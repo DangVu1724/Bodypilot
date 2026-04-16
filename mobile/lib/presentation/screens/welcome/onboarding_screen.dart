@@ -119,7 +119,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             else
                               ElevatedButton(
                                 onPressed: () {
-                                  Navigator.pushReplacementNamed(context, AppRoutes.welcome);
+                                  Navigator.pushReplacementNamed(context, AppRoutes.login);
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.white,

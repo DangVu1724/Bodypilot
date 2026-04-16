@@ -1,48 +1,53 @@
+// signup_screen.dart - phần cần thay đổi
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
-import 'package:mobile/presentation/bloc/auth/login_cubit.dart';
-import 'package:mobile/presentation/bloc/auth/login_state.dart';
+import 'package:mobile/presentation/bloc/auth/signup_cubit.dart';
+import 'package:mobile/presentation/bloc/auth/signup_state.dart';
 import 'package:mobile/presentation/widgets/black_button.dart';
-import 'package:mobile/presentation/widgets/black_button_2.dart';
 
-class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+class SignUpScreen extends StatelessWidget {
+  const SignUpScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(create: (_) => LoginCubit(), child: const LoginView());
+    return BlocProvider(create: (context) => SignupCubit(), child: const SignUpView());
   }
 }
 
-class LoginView extends StatelessWidget {
-  const LoginView({super.key});
+class SignUpView extends StatelessWidget {
+  const SignUpView({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<LoginCubit, LoginState>(
+    return BlocListener<SignupCubit, SignupState>(
+      listenWhen: (previous, current) => previous.status != current.status,
       listener: (context, state) {
-        if (state.status == LoginStatus.success) {
+        if (state.status == SignupStatus.success) {
+          // Navigate to home on success
           Navigator.pushReplacementNamed(context, AppRoutes.home);
-        } else if (state.status == LoginStatus.failure) {
+        } else if (state.status == SignupStatus.failure) {
+          // Show error message
           ScaffoldMessenger.of(
             context,
-          ).showSnackBar(SnackBar(content: Text(state.errorMessage ?? 'Login failed'), backgroundColor: Colors.red));
+          ).showSnackBar(SnackBar(content: Text(state.errorMessage ?? 'Signup failed'), backgroundColor: Colors.red));
         }
       },
       child: Scaffold(
         body: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: BlocBuilder<LoginCubit, LoginState>(
-              builder: (context, state) {
-                final cubit = context.read<LoginCubit>();
+          child: BlocBuilder<SignupCubit, SignupState>(
+            builder: (context, state) {
+              final cubit = context.read<SignupCubit>();
 
-                return Column(
+              return SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 60),
+                    const SizedBox(height: 20),
+
+                    // Logo
                     Container(
                       width: 80,
                       height: 80,
@@ -50,16 +55,38 @@ class LoginView extends StatelessWidget {
                       child: Icon(Icons.fitness_center, size: 50, color: Colors.blue.shade700),
                     ),
                     const SizedBox(height: 40),
+
+                    // Title
                     Text(
-                      'Welcome Back',
+                      "Create Account",
                       style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 8),
+
+                    // Subtitle
                     Text(
-                      'Sign in to continue',
+                      'Sign up to get started with your fitness journey',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
                     ),
                     const SizedBox(height: 40),
+
+                    // Full name field
+                    TextField(
+                      onChanged: cubit.fullNameChanged,
+                      decoration: InputDecoration(
+                        labelText: 'Full Name',
+                        hintText: 'John Doe',
+                        prefixIcon: const Icon(Icons.person_outline),
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Email field
                     TextField(
                       onChanged: cubit.emailChanged,
                       keyboardType: TextInputType.emailAddress,
@@ -76,12 +103,14 @@ class LoginView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
+
+                    // Password field
                     TextField(
                       onChanged: cubit.passwordChanged,
                       obscureText: !state.isPasswordVisible,
                       decoration: InputDecoration(
                         labelText: 'Password',
-                        hintText: 'Enter your password',
+                        hintText: 'Create a password',
                         prefixIcon: const Icon(Icons.lock_outline),
                         suffixIcon: IconButton(
                           icon: Icon(
@@ -99,41 +128,89 @@ class LoginView extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {},
-                        child: Text('Forgot Password?', style: TextStyle(color: AppTheme.primary)),
+                    const SizedBox(height: 16),
+
+                    // Confirm password field
+                    TextField(
+                      onChanged: cubit.confirmPasswordChanged,
+                      obscureText: !state.isConfirmPasswordVisible,
+                      decoration: InputDecoration(
+                        labelText: 'Confirm Password',
+                        hintText: 'Confirm your password',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            state.isConfirmPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                          ),
+                          onPressed: cubit.toggleConfirmPasswordVisibility,
+                        ),
+                        errorText: state.confirmPassword.isNotEmpty && !state.doPasswordsMatch
+                            ? 'Passwords do not match'
+                            : null,
+                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+                        ),
                       ),
                     ),
+                    const SizedBox(height: 12),
+
+                    // Terms and conditions
+                    Row(
+                      children: [
+                        Checkbox(
+                          value: state.isTermsAccepted,
+                          onChanged: cubit.termsAcceptedChanged,
+                          activeColor: AppTheme.primary,
+                        ),
+                        Expanded(
+                          child: Text.rich(
+                            TextSpan(
+                              text: 'I agree to the ',
+                              style: TextStyle(color: Colors.grey.shade600),
+                              children: [
+                                TextSpan(
+                                  text: 'Terms of Service',
+                                  style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
+                                ),
+                                TextSpan(
+                                  text: ' and ',
+                                  style: TextStyle(color: Colors.grey.shade600),
+                                ),
+                                TextSpan(
+                                  text: 'Privacy Policy',
+                                  style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 24),
-                    // BlackButton(
-                    //   label: state.status == LoginStatus.loading ? 'Signing in...' : 'Sign In',
-                    //   onPressed: state.status == LoginStatus.loading ? null : cubit.submit,
-                    //   borderRadius: 12,
-                    //   padding: const EdgeInsets.symmetric(vertical: 16),
-                    // ),
-                    BlackButton2(
-                      label: state.status == LoginStatus.loading ? 'Signing in...' : 'Sign In',
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(context, AppRoutes.assessment);
-                      },
+
+                    // Sign Up button
+                    BlackButton(
+                      label: state.status == SignupStatus.loading ? 'Creating account...' : 'Sign Up',
+                      onPressed: state.status == SignupStatus.loading ? null : cubit.submit,
                       borderRadius: 12,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),
-                    const SizedBox(height: 24),
+
                     Row(
                       children: [
                         Expanded(child: Divider(color: Colors.grey.shade300)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('Or', style: TextStyle(color: Colors.grey.shade600)),
+                          child: Text('Or sign up with', style: TextStyle(color: Colors.grey.shade600)),
                         ),
                         Expanded(child: Divider(color: Colors.grey.shade300)),
                       ],
                     ),
                     const SizedBox(height: 24),
+
+                    // Social sign up
                     Row(
                       children: [
                         Expanded(
@@ -162,25 +239,27 @@ class LoginView extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 32),
+
+                    // Sign in link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Don't have an account? ", style: TextStyle(color: Colors.grey.shade600)),
+                        Text("Already have an account? ", style: TextStyle(color: Colors.grey.shade600)),
                         TextButton(
                           onPressed: () {
-                            Navigator.pushReplacementNamed(context, AppRoutes.signup);
+                            Navigator.pushReplacementNamed(context, AppRoutes.login);
                           },
                           child: Text(
-                            'Sign Up',
+                            'Sign In',
                             style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
                     ),
                   ],
-                );
-              },
-            ),
+                ),
+              );
+            },
           ),
         ),
       ),

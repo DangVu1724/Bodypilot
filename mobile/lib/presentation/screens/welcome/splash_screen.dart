@@ -18,31 +18,11 @@ class SplashScreen extends StatelessWidget {
           }
         },
         child: Scaffold(
-          body: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.blue, Colors.purple],
-              ),
-            ),
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.fitness_center, size: 100, color: Colors.white),
-                  SizedBox(height: 30),
-                  Text(
-                    'BodyPilot',
-                    style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
-                  ),
-                  SizedBox(height: 40),
-                  CircularProgressIndicator(valueColor: AlwaysStoppedAnimation<Color>(Colors.white)),
-                  SizedBox(height: 20),
-                  Text('Loading...', style: TextStyle(color: Colors.white)),
-                ],
-              ),
-            ),
+          body: Image.asset(
+            'assets/images/logo.png',
+            width: double.infinity,
+            height: double.infinity,
+            fit: BoxFit.cover,
           ),
         ),
       ),
