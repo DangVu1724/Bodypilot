@@ -36,6 +36,8 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_bloc: ^9.1.1
   google_fonts: ^8.0.2
+  equatable: ^2.0.8
+  flutter_ruler_picker: ^1.0.6
 
 dev_dependencies:
   flutter_test:
@@ -62,6 +64,9 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/images/man_gender.png
+    - assets/images/woman_gender.png
+    - assets/images/gym_workout.png
    
 
   # An image asset can refer to one or more resolution-specific "variants", see

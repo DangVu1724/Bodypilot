@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:mobile/presentation/screens/assessment/assessment_screen.dart';
+import 'package:mobile/presentation/screens/auth/login_screen.dart';
+import 'package:mobile/presentation/screens/auth/signup_screen.dart';
+import 'package:mobile/presentation/screens/home/home_screen.dart';
 
 import 'package:mobile/presentation/screens/welcome/onboarding_screen.dart';
 import 'package:mobile/presentation/screens/welcome/splash_screen.dart';
@@ -16,10 +20,14 @@ class AppPages {
         return _buildRoute(const OnboardingScreen(), settings);
       case AppRoutes.welcome:
         return _buildRoute(const WelcomeScreen(), settings);
-      // case AppRoutes.login:
-      //   return _buildRoute(const LoginScreen(), settings);
-      // case AppRoutes.home:
-      //   return _buildRoute(const HomeScreen(), settings);
+      case AppRoutes.login:
+        return _buildRoute(const LoginScreen(), settings);
+      case AppRoutes.signup:
+        return _buildRoute(const SignUpScreen(), settings);
+      case AppRoutes.assessment:
+        return _buildRoute(const AssessmentScreen(), settings);
+      case AppRoutes.home:
+        return _buildRoute(const HomeScreen(), settings);
       default:
         return _buildRoute(const SplashScreen(), settings);
     }
