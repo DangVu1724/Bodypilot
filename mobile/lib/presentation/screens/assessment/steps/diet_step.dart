@@ -25,17 +25,28 @@ class _DietStepState extends State<DietStep> {
       children: [
         const SizedBox(height: 20),
 
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [AppTheme.primary, AppTheme.primary.withOpacity(0.7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Text(
+            'Chế độ ăn',
+            style: AppTheme.headlineStyle.copyWith(color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 12),
         Text(
           'Bạn có chế độ ăn uống?',
-          style: GoogleFonts.workSans(fontSize: 30, fontWeight: FontWeight.bold),
+          style: AppTheme.semiboldStyle.copyWith(fontSize: 18, color: Colors.black87),
           textAlign: TextAlign.center,
         ),
-
         const SizedBox(height: 8),
-
         Text(
           'Chúng tôi sẽ gợi ý dinh dưỡng phù hợp',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+          style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600),
           textAlign: TextAlign.center,
         ),
 
@@ -53,26 +64,59 @@ class _DietStepState extends State<DietStep> {
             ),
             itemBuilder: (context, index) {
               final diet = AssessmentState.dietOptions[index];
-              return _buildOption(title: diet.title, icon: diet.icon, examples: diet.examples, isSelected: selectedDiet == diet.title);
+              return _buildOption(
+                title: diet.title,
+                icon: diet.icon,
+                examples: diet.examples,
+                isSelected: selectedDiet == diet.title,
+              );
             },
           ),
         ),
 
-        // 🔘 Button
-        SizedBox(
-          width: double.infinity,
-          child: BlackButton2(
-            label: 'Continue',
-            onPressed: widget.onNext,
-            borderRadius: 16,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 20, offset: const Offset(0, -5))],
+          ),
+          child: Column(
+            children: [
+              if (selectedDiet != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Chế độ ăn: $selectedDiet',
+                    style: GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary),
+                  ),
+                ),
+              SizedBox(
+                width: double.infinity,
+                child: BlackButton2(
+                  label: 'Tiếp tục',
+                  onPressed: widget.onNext,
+                  borderRadius: 16,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ],
           ),
         ),
       ],
     );
   }
 
-  Widget _buildOption({required String title, required IconData icon, required List<String> examples, required bool isSelected}) {
+  Widget _buildOption({
+    required String title,
+    required IconData icon,
+    required List<String> examples,
+    required bool isSelected,
+  }) {
     return GestureDetector(
       onTap: () {
         context.read<AssessmentCubit>().selectDiet(title);
@@ -91,21 +135,16 @@ class _DietStepState extends State<DietStep> {
             Icon(icon, size: 40, color: isSelected ? Colors.white : AppTheme.primary),
             const SizedBox(height: 12),
             Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.workSans(
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
-                color: isSelected ? Colors.white : Colors.black87,
-              ),
-            ),
+            title,
+            textAlign: TextAlign.center,
+            style: AppTheme.semiboldStyle.copyWith(color: isSelected ? Colors.white : Colors.black87, fontSize: 16),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
             Text(
               examples.join(', '),
               textAlign: TextAlign.center,
-              style: GoogleFonts.workSans(
-                fontSize: 12,
-                color: isSelected ? Colors.white70 : Colors.grey.shade600,
-              ),
+              style: GoogleFonts.workSans(fontSize: 12, color: isSelected ? Colors.white70 : Colors.grey.shade600),
             ),
           ],
         ),

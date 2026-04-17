@@ -1,8 +1,9 @@
 // black_button.dart
 import 'package:flutter/material.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 
 class BlackButton2 extends StatelessWidget {
-  const BlackButton2 ({
+  const BlackButton2({
     super.key,
     required this.label,
     required this.onPressed, // Đổi thành VoidCallback

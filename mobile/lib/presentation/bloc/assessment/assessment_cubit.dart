@@ -28,6 +28,46 @@ class AssessmentCubit extends Cubit<AssessmentState> {
     emit(state.copyWith(selectedDiet: diet));
   }
 
+  void selectExercise(String exercise) {
+    emit(state.copyWith(selectedExercise: exercise));
+  }
+
+  void toggleCondition(String condition) {
+    final selectedConditions = List<String>.from(state.selectedConditions);
+    if (selectedConditions.contains(condition)) {
+      selectedConditions.remove(condition);
+    } else {
+      selectedConditions.add(condition);
+    }
+    emit(state.copyWith(selectedConditions: selectedConditions));
+  }
+
+  void selectAllergyCategory(String category) {
+    if (category == 'Không có') {
+      emit(state.copyWith(selectedAllergyCategory: category, selectedAllergies: []));
+    } else {
+      emit(state.copyWith(selectedAllergyCategory: category));
+    }
+  }
+
+  void toggleAllergy(String allergy) {
+    final selectedAllergies = List<String>.from(state.selectedAllergies);
+    if (selectedAllergies.contains(allergy)) {
+      selectedAllergies.remove(allergy);
+    } else {
+      selectedAllergies.add(allergy);
+    }
+    emit(state.copyWith(selectedAllergies: selectedAllergies));
+  }
+
+  void setTargetWeight(int weight) {
+    emit(state.copyWith(targetWeight: weight));
+  }
+
+  void setSleepQuality(String sleep) {
+    emit(state.copyWith(selectedSleep: sleep));
+  }
+
   void setExperience(bool value) {
     emit(state.copyWith(hasExperience: value));
   }

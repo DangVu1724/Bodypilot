@@ -121,15 +121,28 @@ class _BodyStepState extends State<BodyStep> {
     return Column(
       children: [
         const SizedBox(height: 20),
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [AppTheme.primary, AppTheme.primary.withOpacity(0.7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Text(
+            'Cơ thể của bạn',
+            style: AppTheme.headlineStyle.copyWith(color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 12),
         Text(
           'Chiều cao và cân nặng của bạn là bao nhiêu?',
-          style: GoogleFonts.workSans(fontSize: 32, fontWeight: FontWeight.bold),
+          style: AppTheme.semiboldStyle.copyWith(fontSize: 18, color: Colors.black87),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
           'Vuốt các con số để chọn chiều cao và cân nặng cùng một lúc',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+          style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 24),
@@ -164,13 +177,24 @@ class _BodyStepState extends State<BodyStep> {
           ),
         ),
         const SizedBox(height: 16),
-        SizedBox(
-          width: double.infinity,
-          child: BlackButton2(
-            label: 'Continue',
-            onPressed: widget.onNext,
-            borderRadius: 16,
-            padding: const EdgeInsets.symmetric(vertical: 18),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 20, offset: const Offset(0, -5))],
+          ),
+          child: Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: BlackButton2(
+                  label: 'Tiếp tục',
+                  onPressed: widget.onNext,
+                  borderRadius: 16,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ],
           ),
         ),
       ],

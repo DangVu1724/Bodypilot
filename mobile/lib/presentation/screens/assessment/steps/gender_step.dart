@@ -18,48 +18,104 @@ class GenderStep extends StatefulWidget {
 class _GenderStepState extends State<GenderStep> {
   @override
   Widget build(BuildContext context) {
-    final assessmentState = context.watch<AssessmentCubit>().state;
-    final selectedGender = assessmentState.selectedGender;
+    final state = context.watch<AssessmentCubit>().state;
+    final selectedGender = state.selectedGender;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const SizedBox(height: 20),
-        Text('Giới tính của bạn là gì?', style: GoogleFonts.workSans(fontSize: 36, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 8),
-        Text(
-          'Thông tin này giúp chúng tôi cá nhân hóa trải nghiệm tập luyện',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
-        ),
-        const SizedBox(height: 20),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20),
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
 
-        ...AssessmentState.genderOptions.map(
-          (option) => Padding(
-            padding: const EdgeInsets.only(bottom: 12),
-            child: _buildGenderOptionWithImage(
-              context: context,
-              title: option.title,
-              description: option.description,
-              imagePath: option.imagePath,
-              isSelected: selectedGender == option.title,
-              onTap: () {
-                context.read<AssessmentCubit>().selectGender(option.title);
-              },
+          // HEADER (simple fade)
+          AnimatedOpacity(
+            duration: const Duration(milliseconds: 500),
+            opacity: 1,
+            child: Column(
+              children: [
+                Text('Giới tính', style: AppTheme.headlineStyle, textAlign: TextAlign.center),
+                const SizedBox(height: 12),
+                Text(
+                  'Giới tính của bạn là gì?',
+                  style: AppTheme.semiboldStyle.copyWith(fontSize: 18),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Thông tin này giúp chúng tôi cá nhân hóa trải nghiệm tập luyện',
+                  style: AppTheme.bodyStyle.copyWith(color: Colors.grey),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
-        ),
 
-        const Spacer(),
-        SizedBox(
-          width: double.infinity,
-          child: BlackButton2(
-            label: 'Continue',
-            onPressed: selectedGender != null ? widget.onNext : null,
-            borderRadius: 12,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+          const SizedBox(height: 32),
+
+          // OPTIONS
+          ...AssessmentState.genderOptions.asMap().entries.map((entry) {
+            final option = entry.value;
+            final isSelected = selectedGender == option.title;
+
+            return AnimatedOpacity(
+              duration: const Duration(milliseconds: 400),
+              opacity: 1,
+              child: AnimatedSlide(
+                duration: const Duration(milliseconds: 400),
+                offset: const Offset(0, 0),
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 16),
+                  child: _buildGenderOptionWithImage(
+                    context: context,
+                    title: option.title,
+                    description: option.description,
+                    imagePath: option.imagePath,
+                    isSelected: isSelected,
+                    onTap: () {
+                      context.read<AssessmentCubit>().selectGender(option.title);
+                    },
+                  ),
+                ),
+              ),
+            );
+          }),
+
+          const Spacer(),
+          Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 20, offset: const Offset(0, -5))],
+            ),
+            child: Column(
+              children: [
+                if (selectedGender != null)
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.primary.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      'Giới tính: $selectedGender',
+                      style: GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary),
+                    ),
+                  ),
+                SizedBox(
+                  width: double.infinity,
+                  child: BlackButton2(
+                    label: 'Tiếp tục',
+                    onPressed: selectedGender != null ? widget.onNext : null,
+                    borderRadius: 16,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -73,52 +129,66 @@ class _GenderStepState extends State<GenderStep> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        transformAlignment: Alignment.center,
+        transform: isSelected ? (Matrix4.identity()..scale(1.03)) : Matrix4.identity(),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
-          border: isSelected
-              ? Border.all(color: AppTheme.primary, width: 2)
-              : Border.all(color: Colors.grey.shade300, width: 1),
+          border: Border.all(color: isSelected ? AppTheme.primary : Colors.grey.shade200, width: isSelected ? 2 : 1),
+          boxShadow: [
+            BoxShadow(
+              color: isSelected ? AppTheme.primary.withOpacity(0.12) : Colors.grey.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 4),
+            ),
+          ],
         ),
-        child: Padding(
-          padding: const EdgeInsets.all(0),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(24),
           child: Row(
             children: [
-              // Bên trái: Info + Checkbox
+              // LEFT CONTENT
               Expanded(
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(20),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        title,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: isSelected ? AppTheme.primary : Colors.black87,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Phù hợp với ${title.toLowerCase()} giới',
-                        style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
-                      ),
-                      const SizedBox(height: 12),
                       Row(
                         children: [
-                          Checkbox(
-                            value: isSelected,
-                            onChanged: (value) {
-                              onTap();
-                            },
-                            activeColor: AppTheme.primary,
+                          Icon(
+                            title == 'Nam' ? Icons.male : Icons.female,
+                            color: isSelected ? AppTheme.primary : Colors.grey,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            title,
+                            style: AppTheme.semiboldStyle.copyWith(
+                              fontSize: 18,
+                              color: isSelected ? AppTheme.primary : Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      Text(description, style: AppTheme.bodyStyle.copyWith(color: Colors.grey)),
+                      const SizedBox(height: 14),
+
+                      // CHECK
+                      Row(
+                        children: [
+                          Icon(
+                            isSelected ? Icons.check_circle : Icons.circle_outlined,
+                            color: isSelected ? AppTheme.primary : Colors.grey,
+                            size: 20,
                           ),
                           const SizedBox(width: 8),
                           Text(
-                            'Chọn ${title.toLowerCase()}',
-                            style: TextStyle(fontSize: 14, color: isSelected ? AppTheme.primary : Colors.grey.shade600),
+                            'Chọn $title',
+                            style: AppTheme.bodyStyle.copyWith(color: isSelected ? AppTheme.primary : Colors.grey),
                           ),
                         ],
                       ),
@@ -127,16 +197,8 @@ class _GenderStepState extends State<GenderStep> {
                 ),
               ),
 
-              // Bên phải: Ảnh giới tính
-              ClipRRect(
-                borderRadius: const BorderRadius.only(topRight: Radius.circular(16), bottomRight: Radius.circular(16)),
-                child: Image.asset(
-                  imagePath,
-                  width: 150,
-                  height: 170,
-                  fit: BoxFit.cover, // Ảnh phủ kín toàn bộ
-                ),
-              ),
+              // RIGHT IMAGE
+              Image.asset(imagePath, width: 120, height: 160, fit: BoxFit.cover),
             ],
           ),
         ),

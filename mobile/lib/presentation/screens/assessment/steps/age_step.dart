@@ -27,22 +27,34 @@ class _AgeStepState extends State<AgeStep> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
+    final selectedAge = context.watch<AssessmentCubit>().state.selectedAge;
 
     return Column(
       children: [
         const SizedBox(height: 20),
 
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [AppTheme.primary, AppTheme.primary.withOpacity(0.7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Text(
+            'Tuổi của bạn',
+            style: AppTheme.headlineStyle.copyWith(color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 12),
         Text(
           'Bạn bao nhiêu tuổi?',
-          style: GoogleFonts.workSans(fontSize: 32, fontWeight: FontWeight.bold),
+          style: AppTheme.semiboldStyle.copyWith(fontSize: 18, color: Colors.black87),
           textAlign: TextAlign.center,
         ),
-
         const SizedBox(height: 8),
-
         Text(
           'Vuốt để chọn tuổi của bạn',
-          style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+          style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600),
           textAlign: TextAlign.center,
         ),
 
@@ -77,7 +89,6 @@ class _AgeStepState extends State<AgeStep> {
                   childCount: 100,
                   builder: (context, index) {
                     final age = index + 1;
-                    final selectedAge = context.watch<AssessmentCubit>().state.selectedAge;
                     final diff = (age - selectedAge).abs();
 
                     final scale = diff == 0
@@ -108,16 +119,26 @@ class _AgeStepState extends State<AgeStep> {
         ),
 
         const Spacer(),
-
-        SizedBox(
-          width: double.infinity,
-          child: BlackButton2(
-            label: 'Continue',
-            onPressed: () {
-              widget.onNext();
-            },
-            borderRadius: 12,
-            padding: const EdgeInsets.symmetric(vertical: 18),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 20, offset: const Offset(0, -5))],
+          ),
+          child: Column(
+            children: [
+              SizedBox(
+                width: double.infinity,
+                child: BlackButton2(
+                  label: 'Tiếp tục',
+                  onPressed: () {
+                    widget.onNext();
+                  },
+                  borderRadius: 16,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ],
           ),
         ),
       ],

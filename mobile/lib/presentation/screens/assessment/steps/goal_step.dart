@@ -25,12 +25,31 @@ class _GoalStepState extends State<GoalStep> {
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
         const SizedBox(height: 20),
+        ShaderMask(
+          shaderCallback: (bounds) => LinearGradient(
+            colors: [AppTheme.primary, AppTheme.primary.withOpacity(0.7)],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ).createShader(bounds),
+          child: Text(
+            'Mục tiêu',
+            style: AppTheme.headlineStyle.copyWith(color: Colors.white),
+            textAlign: TextAlign.center,
+          ),
+        ),
+        const SizedBox(height: 12),
         Text(
           'Mục tiêu tập luyện của bạn là gì?',
-          style: GoogleFonts.workSans(fontSize: 36, fontWeight: FontWeight.bold),
+          style: AppTheme.semiboldStyle.copyWith(fontSize: 18, color: Colors.black87),
           textAlign: TextAlign.center,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 8),
+        Text(
+          'Chọn mục tiêu giúp chúng tôi đề xuất kế hoạch phù hợp',
+          style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 24),
         Wrap(
           spacing: 16,
           runSpacing: 16,
@@ -39,13 +58,37 @@ class _GoalStepState extends State<GoalStep> {
           }).toList(),
         ),
         const Spacer(),
-        SizedBox(
-          width: double.infinity,
-          child: BlackButton2(
-            label: 'Continue',
-            onPressed: selectedGoal != null ? widget.onNext : null,
-            borderRadius: 12,
-            padding: const EdgeInsets.symmetric(vertical: 16),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 20, offset: const Offset(0, -5))],
+          ),
+          child: Column(
+            children: [
+              if (selectedGoal != null)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: AppTheme.primary.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    'Mục tiêu: $selectedGoal',
+                    style: GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary),
+                  ),
+                ),
+              SizedBox(
+                width: double.infinity,
+                child: BlackButton2(
+                  label: 'Tiếp tục',
+                  onPressed: selectedGoal != null ? widget.onNext : null,
+                  borderRadius: 16,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+              ),
+            ],
           ),
         ),
       ],
@@ -67,11 +110,9 @@ class _GoalStepState extends State<GoalStep> {
         child: ListTile(
           title: Text(
             title,
-            style: GoogleFonts.workSans(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: isSelected ? Colors.white : Colors.black87,
-            ),
+            style: AppTheme.semiboldStyle.copyWith(color: isSelected ? Colors.white : Colors.black87, fontSize: 16),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
           leading: Icon(icon, size: 40, color: isSelected ? Colors.white : AppTheme.primary),

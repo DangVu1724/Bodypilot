@@ -6,15 +6,20 @@ import 'package:mobile/presentation/bloc/assessment/assessment_cubit.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_state.dart';
 import 'package:mobile/presentation/widgets/black_button_2.dart';
 
-class ExperienceStep extends StatelessWidget {
+class ExerciseStep extends StatefulWidget {
   final VoidCallback onNext;
 
-  const ExperienceStep({super.key, required this.onNext});
+  const ExerciseStep({super.key, required this.onNext});
 
   @override
+  State<ExerciseStep> createState() => _ExerciseStepState();
+}
+
+class _ExerciseStepState extends State<ExerciseStep> {
+  @override
   Widget build(BuildContext context) {
-    final state = context.watch<AssessmentCubit>().state;
-    final hasExperience = state.hasExperience;
+    final assessmentState = context.watch<AssessmentCubit>().state;
+    final selectedExercise = assessmentState.selectedExercise;
 
     return Column(
       children: [
@@ -27,59 +32,47 @@ class ExperienceStep extends StatelessWidget {
             end: Alignment.bottomRight,
           ).createShader(bounds),
           child: Text(
-            'Kinh nghiệm',
+            'Hoạt động',
             style: AppTheme.headlineStyle.copyWith(color: Colors.white),
             textAlign: TextAlign.center,
           ),
         ),
         const SizedBox(height: 12),
         Text(
-          'Bạn đã từng tập gym chưa?',
+          'Bạn thường tập luyện môn nào?',
           style: AppTheme.semiboldStyle.copyWith(fontSize: 18, color: Colors.black87),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 8),
         Text(
-          'Thông tin này giúp chúng tôi cá nhân hóa trải nghiệm tập luyện',
+          'Chúng tôi sẽ gợi ý bài tập phù hợp với bạn',
           style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600),
           textAlign: TextAlign.center,
         ),
 
-        // 🎯 Ảnh nằm giữa
+        const SizedBox(height: 30),
+
+        // 🔥 GRID 2x2
         Expanded(
-          child: Center(child: Image.asset(AssessmentState.experienceImage, height: 280, fit: BoxFit.contain)),
+          child: GridView.builder(
+            itemCount: AssessmentState.exerciseOptions.length,
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: 3,
+              crossAxisSpacing: 16,
+              mainAxisSpacing: 16,
+              childAspectRatio: 0.9,
+            ),
+            itemBuilder: (context, index) {
+              final exercise = AssessmentState.exerciseOptions[index];
+              return _buildOption(
+                title: exercise.title,
+                icon: exercise.icon,
+                isSelected: selectedExercise == exercise.title,
+              );
+            },
+          ),
         ),
 
-        const SizedBox(height: 16),
-
-        // Selection Cards
-        Row(
-          children: [
-            Expanded(
-              child: _buildChoiceCard(
-                context: context,
-                title: 'Chưa từng tập',
-                icon: Icons.history,
-                isSelected: hasExperience == false,
-                onTap: () => context.read<AssessmentCubit>().setExperience(false),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _buildChoiceCard(
-                context: context,
-                title: 'Đã từng tập',
-                icon: Icons.fitness_center,
-                isSelected: hasExperience == true,
-                onTap: () => context.read<AssessmentCubit>().setExperience(true),
-              ),
-            ),
-          ],
-        ),
-
-        const SizedBox(height: 24),
-
-        // Fixed Bottom Container
         Container(
           padding: const EdgeInsets.all(20),
           decoration: BoxDecoration(
@@ -88,7 +81,7 @@ class ExperienceStep extends StatelessWidget {
           ),
           child: Column(
             children: [
-              if (hasExperience != null)
+              if (selectedExercise != null)
                 Container(
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -97,7 +90,7 @@ class ExperienceStep extends StatelessWidget {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    'Đã chọn: ${hasExperience ? 'Đã từng tập' : 'Chưa từng tập'}',
+                    'Đã chọn: $selectedExercise',
                     style: GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary),
                   ),
                 ),
@@ -105,7 +98,7 @@ class ExperienceStep extends StatelessWidget {
                 width: double.infinity,
                 child: BlackButton2(
                   label: 'Tiếp tục',
-                  onPressed: hasExperience != null ? onNext : null,
+                  onPressed: widget.onNext,
                   borderRadius: 16,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -117,31 +110,30 @@ class ExperienceStep extends StatelessWidget {
     );
   }
 
-  Widget _buildChoiceCard({
-    required BuildContext context,
-    required String title,
-    required IconData icon,
-    required bool isSelected,
-    required VoidCallback onTap,
-  }) {
+  Widget _buildOption({required String title, required IconData icon, required bool isSelected}) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: () {
+        context.read<AssessmentCubit>().selectExercise(title);
+      },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 20),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: isSelected ? AppTheme.primary : const Color(0xFFF3F3F4),
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(color: isSelected ? AppTheme.primary : Colors.transparent, width: 2),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 32, color: isSelected ? Colors.white : AppTheme.primary),
+            Icon(icon, size: 40, color: isSelected ? Colors.white : AppTheme.primary),
             const SizedBox(height: 12),
             Text(
               title,
-              style: AppTheme.semiboldStyle.copyWith(
-                fontSize: 15,
+              textAlign: TextAlign.center,
+              style: GoogleFonts.workSans(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
                 color: isSelected ? Colors.white : Colors.black87,
               ),
             ),
