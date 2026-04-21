@@ -4,7 +4,6 @@ import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/auth/login_cubit.dart';
 import 'package:mobile/presentation/bloc/auth/login_state.dart';
-import 'package:mobile/presentation/widgets/black_button.dart';
 import 'package:mobile/presentation/widgets/black_button_2.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -24,7 +23,11 @@ class LoginView extends StatelessWidget {
     return BlocListener<LoginCubit, LoginState>(
       listener: (context, state) {
         if (state.status == LoginStatus.success) {
-          Navigator.pushReplacementNamed(context, AppRoutes.home);
+          if (state.isProfileComplete == true) {
+            Navigator.pushReplacementNamed(context, AppRoutes.home);
+          } else {
+            Navigator.pushReplacementNamed(context, AppRoutes.assessment);
+          }
         } else if (state.status == LoginStatus.failure) {
           ScaffoldMessenger.of(
             context,
@@ -116,9 +119,7 @@ class LoginView extends StatelessWidget {
                     // ),
                     BlackButton2(
                       label: state.status == LoginStatus.loading ? 'Signing in...' : 'Sign In',
-                      onPressed: () {
-                        Navigator.pushReplacementNamed(context, AppRoutes.assessment);
-                      },
+                      onPressed: state.status == LoginStatus.loading ? null : cubit.submit,
                       borderRadius: 12,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                     ),

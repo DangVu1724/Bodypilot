@@ -5,6 +5,7 @@ class AppTheme {
   AppTheme._();
 
   static const Color primary = Color(0xFFF97316);
+
   static const Color background = Color(0xFFFFFFFF);
   static const Color surface = Color(0xFFF8FAFC);
   static const Color textPrimary = Color(0xFF0F172A);
@@ -12,8 +13,12 @@ class AppTheme {
   static const Color darkBackground = Color(0xFF0F172A);
   static const Color darkSurface = Color(0xFF111827);
 
+  static TextStyle get headlineStyle => GoogleFonts.workSans(fontSize: 32, fontWeight: FontWeight.bold);
+  static TextStyle get semiboldStyle => GoogleFonts.workSans(fontSize: 15, fontWeight: FontWeight.w600, height: 1.3);
+  static TextStyle get bodyStyle => GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.w400, height: 1.4);
+
   static ThemeData get lightTheme {
-    final textTheme = GoogleFonts.poppinsTextTheme(
+    final textTheme = GoogleFonts.workSansTextTheme(
       Typography.material2018().black,
     ).apply(bodyColor: textPrimary, displayColor: textPrimary);
 
@@ -77,7 +82,7 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    final textTheme = GoogleFonts.poppinsTextTheme(
+    final textTheme = GoogleFonts.workSansTextTheme(
       Typography.material2018().white,
     ).apply(bodyColor: Colors.white, displayColor: Colors.white);
 

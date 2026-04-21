@@ -13,17 +13,17 @@ class OnboardingCubit extends Cubit<int> {
 
   static const List<OnboardingPage> pages = [
     OnboardingPage(
-      image: 'assets/images/boxing.png',
+      image: 'assets/images/man.png',
       title: 'Personalized Workout Plans',
       description: 'Get workout plans tailored to your fitness goals',
     ),
     OnboardingPage(
-      image: 'assets/images/equipments.png',
+      image: 'assets/images/fruit.png',
       title: 'Smart Nutrition Guide',
       description: 'Track your meals and get personalized advice',
     ),
     OnboardingPage(
-      image: 'assets/images/fruit.png',
+      image: 'assets/images/ai.jpg',
       title: 'AI Fitness Coach',
       description: 'Real-time feedback using AI technology',
     ),
@@ -33,7 +33,7 @@ class OnboardingCubit extends Cubit<int> {
       description: 'Monitor your improvements with analytics',
     ),
     OnboardingPage(
-      image: 'assets/images/yoga.png',
+      image: 'assets/images/equipments.png',
       title: 'Join Our Community',
       description: 'Connect with others and stay motivated',
     ),

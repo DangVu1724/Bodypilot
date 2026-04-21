@@ -25,8 +25,10 @@ class SignUpView extends StatelessWidget {
       listenWhen: (previous, current) => previous.status != current.status,
       listener: (context, state) {
         if (state.status == SignupStatus.success) {
-          // Navigate to home on success
-          Navigator.pushReplacementNamed(context, AppRoutes.home);
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Đăng ký thành công! Vui lòng đăng nhập.')),
+          );
+          Navigator.pushReplacementNamed(context, AppRoutes.login);
         } else if (state.status == SignupStatus.failure) {
           // Show error message
           ScaffoldMessenger.of(

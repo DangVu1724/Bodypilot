@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 
 class BlackButton2 extends StatelessWidget {
-  const BlackButton2 ({
+  const BlackButton2({
     super.key,
     required this.label,
     required this.onPressed, // Đổi thành VoidCallback
