@@ -4,6 +4,7 @@ import 'package:mobile/presentation/screens/assessment/assessment_screen.dart';
 import 'package:mobile/presentation/screens/auth/login_screen.dart';
 import 'package:mobile/presentation/screens/auth/signup_screen.dart';
 import 'package:mobile/presentation/screens/home/home_screen.dart';
+import 'package:mobile/presentation/screens/main/main_screen.dart';
 
 import 'package:mobile/presentation/screens/welcome/onboarding_screen.dart';
 import 'package:mobile/presentation/screens/welcome/splash_screen.dart';
@@ -27,7 +28,7 @@ class AppPages {
       case AppRoutes.assessment:
         return _buildRoute(const AssessmentScreen(), settings);
       case AppRoutes.home:
-        return _buildRoute(const HomeScreen(), settings);
+        return _buildRoute(const MainScreen(), settings);
       default:
         return _buildRoute(const SplashScreen(), settings);
     }

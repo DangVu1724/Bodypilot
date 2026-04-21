@@ -58,10 +58,10 @@ class _AgeStepState extends State<AgeStep> {
           textAlign: TextAlign.center,
         ),
 
-        const SizedBox(height: 20),
+        const SizedBox(height: 10),
 
         SizedBox(
-          height: screenHeight * 0.6,
+          height: screenHeight * 0.5,
           child: Stack(
             alignment: Alignment.center,
             children: [
@@ -79,7 +79,7 @@ class _AgeStepState extends State<AgeStep> {
               ListWheelScrollView.useDelegate(
                 controller: _scrollController,
                 itemExtent: 90,
-                diameterRatio: 1.1,
+                diameterRatio: 1.9,
                 perspective: 0.0015,
                 physics: const FixedExtentScrollPhysics(),
                 onSelectedItemChanged: (index) {
@@ -104,7 +104,7 @@ class _AgeStepState extends State<AgeStep> {
                         child: Text(
                           '$age',
                           style: GoogleFonts.workSans(
-                            fontSize: diff == 0 ? 72 : 68,
+                            fontSize: diff == 0 ? 64 : 60,
                             fontWeight: FontWeight.bold,
                             color: diff == 0 ? Colors.white : Colors.grey.shade500,
                           ),

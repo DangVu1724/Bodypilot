@@ -62,20 +62,27 @@ class _ConditionStepState extends State<ConditionStep> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: GridView.builder(
-              itemCount: AssessmentState.conditionOptions.length,
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 16,
-                mainAxisSpacing: 16,
-                childAspectRatio: 0.9,
-              ),
-              itemBuilder: (context, index) {
-                final condition = AssessmentState.conditionOptions[index];
-                final isSelected = selectedConditions.contains(condition.title);
-                return _buildModernOption(title: condition.title, icon: condition.icon, isSelected: isSelected);
-              },
-            ),
+            child: assessmentState.availableConditions.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : GridView.builder(
+                    itemCount: assessmentState.availableConditions.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 16,
+                      mainAxisSpacing: 16,
+                      childAspectRatio: 0.9,
+                    ),
+                    itemBuilder: (context, index) {
+                      final condition = assessmentState.availableConditions[index];
+                      final isSelected = selectedConditions.contains(condition.code);
+                      return _buildModernOption(
+                        title: condition.name,
+                        icon: AssessmentState.getConditionIcon(condition.code),
+                        isSelected: isSelected,
+                        code: condition.code,
+                      );
+                    },
+                  ),
           ),
         ),
 
@@ -118,10 +125,10 @@ class _ConditionStepState extends State<ConditionStep> {
     );
   }
 
-  Widget _buildModernOption({required String title, required IconData icon, required bool isSelected}) {
+  Widget _buildModernOption({required String title, required IconData icon, required bool isSelected, required String code}) {
     return GestureDetector(
       onTap: () {
-        context.read<AssessmentCubit>().toggleCondition(title);
+        context.read<AssessmentCubit>().toggleCondition(code);
         // Haptic feedback
         // HapticFeedback.lightImpact();
       },

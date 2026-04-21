@@ -1,14 +1,21 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile/data/models/health_condition_model.dart';
+import 'package:mobile/data/models/injury_model.dart';
+import 'package:mobile/core/theme/app_theme.dart';
+
+enum AssessmentStatus { initial, loading, success, failure }
 
 class GoalOption extends Equatable {
   final String title;
+  final String value;
   final IconData icon;
+  final String description;
 
-  const GoalOption({required this.title, required this.icon});
+  const GoalOption({required this.title, required this.value, required this.icon, required this.description});
 
   @override
-  List<Object?> get props => [title, icon];
+  List<Object?> get props => [title, value, icon, description];
 }
 
 class GenderOption extends Equatable {
@@ -20,17 +27,6 @@ class GenderOption extends Equatable {
 
   @override
   List<Object?> get props => [title, description, imagePath];
-}
-
-class DietOption extends Equatable {
-  final String title;
-  final IconData icon;
-  final List<String> examples;
-
-  const DietOption({required this.title, required this.icon, this.examples = const []});
-
-  @override
-  List<Object?> get props => [title, icon, examples];
 }
 
 class ExerciseOption extends Equatable {
@@ -51,6 +47,29 @@ class ConditionOption extends Equatable {
 
   @override
   List<Object?> get props => [title, icon];
+}
+
+class InjuryOption extends Equatable {
+  final String title;
+  final IconData icon;
+  final String bodyPart;
+
+  const InjuryOption({required this.title, required this.icon, required this.bodyPart});
+
+  @override
+  List<Object?> get props => [title, icon, bodyPart];
+}
+
+class ActivityLevelOption extends Equatable {
+  final String title;
+  final String value;
+  final IconData icon;
+  final String description;
+
+  const ActivityLevelOption({required this.title, required this.value, required this.icon, required this.description});
+
+  @override
+  List<Object?> get props => [title, value, icon, description];
 }
 
 class AllergyOption extends Equatable {
@@ -76,32 +95,33 @@ class SleepOption extends Equatable {
 
 class AssessmentState extends Equatable {
   static const List<GoalOption> goalOptions = [
-    GoalOption(title: 'Giảm cân', icon: Icons.fitness_center),
-    GoalOption(title: 'Tăng cơ', icon: Icons.fitness_center),
-    GoalOption(title: 'Cải thiện sức khỏe', icon: Icons.fitness_center),
-    GoalOption(title: 'Trải nghiệm', icon: Icons.fitness_center),
+    GoalOption(
+      title: 'Duy trì vóc dáng',
+      value: 'MAINTAIN',
+      icon: Icons.accessibility_new,
+      description: 'Giữ cân nặng hiện tại',
+    ),
+    GoalOption(title: 'Giảm cân chậm', value: 'LOSE_0_5KG', icon: Icons.trending_down, description: 'Giảm 0.5kg/tuần'),
+    GoalOption(title: 'Giảm cân nhanh', value: 'LOSE_1KG', icon: Icons.fast_rewind, description: 'Giảm 1kg/tuần'),
+    GoalOption(title: 'Tăng cân chậm', value: 'GAIN_0_5KG', icon: Icons.trending_up, description: 'Tăng 0.5kg/tuần'),
+    GoalOption(title: 'Tăng cân nhanh', value: 'GAIN_1KG', icon: Icons.fast_forward, description: 'Tăng 1kg/tuần'),
+    GoalOption(
+      title: 'Tăng cơ mỡ thấp',
+      value: 'GAIN_MUSCLE',
+      icon: Icons.fitness_center,
+      description: 'Tập xả cơ kết hợp lean bulk',
+    ),
+    GoalOption(
+      title: 'Cải thiện sức khỏe',
+      value: 'HEALTHY_LIFESTYLE',
+      icon: Icons.favorite,
+      description: 'Sống lành mạnh vững bền',
+    ),
   ];
 
   static const List<GenderOption> genderOptions = [
     GenderOption(title: 'Nam', description: 'Phù hợp với nam giới', imagePath: 'assets/images/man_gender.png'),
     GenderOption(title: 'Nữ', description: 'Phù hợp với nữ giới', imagePath: 'assets/images/woman_gender.png'),
-  ];
-
-  static const List<DietOption> dietOptions = [
-    DietOption(title: 'Ăn chay', icon: Icons.eco, examples: ['Rau củ luộc', 'Đậu hũ', 'Salad', 'Canh rong biển']),
-    DietOption(
-      title: 'Low-carb',
-      icon: Icons.local_fire_department,
-      examples: ['Thịt bò', 'Trứng', 'Cá hồi', 'Rau xanh'],
-    ),
-    DietOption(title: 'Eat clean', icon: Icons.restaurant, examples: ['Ức gà', 'Gạo lứt', 'Khoai lang', 'Salad']),
-    DietOption(title: 'Keto', icon: Icons.bolt, examples: ['Thịt mỡ', 'Trứng', 'Bơ', 'Phô mai']),
-    DietOption(
-      title: 'High-protein',
-      icon: Icons.fitness_center,
-      examples: ['Ức gà', 'Cá ngừ', 'Trứng', 'Whey protein'],
-    ),
-    DietOption(title: 'Không theo chế độ', icon: Icons.fastfood, examples: ['Cơm', 'Bún phở', 'Đồ chiên', 'Đồ ngọt']),
   ];
 
   static const List<ExerciseOption> exerciseOptions = [
@@ -150,21 +170,116 @@ class AssessmentState extends Equatable {
     SleepOption(title: 'Rất kém', icon: Icons.mood_bad, description: 'Dưới 4 tiếng/đêm'),
   ];
 
+  static const List<InjuryOption> injuryOptions = [
+    InjuryOption(title: 'ACL Tear', icon: Icons.personal_injury, bodyPart: 'KNEE'),
+    InjuryOption(title: 'Runner\'s Knee', icon: Icons.personal_injury, bodyPart: 'KNEE'),
+    InjuryOption(title: 'Lower Back Pain', icon: Icons.accessibility_new, bodyPart: 'BACK'),
+    InjuryOption(title: 'Herniated Disc', icon: Icons.accessibility_new, bodyPart: 'BACK'),
+    InjuryOption(title: 'Shoulder Impingement', icon: Icons.boy, bodyPart: 'SHOULDER'),
+    InjuryOption(title: 'Rotator Cuff Tear', icon: Icons.boy, bodyPart: 'SHOULDER'),
+    InjuryOption(title: 'Tennis Elbow', icon: Icons.fitness_center, bodyPart: 'ARM'),
+    InjuryOption(title: 'Ankle Sprain', icon: Icons.directions_walk, bodyPart: 'LEG'),
+  ];
+
+  static const List<ActivityLevelOption> activityLevelOptions = [
+    ActivityLevelOption(
+      title: 'Ít vận động',
+      value: 'SEDENTARY',
+      icon: Icons.desktop_mac,
+      description: 'Ngồi nhiều, ít tập thể dục',
+    ),
+    ActivityLevelOption(
+      title: 'Nhẹ nhàng',
+      value: 'LIGHTLY_ACTIVE',
+      icon: Icons.directions_walk,
+      description: '1-2 lần/tuần',
+    ),
+    ActivityLevelOption(
+      title: 'Vừa phải',
+      value: 'MODERATELY_ACTIVE',
+      icon: Icons.fitness_center,
+      description: '3-5 lần/tuần',
+    ),
+    ActivityLevelOption(
+      title: 'Tích cực',
+      value: 'VERY_ACTIVE',
+      icon: Icons.directions_run,
+      description: '6-7 lần/tuần',
+    ),
+    ActivityLevelOption(
+      title: 'Rất tích cực',
+      value: 'EXTRA_ACTIVE',
+      icon: Icons.local_fire_department,
+      description: '2 lần/ngày',
+    ),
+    ActivityLevelOption(
+      title: 'Chuyên nghiệp',
+      value: 'PROFESSIONAL',
+      icon: Icons.emoji_events,
+      description: 'Vận động viên',
+    ),
+  ];
+
   static const String experienceImage = 'assets/images/gym_workout.png';
+
+  static IconData getConditionIcon(String code) {
+    switch (code) {
+      case 'DIABETES':
+        return Icons.bloodtype;
+      case 'HYPERTENSION':
+        return Icons.favorite;
+      case 'HEART_DISEASE':
+        return Icons.health_and_safety;
+      case 'ARTHRITIS':
+        return Icons.self_improvement;
+      case 'ASTHMA':
+        return Icons.air;
+      case 'DIGESTIVE_DISORDER':
+        return Icons.local_pizza;
+      case 'DEPRESSION':
+        return Icons.psychology;
+      case 'INSOMNIA':
+        return Icons.bedtime;
+      default:
+        return Icons.health_and_safety_outlined;
+    }
+  }
+
+  static IconData getInjuryIcon(String code) {
+    switch (code) {
+      case 'ACL_TEAR':
+      case 'RUNNERS_KNEE':
+        return Icons.personal_injury;
+      case 'LOWER_BACK_PAIN':
+      case 'HERNIATED_DISC':
+        return Icons.accessibility_new;
+      case 'SHOULDER_IMPINGEMENT':
+      case 'ROTATOR_CUFF_TEAR':
+        return Icons.boy;
+      case 'TENNIS_ELBOW':
+        return Icons.fitness_center;
+      case 'ANKLE_SPRAIN':
+        return Icons.directions_walk;
+      default:
+        return Icons.personal_injury_outlined;
+    }
+  }
 
   final String? selectedGoal;
   final String? selectedGender;
   final int selectedHeight;
   final int selectedWeight;
   final int selectedAge;
-  final String? selectedDiet;
-  final String? selectedExercise;
-  final List<String> selectedConditions;
+  final List<String> selectedConditions; // Now stores codes
+  final List<String> selectedInjuries; // Now stores codes
+  final List<HealthConditionModel> availableConditions;
+  final List<InjuryModel> availableInjuries;
   final String? selectedAllergyCategory;
   final List<String> selectedAllergies;
   final int targetWeight;
-  final String? selectedSleep;
   final bool? hasExperience;
+  final String? selectedActivityLevel;
+  final AssessmentStatus status;
 
   const AssessmentState({
     this.selectedGoal,
@@ -172,14 +287,16 @@ class AssessmentState extends Equatable {
     this.selectedHeight = 170,
     this.selectedWeight = 65,
     this.selectedAge = 25,
-    this.selectedDiet,
-    this.selectedExercise,
     this.selectedConditions = const [],
+    this.selectedInjuries = const [],
+    this.availableConditions = const [],
+    this.availableInjuries = const [],
     this.selectedAllergyCategory,
     this.selectedAllergies = const [],
     this.targetWeight = 65,
-    this.selectedSleep,
     this.hasExperience,
+    this.selectedActivityLevel,
+    this.status = AssessmentStatus.initial,
   });
 
   AssessmentState copyWith({
@@ -188,14 +305,16 @@ class AssessmentState extends Equatable {
     int? selectedHeight,
     int? selectedWeight,
     int? selectedAge,
-    String? selectedDiet,
-    String? selectedExercise,
     List<String>? selectedConditions,
+    List<String>? selectedInjuries,
+    List<HealthConditionModel>? availableConditions,
+    List<InjuryModel>? availableInjuries,
     String? selectedAllergyCategory,
     List<String>? selectedAllergies,
     int? targetWeight,
-    String? selectedSleep,
     bool? hasExperience,
+    String? selectedActivityLevel,
+    AssessmentStatus? status,
   }) {
     return AssessmentState(
       selectedGoal: selectedGoal ?? this.selectedGoal,
@@ -203,14 +322,52 @@ class AssessmentState extends Equatable {
       selectedHeight: selectedHeight ?? this.selectedHeight,
       selectedWeight: selectedWeight ?? this.selectedWeight,
       selectedAge: selectedAge ?? this.selectedAge,
-      selectedDiet: selectedDiet ?? this.selectedDiet,
-      selectedExercise: selectedExercise ?? this.selectedExercise,
       selectedConditions: selectedConditions ?? this.selectedConditions,
+      selectedInjuries: selectedInjuries ?? this.selectedInjuries,
+      availableConditions: availableConditions ?? this.availableConditions,
+      availableInjuries: availableInjuries ?? this.availableInjuries,
       selectedAllergyCategory: selectedAllergyCategory ?? this.selectedAllergyCategory,
       selectedAllergies: selectedAllergies ?? this.selectedAllergies,
       targetWeight: targetWeight ?? this.targetWeight,
-      selectedSleep: selectedSleep ?? this.selectedSleep,
       hasExperience: hasExperience ?? this.hasExperience,
+      selectedActivityLevel: selectedActivityLevel ?? this.selectedActivityLevel,
+      status: status ?? this.status,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'selectedGoal': selectedGoal,
+      'selectedGender': selectedGender,
+      'heightCm': selectedHeight,
+      'weight': selectedWeight,
+      'age': selectedAge,
+      'selectedConditions': selectedConditions,
+      'selectedInjuries': selectedInjuries,
+      'selectedAllergyCategory': selectedAllergyCategory,
+      'selectedAllergies': selectedAllergies,
+      'targetWeight': targetWeight,
+      'hasExperience': hasExperience,
+      'activityLevel': selectedActivityLevel,
+      // Status is transient, don't persist it to avoid jumping to Home on reload
+    };
+  }
+
+  factory AssessmentState.fromJson(Map<String, dynamic> json) {
+    return AssessmentState(
+      selectedGoal: json['selectedGoal'] as String?,
+      selectedGender: json['selectedGender'] as String?,
+      selectedHeight: (json['selectedHeight'] as num?)?.toInt() ?? 170,
+      selectedWeight: (json['selectedWeight'] as num?)?.toInt() ?? 65,
+      selectedAge: (json['selectedAge'] as num?)?.toInt() ?? 25,
+      selectedConditions: List<String>.from(json['selectedConditions'] ?? []),
+      selectedInjuries: List<String>.from(json['selectedInjuries'] ?? []),
+      selectedAllergyCategory: json['selectedAllergyCategory'] as String?,
+      selectedAllergies: List<String>.from(json['selectedAllergies'] ?? []),
+      targetWeight: (json['targetWeight'] as num?)?.toInt() ?? 65,
+      hasExperience: json['hasExperience'] as bool?,
+      selectedActivityLevel: json['activityLevel'] as String?,
+      status: AssessmentStatus.initial, // Always start as initial when loading from cache
     );
   }
 
@@ -221,13 +378,15 @@ class AssessmentState extends Equatable {
     selectedHeight,
     selectedWeight,
     selectedAge,
-    selectedDiet,
-    selectedExercise,
     selectedConditions,
+    selectedInjuries,
+    availableConditions,
+    availableInjuries,
     selectedAllergyCategory,
     selectedAllergies,
     targetWeight,
-    selectedSleep,
     hasExperience,
+    selectedActivityLevel,
+    status,
   ];
 }

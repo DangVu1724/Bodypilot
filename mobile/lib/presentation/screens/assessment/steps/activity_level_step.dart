@@ -6,21 +6,21 @@ import 'package:mobile/presentation/bloc/assessment/assessment_cubit.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_state.dart';
 import 'package:mobile/presentation/widgets/black_button_2.dart';
 
-class GoalStep extends StatefulWidget {
+class ActivityLevelStep extends StatefulWidget {
   final VoidCallback onNext;
 
-  const GoalStep({super.key, required this.onNext});
+  const ActivityLevelStep({super.key, required this.onNext});
 
   @override
-  State<GoalStep> createState() => _GoalStepState();
+  State<ActivityLevelStep> createState() => _ActivityLevelStepState();
 }
 
-class _GoalStepState extends State<GoalStep> {
+class _ActivityLevelStepState extends State<ActivityLevelStep> {
   @override
   Widget build(BuildContext context) {
     final assessmentState = context.watch<AssessmentCubit>().state;
-    final selectedGoal = assessmentState.selectedGoal;
-    final options = AssessmentState.goalOptions;
+    final selectedActivityLevel = assessmentState.selectedActivityLevel;
+    final options = AssessmentState.activityLevelOptions;
 
     return Column(
       children: [
@@ -34,28 +34,28 @@ class _GoalStepState extends State<GoalStep> {
                 end: Alignment.bottomRight,
               ).createShader(bounds),
               child: Text(
-                'Mục tiêu',
+                'Mức độ vận động',
                 style: AppTheme.headlineStyle.copyWith(color: Colors.white),
                 textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Mục tiêu tập luyện của bạn là gì?',
+              'Lượng vận động của bạn thế nào?',
               style: AppTheme.semiboldStyle.copyWith(fontSize: 18, color: Colors.black87),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Chọn mục tiêu giúp chúng tôi đề xuất kế hoạch phù hợp',
+              'Giúp chúng tôi tính toán chính xác lượng calo cần thiết',
               style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600),
               textAlign: TextAlign.center,
             ),
           ],
         ),
-        
+
         const SizedBox(height: 24),
-        
+
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -63,7 +63,11 @@ class _GoalStepState extends State<GoalStep> {
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final option = options[index];
-              return _buildOption(context, option, selectedGoal == option.value);
+              return _buildOption(
+                context, 
+                option, 
+                selectedActivityLevel == option.value
+              );
             },
           ),
         ),
@@ -76,7 +80,7 @@ class _GoalStepState extends State<GoalStep> {
           ),
           child: Column(
             children: [
-              if (selectedGoal != null)
+              if (selectedActivityLevel != null)
                 Container(
                   margin: const EdgeInsets.only(bottom: 16),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -85,15 +89,16 @@ class _GoalStepState extends State<GoalStep> {
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
-                    'Đã chọn: ${options.firstWhere((o) => o.value == selectedGoal).title}',
+                    'Đã chọn: ${options.firstWhere((o) => o.value == selectedActivityLevel).title}',
                     style: GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary),
                   ),
                 ),
+
               SizedBox(
                 width: double.infinity,
                 child: BlackButton2(
                   label: 'Tiếp tục',
-                  onPressed: selectedGoal != null ? widget.onNext : null,
+                  onPressed: selectedActivityLevel != null ? widget.onNext : null,
                   borderRadius: 16,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 ),
@@ -105,10 +110,10 @@ class _GoalStepState extends State<GoalStep> {
     );
   }
 
-  Widget _buildOption(BuildContext context, GoalOption option, bool isSelected) {
+  Widget _buildOption(BuildContext context, ActivityLevelOption option, bool isSelected) {
     return GestureDetector(
       onTap: () {
-        context.read<AssessmentCubit>().selectGoal(option.value);
+        context.read<AssessmentCubit>().selectActivityLevel(option.value);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
