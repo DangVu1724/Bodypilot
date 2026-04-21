@@ -1,4 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/presentation/bloc/auth/login_state.dart';
 
 class LoginCubit extends Cubit<LoginState> {
@@ -30,7 +31,7 @@ class LoginCubit extends Cubit<LoginState> {
       emit(
         state.copyWith(
           status: LoginStatus.failure,
-          errorMessage: 'Please enter a valid email and password with at least 6 characters.',
+          errorMessage: 'Please enter a valid email and password.',
         ),
       );
       return;
@@ -39,10 +40,10 @@ class LoginCubit extends Cubit<LoginState> {
     emit(state.copyWith(status: LoginStatus.loading, errorMessage: null));
 
     try {
-      await Future.delayed(const Duration(seconds: 2));
-      emit(state.copyWith(status: LoginStatus.success));
+      final isComplete = await authRepository.login(state.email, state.password);
+      emit(state.copyWith(status: LoginStatus.success, isProfileComplete: isComplete));
     } catch (e) {
-      emit(state.copyWith(status: LoginStatus.failure, errorMessage: e.toString()));
+      emit(state.copyWith(status: LoginStatus.failure, errorMessage: e.toString().replaceAll('Exception: ', '')));
     }
   }
 

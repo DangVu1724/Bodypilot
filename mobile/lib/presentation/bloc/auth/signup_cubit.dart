@@ -1,42 +1,31 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/presentation/bloc/auth/signup_state.dart';
 
 class SignupCubit extends Cubit<SignupState> {
   SignupCubit() : super(const SignupState());
-
-  bool _validateEmail(String email) {
-    final emailRegex = RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$');
-    return emailRegex.hasMatch(email);
-  }
-
-  bool _validatePassword(String password) {
-    return password.length >= 6;
-  }
-
-  bool _checkPasswordsMatch(String password, String confirmPassword) {
-    return password == confirmPassword;
-  }
 
   void fullNameChanged(String value) {
     emit(state.copyWith(fullName: value));
   }
 
   void emailChanged(String value) {
-    emit(state.copyWith(email: value, isValidEmail: _validateEmail(value)));
+    final emailRegex = RegExp(r'^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$');
+    emit(state.copyWith(email: value, isValidEmail: emailRegex.hasMatch(value)));
   }
 
   void passwordChanged(String value) {
     emit(
       state.copyWith(
         password: value,
-        isValidPassword: _validatePassword(value),
-        doPasswordsMatch: _checkPasswordsMatch(value, state.confirmPassword),
+        isValidPassword: value.length >= 6,
+        doPasswordsMatch: value == state.confirmPassword,
       ),
     );
   }
 
   void confirmPasswordChanged(String value) {
-    emit(state.copyWith(confirmPassword: value, doPasswordsMatch: _checkPasswordsMatch(state.password, value)));
+    emit(state.copyWith(confirmPassword: value, doPasswordsMatch: value == state.password));
   }
 
   void togglePasswordVisibility() {
@@ -48,7 +37,7 @@ class SignupCubit extends Cubit<SignupState> {
   }
 
   void termsAcceptedChanged(bool? value) {
-    emit(state.copyWith(isTermsAccepted: value));
+    emit(state.copyWith(isTermsAccepted: value ?? false));
   }
 
   Future<void> submit() async {
@@ -56,7 +45,7 @@ class SignupCubit extends Cubit<SignupState> {
       emit(
         state.copyWith(
           status: SignupStatus.failure,
-          errorMessage: 'Please fill all fields correctly and accept the terms.',
+          errorMessage: 'Please fill in all fields correctly and accept terms.',
         ),
       );
       return;
@@ -65,14 +54,10 @@ class SignupCubit extends Cubit<SignupState> {
     emit(state.copyWith(status: SignupStatus.loading, errorMessage: null));
 
     try {
-      // Simulate network call
-      await Future.delayed(const Duration(seconds: 2));
-
-      // On success
+      await authRepository.register(state.email, state.password, state.fullName);
       emit(state.copyWith(status: SignupStatus.success));
     } catch (e) {
-      // On failure
-      emit(state.copyWith(status: SignupStatus.failure, errorMessage: e.toString()));
+      emit(state.copyWith(status: SignupStatus.failure, errorMessage: e.toString().replaceAll('Exception: ', '')));
     }
   }
 

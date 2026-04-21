@@ -10,6 +10,7 @@ class LoginState extends Equatable {
   final String? errorMessage;
   final bool isValidEmail;
   final bool isValidPassword;
+  final bool? isProfileComplete;
 
   const LoginState({
     this.status = LoginStatus.initial,
@@ -19,6 +20,7 @@ class LoginState extends Equatable {
     this.errorMessage,
     this.isValidEmail = false,
     this.isValidPassword = false,
+    this.isProfileComplete,
   });
 
   bool get isFormValid => isValidEmail && isValidPassword;
@@ -31,6 +33,7 @@ class LoginState extends Equatable {
     String? errorMessage,
     bool? isValidEmail,
     bool? isValidPassword,
+    bool? isProfileComplete,
   }) {
     return LoginState(
       status: status ?? this.status,
@@ -40,9 +43,19 @@ class LoginState extends Equatable {
       errorMessage: errorMessage ?? this.errorMessage,
       isValidEmail: isValidEmail ?? this.isValidEmail,
       isValidPassword: isValidPassword ?? this.isValidPassword,
+      isProfileComplete: isProfileComplete ?? this.isProfileComplete,
     );
   }
 
   @override
-  List<Object?> get props => [status, email, password, isPasswordVisible, errorMessage, isValidEmail, isValidPassword];
+  List<Object?> get props => [
+    status,
+    email,
+    password,
+    isPasswordVisible,
+    errorMessage,
+    isValidEmail,
+    isValidPassword,
+    isProfileComplete,
+  ];
 }

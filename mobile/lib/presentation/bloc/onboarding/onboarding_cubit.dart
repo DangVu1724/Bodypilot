@@ -13,7 +13,7 @@ class OnboardingCubit extends Cubit<int> {
 
   static const List<OnboardingPage> pages = [
     OnboardingPage(
-      image: 'assets/images/man.jpg',
+      image: 'assets/images/man.png',
       title: 'Personalized Workout Plans',
       description: 'Get workout plans tailored to your fitness goals',
     ),
