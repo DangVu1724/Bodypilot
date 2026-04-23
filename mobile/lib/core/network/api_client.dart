@@ -1,5 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/data/services/token_service.dart';
+import 'package:mobile/main.dart';
 
 class ApiClient {
   late final Dio dio;
@@ -10,10 +12,7 @@ class ApiClient {
         baseUrl: 'http://10.0.2.2:8080/api/v1', // Android Emulator IP
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-        },
+        headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
       ),
     );
 
@@ -30,6 +29,9 @@ class ApiClient {
           if (e.response?.statusCode == 401) {
             // Handle token expiration - Logout and redirect to login
             TokenService.removeToken();
+
+            // Redirect to welcome screen
+            navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.welcome, (route) => false);
           }
           return handler.next(e);
         },
@@ -41,8 +43,8 @@ class ApiClient {
     return await dio.post(path, data: data);
   }
 
-  Future<Response> get(String path) async {
-    return await dio.get(path);
+  Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) async {
+    return await dio.get(path, queryParameters: queryParameters);
   }
 }
 

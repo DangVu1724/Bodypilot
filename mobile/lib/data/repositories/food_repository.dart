@@ -1,0 +1,50 @@
+import 'package:dio/dio.dart';
+import 'package:mobile/core/network/api_client.dart';
+import 'package:mobile/data/models/food_category_model.dart';
+import 'package:mobile/data/models/food_model.dart';
+import 'package:mobile/data/models/paginated_response.dart';
+
+class FoodRepository {
+  Future<PaginatedResponse<FoodModel>> searchFoods(
+    String query, {
+    String? categoryId,
+    int page = 0,
+    int size = 10,
+  }) async {
+    try {
+      final response = await apiClient.get(
+        '/foods/search',
+        queryParameters: {'query': query, if (categoryId != null) 'categoryId': categoryId, 'page': page, 'size': size},
+      );
+
+      return PaginatedResponse<FoodModel>.fromJson(
+        response.data['data'] as Map<String, dynamic>,
+        (json) => FoodModel.fromJson(json as Map<String, dynamic>),
+      );
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Network error');
+    }
+  }
+
+  Future<FoodModel> getFoodDetails(String foodId) async {
+    try {
+      final response = await apiClient.get('/foods/$foodId');
+      return FoodModel.fromJson(response.data['data'] as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Network error');
+    }
+  }
+
+  Future<List<FoodCategoryModel>> getFoodCategories() async {
+    try {
+      final response = await apiClient.get('/foods/categories');
+      final List<dynamic> data = response.data['data'] as List<dynamic>;
+      return data.map((e) => FoodCategoryModel.fromJson(e as Map<String, dynamic>)).toList();
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Network error');
+    }
+  }
+
+}
+
+final foodRepository = FoodRepository();

@@ -11,10 +11,21 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => SplashCubit()..startSplash(),
-      child: BlocListener<SplashCubit, bool>(
-        listener: (context, isCompleted) {
-          if (isCompleted) {
-            Navigator.pushReplacementNamed(context, AppRoutes.welcome);
+      child: BlocListener<SplashCubit, SplashStatus>(
+        listener: (context, status) {
+          switch (status) {
+            case SplashStatus.authenticated:
+              Navigator.pushReplacementNamed(context, AppRoutes.home);
+              break;
+            case SplashStatus.needsAssessment:
+              Navigator.pushReplacementNamed(context, AppRoutes.assessment);
+              break;
+            case SplashStatus.unauthenticated:
+              Navigator.pushReplacementNamed(context, AppRoutes.welcome);
+              break;
+            case SplashStatus.loading:
+            default:
+              break;
           }
         },
         child: Scaffold(

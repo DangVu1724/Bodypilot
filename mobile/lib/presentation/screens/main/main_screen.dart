@@ -8,6 +8,9 @@ import 'package:mobile/presentation/screens/meal/meal_screen.dart';
 import 'package:mobile/presentation/screens/workout/workout_screen.dart';
 import 'package:mobile/presentation/screens/profile/profile_screen.dart';
 
+import 'package:mobile/presentation/bloc/food/food_cubit.dart';
+import 'package:mobile/data/repositories/food_repository.dart';
+
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
 
@@ -33,8 +36,11 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => UserCubit(userRepository)..fetchUserProfile(),
+    return MultiBlocProvider(
+      providers: [
+        BlocProvider(create: (context) => UserCubit(userRepository)..fetchUserProfile()),
+        BlocProvider(create: (context) => FoodCubit(foodRepository)..init()),
+      ],
       child: Scaffold(
         body: IndexedStack(
           index: _selectedIndex,

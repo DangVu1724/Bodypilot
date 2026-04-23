@@ -43,6 +43,7 @@ dependencies:
   dio: ^5.8.0
   intl: ^0.20.2
   font_awesome_flutter: ^11.0.0
+  logger: ^2.7.0
 
 dev_dependencies:
   flutter_test:

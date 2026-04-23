@@ -15,7 +15,7 @@ class AuthRepository {
         final userId = response.data['data']['user']['id'] as String;
         final profile = response.data['data']['user']['profile'];
         final isComplete = profile != null ? (profile['isAssessmentCompleted'] ?? profile['assessmentCompleted'] ?? false) : false;
-        await TokenService.saveToken(token, userId);
+        await TokenService.saveToken(token, userId, isComplete);
         return isComplete;
       } else {
         throw Exception(response.data['message'] ?? 'Login failed');
@@ -41,7 +41,7 @@ class AuthRepository {
         final userId = response.data['data']['user']['id'] as String;
         final profile = response.data['data']['user']['profile'];
         final isComplete = profile != null ? (profile['isAssessmentCompleted'] ?? profile['assessmentCompleted'] ?? false) : false;
-        await TokenService.saveToken(token, userId);
+        await TokenService.saveToken(token, userId, isComplete);
         return isComplete;
       } else {
         throw Exception(response.data['message'] ?? 'Registration failed');

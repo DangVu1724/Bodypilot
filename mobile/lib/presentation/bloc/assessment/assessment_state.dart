@@ -147,28 +147,6 @@ class AssessmentState extends Equatable {
     ConditionOption(title: 'Mất ngủ', icon: Icons.bedtime),
   ];
 
-  static const List<String> allergyCategories = ['Không có', 'Hạt', 'Hải sản', 'Sữa', 'Trái cây'];
-
-  static const List<AllergyOption> allergyOptions = [
-    AllergyOption(name: 'Đậu phộng', category: 'Hạt'),
-    AllergyOption(name: 'Hạt điều', category: 'Hạt'),
-    AllergyOption(name: 'Hạt óc chó', category: 'Hạt'),
-    AllergyOption(name: 'Tôm', category: 'Hải sản'),
-    AllergyOption(name: 'Cá', category: 'Hải sản'),
-    AllergyOption(name: 'Sữa', category: 'Sữa'),
-    AllergyOption(name: 'Phô mai', category: 'Sữa'),
-    AllergyOption(name: 'Dứa', category: 'Trái cây'),
-    AllergyOption(name: 'Đào', category: 'Trái cây'),
-  ];
-
-  static const List<SleepOption> sleepOptions = [
-    SleepOption(title: 'Ngủ nhiều', icon: Icons.hotel, description: 'Trên 8 tiếng/đêm'),
-    SleepOption(title: 'Rất tốt', icon: Icons.emoji_emotions, description: '7-8 tiếng/đêm'),
-    SleepOption(title: 'Tốt', icon: Icons.sentiment_satisfied, description: '6-7 tiếng/đêm'),
-    SleepOption(title: 'Trung bình', icon: Icons.sentiment_neutral, description: '5-6 tiếng/đêm'),
-    SleepOption(title: 'Kém', icon: Icons.sentiment_dissatisfied, description: '4-5 tiếng/đêm'),
-    SleepOption(title: 'Rất kém', icon: Icons.mood_bad, description: 'Dưới 4 tiếng/đêm'),
-  ];
 
   static const List<InjuryOption> injuryOptions = [
     InjuryOption(title: 'ACL Tear', icon: Icons.personal_injury, bodyPart: 'KNEE'),

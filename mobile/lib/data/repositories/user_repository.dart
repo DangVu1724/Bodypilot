@@ -3,6 +3,7 @@ import 'package:mobile/core/network/api_client.dart';
 import 'package:mobile/data/models/health_condition_model.dart';
 import 'package:mobile/data/models/injury_model.dart';
 import 'package:mobile/data/models/user_model.dart';
+import 'package:mobile/data/services/token_service.dart';
 
 class UserRepository {
   Future<UserModel> getUserDetails(String userId) async {
@@ -41,7 +42,9 @@ class UserRepository {
         data: data,
       );
 
-      if (response.data['success'] != true) {
+      if (response.data['success'] == true) {
+        await TokenService.setAssessmentCompleted(true);
+      } else {
         throw Exception(response.data['message'] ?? 'Failed to submit assessment');
       }
     } on DioException catch (e) {
