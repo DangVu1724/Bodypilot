@@ -5,6 +5,9 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
 import 'widgets/calorie_dashboard_card.dart';
+import 'widgets/weight_goal_card.dart';
+import 'widgets/ai_suggestion_banner.dart';
+import 'widgets/browse_meals_list.dart';
 
 class MealScreen extends StatefulWidget {
   const MealScreen({super.key});
@@ -100,6 +103,13 @@ class _MealScreenState extends State<MealScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 32),
+                  const WeightGoalCard(),
+                  const SizedBox(height: 32),
+                  const AiSuggestionBanner(),
+                  const SizedBox(height: 32),
+                  const BrowseMealsList(),
+                  const SizedBox(height: 32),
                 ],
               );
             },
