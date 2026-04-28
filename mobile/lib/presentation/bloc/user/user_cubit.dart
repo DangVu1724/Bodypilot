@@ -8,20 +8,32 @@ class UserCubit extends Cubit<UserState> {
 
   UserCubit(this._userRepository) : super(UserInitial());
 
-  Future<void> fetchUserProfile() async {
+  Future<bool> fetchUserProfile() async {
     final userId = TokenService.getUserId();
     if (userId == null) {
       emit(const UserError('User not logged in'));
-      return;
+      return false;
     }
 
-    emit(UserLoading());
+    // Load from cache first for instant UI response and offline support
+    final cachedUser = TokenService.getCachedUser();
+    if (cachedUser != null) {
+      emit(UserLoaded(cachedUser));
+    } else {
+      emit(UserLoading());
+    }
 
     try {
       final user = await _userRepository.getUserDetails(userId);
+      await TokenService.saveUserCache(user);
       emit(UserLoaded(user));
+      return true;
     } catch (e) {
-      emit(UserError(e.toString()));
+      // If we don't have cache, emit error
+      if (cachedUser == null) {
+        emit(UserError(e.toString()));
+      }
+      return false;
     }
   }
 }

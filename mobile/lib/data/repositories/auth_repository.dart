@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:mobile/core/network/api_client.dart';
 import 'package:mobile/data/services/token_service.dart';
+import 'package:mobile/data/models/user_model.dart';
 
 class AuthRepository {
   Future<bool> login(String email, String password) async {
@@ -12,10 +13,16 @@ class AuthRepository {
 
       if (response.data['success'] == true) {
         final token = response.data['data']['token'];
-        final userId = response.data['data']['user']['id'] as String;
-        final profile = response.data['data']['user']['profile'];
+        final userData = response.data['data']['user'] as Map<String, dynamic>;
+        final userId = userData['id'] as String;
+        final profile = userData['profile'];
         final isComplete = profile != null ? (profile['isAssessmentCompleted'] ?? profile['assessmentCompleted'] ?? false) : false;
         await TokenService.saveToken(token, userId, isComplete);
+        try {
+          await TokenService.saveUserCache(UserModel.fromJson(userData));
+        } catch (e) {
+          // ignore cache error
+        }
         return isComplete;
       } else {
         throw Exception(response.data['message'] ?? 'Login failed');
@@ -38,10 +45,16 @@ class AuthRepository {
 
       if (response.data['success'] == true) {
         final token = response.data['data']['token'];
-        final userId = response.data['data']['user']['id'] as String;
-        final profile = response.data['data']['user']['profile'];
+        final userData = response.data['data']['user'] as Map<String, dynamic>;
+        final userId = userData['id'] as String;
+        final profile = userData['profile'];
         final isComplete = profile != null ? (profile['isAssessmentCompleted'] ?? profile['assessmentCompleted'] ?? false) : false;
         await TokenService.saveToken(token, userId, isComplete);
+        try {
+          await TokenService.saveUserCache(UserModel.fromJson(userData));
+        } catch (e) {
+          // ignore cache error
+        }
         return isComplete;
       } else {
         throw Exception(response.data['message'] ?? 'Registration failed');

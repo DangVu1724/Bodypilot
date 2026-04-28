@@ -28,7 +28,7 @@ class FoodCubit extends Cubit<FoodState> {
     String query = '',
     String? categoryId,
     int page = 0,
-    int size = 10,
+    int size = 60,
   }) async {
     emit(state.copyWith(
       status: FoodStatus.loading,

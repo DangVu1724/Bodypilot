@@ -9,4 +9,7 @@ class AppRoutes {
   static const String assessment = '/assessment';
 
   static const String home = '/home';
+  static const String foodDetail = '/food-detail';
+  static const String ingredientDetail = '/ingredient-detail';
+  static const String foodList = '/food-list';
 }

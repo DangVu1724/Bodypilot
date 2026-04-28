@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/routes/app_routes.dart';
 import 'widgets/home_header.dart';
 import 'widgets/metric_section.dart';
 import 'widgets/workout_section.dart';
-import 'widgets/diet_section.dart';
+import 'widgets/food_sections.dart';
 import 'widgets/section_header.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -28,9 +29,19 @@ class HomeScreen extends StatelessWidget {
                   const SizedBox(height: 16),
                   const WorkoutSection(),
                   const SizedBox(height: 32),
-                  SectionHeader(title: 'Diet & Nutrition', onSeeAll: () {}),
+                  SectionHeader(
+                    title: 'Tra cứu món ăn',
+                    onSeeAll: () => Navigator.pushNamed(context, AppRoutes.foodList, arguments: 'DISH'),
+                  ),
                   const SizedBox(height: 16),
-                  const DietSection(),
+                  const DishSection(),
+                  const SizedBox(height: 32),
+                  SectionHeader(
+                    title: 'Nguyên liệu',
+                    onSeeAll: () => Navigator.pushNamed(context, AppRoutes.foodList, arguments: 'INGREDIENT'),
+                  ),
+                  const SizedBox(height: 16),
+                  const IngredientSection(),
                   const SizedBox(height: 32),
                 ],
               ),

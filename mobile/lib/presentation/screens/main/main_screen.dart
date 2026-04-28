@@ -36,54 +36,48 @@ class _MainScreenState extends State<MainScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (context) => UserCubit(userRepository)..fetchUserProfile()),
-        BlocProvider(create: (context) => FoodCubit(foodRepository)..init()),
-      ],
-      child: Scaffold(
-        body: IndexedStack(
-          index: _selectedIndex,
-          children: _screens,
+    return Scaffold(
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: _screens,
+      ),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, -5),
+            ),
+          ],
         ),
-        bottomNavigationBar: Container(
-          decoration: BoxDecoration(
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, -5),
-              ),
-            ],
-          ),
-          child: NavigationBar(
-            selectedIndex: _selectedIndex,
-            onDestinationSelected: _onItemTapped,
-            backgroundColor: Colors.white,
-            indicatorColor: AppTheme.primary.withOpacity(0.1),
-            destinations: const [
-              NavigationDestination(
-                icon: Icon(Icons.home_outlined),
-                selectedIcon: Icon(Icons.home, color: AppTheme.primary),
-                label: 'Home',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.restaurant_outlined),
-                selectedIcon: Icon(Icons.restaurant, color: AppTheme.primary),
-                label: 'Meal',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.fitness_center_outlined),
-                selectedIcon: Icon(Icons.fitness_center, color: AppTheme.primary),
-                label: 'Workout',
-              ),
-              NavigationDestination(
-                icon: Icon(Icons.person_outline),
-                selectedIcon: Icon(Icons.person, color: AppTheme.primary),
-                label: 'Profile',
-              ),
-            ],
-          ),
+        child: NavigationBar(
+          selectedIndex: _selectedIndex,
+          onDestinationSelected: _onItemTapped,
+          backgroundColor: Colors.white,
+          indicatorColor: AppTheme.primary.withOpacity(0.1),
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home, color: AppTheme.primary),
+              label: 'Home',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.restaurant_outlined),
+              selectedIcon: Icon(Icons.restaurant, color: AppTheme.primary),
+              label: 'Meal',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.fitness_center_outlined),
+              selectedIcon: Icon(Icons.fitness_center, color: AppTheme.primary),
+              label: 'Workout',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline),
+              selectedIcon: Icon(Icons.person, color: AppTheme.primary),
+              label: 'Profile',
+            ),
+          ],
         ),
       ),
     );
