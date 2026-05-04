@@ -72,7 +72,30 @@ public class CalorieCalculatorService {
             case GAIN_0_5KG -> tdee + 500;
             case GAIN_1KG -> tdee + 1000;
             case GAIN_MUSCLE -> tdee + 300; // Moderate surplus for lean mass gain
+            default -> throw new IllegalArgumentException("Unexpected value: " + goal);
         };
+    }
+
+    /**
+     * Calculates the calories burned during an exercise based on MET value, duration, and user's weight.
+     * Formula: Calories = MET * Weight (kg) * (Duration in minutes / 60)
+     *
+     * @param metValue         The Metabolic Equivalent of Task (MET) value for the exercise.
+     * @param durationMinutes  The duration of the exercise in minutes.
+     * @param weightKg         The weight of the user in kilograms.
+     * @return The estimated calories burned (rounded to 1 decimal place).
+     */
+    public double calculateWorkoutCalories(Double metValue, Number durationMinutes, Double weightKg) {
+        if (metValue == null || durationMinutes == null || weightKg == null) {
+            return 0.0;
+        }
+        double duration = durationMinutes.doubleValue();
+        if (metValue <= 0 || duration <= 0 || weightKg <= 0) {
+            return 0.0;
+        }
+
+        double caloriesRaw = metValue * weightKg * (duration / 60.0);
+        return round(caloriesRaw, 1);
     }
 
     /**

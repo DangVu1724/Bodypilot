@@ -7,5 +7,6 @@ public enum Goal {
     GAIN_0_5KG,
     GAIN_1KG,
     GAIN_MUSCLE,
-    HEALTHY_LIFESTYLE
+    HEALTHY_LIFESTYLE,
+    ENDURANCE
 }
