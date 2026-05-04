@@ -4,145 +4,139 @@ import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
+import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
 
 class HomeHeader extends StatelessWidget {
   const HomeHeader({super.key});
 
+  String _getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) {
+      return 'Good Morning!';
+    } else if (hour < 17) {
+      return 'Good Afternoon!';
+    } else {
+      return 'Good Evening!';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final statusBarHeight = MediaQuery.of(context).padding.top;
-    final today = DateFormat('MMM dd, yyyy').format(DateTime.now()).toUpperCase();
 
     return SliverAppBar(
-      expandedHeight: 240,
+      expandedHeight: 120,
       pinned: true,
+      stretch: true,
       automaticallyImplyLeading: false,
-      backgroundColor: AppTheme.darkBackground,
+      backgroundColor: Colors.transparent,
+      elevation: 0,
       flexibleSpace: FlexibleSpaceBar(
+        stretchModes: const [StretchMode.zoomBackground],
         background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.only(bottomLeft: Radius.circular(32), bottomRight: Radius.circular(32)),
-          ),
-          child: Stack(
+          color: Colors.transparent,
+          padding: EdgeInsets.fromLTRB(24, statusBarHeight + 10, 24, 10),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Positioned(
-                top: -50,
-                right: -50,
-                child: Container(
-                  width: 200,
-                  height: 200,
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.03), shape: BoxShape.circle),
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(24, statusBarHeight + 10, 24, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          children: [
-                            Icon(Icons.calendar_today, color: Colors.white.withOpacity(0.6), size: 14),
-                            const SizedBox(width: 6),
-                            Text(
-                              today,
-                              style: AppTheme.bodyStyle.copyWith(
-                                color: Colors.white.withOpacity(0.6),
-                                fontSize: 11,
-                                fontWeight: FontWeight.w600,
-                                letterSpacing: 0.5,
-                              ),
-                            ),
-                          ],
-                        ),
-                        _buildNotificationIcon(),
-                      ],
-                    ),
-                    const Spacer(),
-                    BlocBuilder<UserCubit, UserState>(
-                      builder: (context, state) {
-                        String name = 'Guest';
-                        String? avatarUrl;
-                        bool isLoading = state is UserLoading;
-
-                        if (state is UserLoaded) {
-                          name = state.user.profile?.fullName ?? 'Member';
-                          avatarUrl = state.user.profile?.avatarUrl;
-                        }
-
-                        return Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white.withOpacity(0.1), width: 1),
-                              ),
-                              child: ClipRRect(
-                                borderRadius: BorderRadius.circular(50),
-                                child: isLoading
-                                    ? Container(width: 100, height: 100, color: Colors.white10)
-                                    : (avatarUrl != null && avatarUrl.isNotEmpty)
-                                        ? Image.network(
-                                            avatarUrl,
-                                            width: 100,
-                                            height: 100,
-                                            fit: BoxFit.cover,
-                                            errorBuilder: (context, error, stackTrace) => Image.asset(
-                                              'assets/images/man.png',
-                                              width: 100,
-                                              height: 100,
-                                              fit: BoxFit.cover,
-                                            ),
-                                          )
-                                        : Image.asset('assets/images/man.png', width: 100, height: 100, fit: BoxFit.cover),
-                              ),
-                            ),
-                            const SizedBox(width: 16),
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    isLoading ? 'Loading...' : 'Hello, $name!',
-                                    style: AppTheme.headlineStyle.copyWith(
-                                      color: Colors.white,
-                                      fontSize: 24,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 6),
-                                  Row(
-                                    children: [
-                                      _buildStatusBadge(
-                                        icon: Icons.add_circle,
-                                        label: '88% Healthy',
-                                        color: AppTheme.primary,
-                                      ),
-                                      const SizedBox(width: 12),
-                                      _buildStatusBadge(icon: Icons.star, label: 'Pro', color: Colors.blueAccent),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                            Icon(Icons.chevron_right, color: Colors.white.withOpacity(0.5)),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: [
+                      BlocBuilder<UserCubit, UserState>(
+                        builder: (context, state) {
+                          String? avatarUrl;
+                          if (state is UserLoaded) {
+                            avatarUrl = state.user.profile?.avatarUrl;
+                          }
+                          return HeroProfileAvatar(
+                            avatarUrl: avatarUrl,
+                            radius: 28,
+                            heroTag: 'profile_avatar',
+                            border: Border.all(color: Colors.white, width: 2),
+                          );
+                        },
+                      ),
+                      const SizedBox(width: 12),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _getGreeting(),
+                            style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600, fontSize: 13),
+                          ),
+                          BlocBuilder<UserCubit, UserState>(
+                            builder: (context, state) {
+                              String name = 'User';
+                              if (state is UserLoaded) {
+                                name = state.user.profile?.fullName ?? 'User';
+                              }
+                              return Text(
+                                name,
+                                style: AppTheme.headlineStyle.copyWith(fontSize: 20, color: const Color(0xFF1E293B)),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                  _buildNotificationIcon(),
+                ],
               ),
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  static Widget buildDateSelector() {
+    final days = ['14\nMon', '15\nTue', '16\nWed', '17\nThu', '18\nFri', '19\nSat', '20\nSun'];
+    return SizedBox(
+      height: 70,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: days.length,
+        itemBuilder: (context, index) {
+          bool isSelected = index == 3;
+          String date = days[index].split('\n')[0];
+          String day = days[index].split('\n')[1];
+          return Container(
+            width: 50,
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(25),
+              border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  date,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                    color: isSelected ? Colors.black : Colors.grey.shade700,
+                  ),
+                ),
+                Text(
+                  day,
+                  style: TextStyle(fontSize: 10, color: isSelected ? Colors.grey.shade600 : Colors.grey.shade500),
+                ),
+                if (isSelected)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    width: 12,
+                    height: 3,
+                    decoration: BoxDecoration(color: const Color(0xFF84CC16), borderRadius: BorderRadius.circular(2)),
+                  ),
+              ],
+            ),
+          );
+        },
       ),
     );
   }

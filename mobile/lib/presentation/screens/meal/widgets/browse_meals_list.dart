@@ -5,6 +5,7 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/models/food_model.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
+import 'package:mobile/presentation/screens/home/widgets/section_header.dart';
 
 class BrowseMealsList extends StatelessWidget {
   const BrowseMealsList({super.key});
@@ -14,24 +15,10 @@ class BrowseMealsList extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              'Browse Meals',
-              style: AppTheme.semiboldStyle.copyWith(fontSize: 16),
-            ),
-            Row(
-              children: [
-                Text(
-                  'Most Popular',
-                  style: AppTheme.semiboldStyle.copyWith(fontSize: 13, color: Colors.grey.shade500),
-                ),
-                const SizedBox(width: 4),
-                Icon(Icons.filter_list, size: 16, color: const Color(0xFFF07025)),
-              ],
-            ),
-          ],
+        SectionHeader(
+          title: 'Browse Meals',
+          onSeeAll: () => Navigator.of(context, rootNavigator: true)
+              .pushNamed(AppRoutes.foodList, arguments: 'DISH'),
         ),
         const SizedBox(height: 16),
         BlocBuilder<FoodCubit, FoodState>(
@@ -57,7 +44,8 @@ class BrowseMealsList extends StatelessWidget {
               itemBuilder: (context, index) {
                 final food = displayDishes[index];
                 return GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, AppRoutes.foodDetail, arguments: food.id),
+                  onTap: () => Navigator.of(context, rootNavigator: true)
+                      .pushNamed(AppRoutes.foodDetail, arguments: food.id),
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(12),

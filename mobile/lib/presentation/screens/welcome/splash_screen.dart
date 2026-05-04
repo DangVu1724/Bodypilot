@@ -45,12 +45,7 @@ class _SplashScreenState extends State<SplashScreen> {
         child: Scaffold(
           body: Stack(
             children: [
-              Image.asset(
-                'assets/images/logo.png',
-                width: double.infinity,
-                height: double.infinity,
-                fit: BoxFit.cover,
-              ),
+              Image.asset('assets/images/logo.png', width: double.infinity, height: double.infinity, fit: BoxFit.cover),
               // UI for error state removed as internet check is disabled
               const SizedBox.shrink(),
             ],

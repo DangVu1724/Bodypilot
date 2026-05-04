@@ -1,15 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/app_theme.dart';
-import 'package:mobile/presentation/bloc/user/user_cubit.dart';
-import 'package:mobile/data/repositories/user_repository.dart';
+
 import 'package:mobile/presentation/screens/home/home_screen.dart';
 import 'package:mobile/presentation/screens/meal/meal_screen.dart';
 import 'package:mobile/presentation/screens/workout/workout_screen.dart';
 import 'package:mobile/presentation/screens/profile/profile_screen.dart';
-
-import 'package:mobile/presentation/bloc/food/food_cubit.dart';
-import 'package:mobile/data/repositories/food_repository.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -21,25 +16,45 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0;
 
-  final List<Widget> _screens = const [
-    HomeScreen(),
-    MealScreen(),
-    WorkoutScreen(),
-    ProfileScreen(),
+  final List<Widget> _screens = [
+    const HomeScreen(),
+    const MealScreen(),
+    const WorkoutScreen(),
+    const ProfileScreen(),
   ];
 
+  final GlobalKey<NavigatorState> _navigatorKey = GlobalKey<NavigatorState>();
+
   void _onItemTapped(int index) {
+    if (_selectedIndex == index) return;
+    
     setState(() {
       _selectedIndex = index;
     });
+
+    _navigatorKey.currentState!.pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => _screens[index],
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: IndexedStack(
-        index: _selectedIndex,
-        children: _screens,
+      backgroundColor: const Color(0xFFE5E5E5),
+      body: Navigator(
+        key: _navigatorKey,
+        onGenerateRoute: (settings) => MaterialPageRoute(
+          builder: (context) => _screens[_selectedIndex],
+        ),
       ),
       bottomNavigationBar: Container(
         decoration: BoxDecoration(

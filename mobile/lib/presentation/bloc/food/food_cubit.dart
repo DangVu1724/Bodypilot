@@ -87,4 +87,8 @@ class FoodCubit extends Cubit<FoodState> {
       );
     }
   }
+
+  void clear() {
+    emit(const FoodState());
+  }
 }

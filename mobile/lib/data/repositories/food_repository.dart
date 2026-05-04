@@ -3,6 +3,9 @@ import 'package:mobile/core/network/api_client.dart';
 import 'package:mobile/data/models/food_category_model.dart';
 import 'package:mobile/data/models/food_model.dart';
 import 'package:mobile/data/models/paginated_response.dart';
+import 'package:logger/logger.dart';
+
+final _logger = Logger();
 
 class FoodRepository {
   Future<PaginatedResponse<FoodModel>> searchFoods(
@@ -11,17 +14,21 @@ class FoodRepository {
     int page = 0,
     int size = 10,
   }) async {
+    _logger.d('Searching foods with query: $query, categoryId: $categoryId, page: $page, size: $size');
     try {
       final response = await apiClient.get(
         '/foods/search',
         queryParameters: {'query': query, if (categoryId != null) 'categoryId': categoryId, 'page': page, 'size': size},
       );
+      
+      _logger.d('Fetch foods response data: ${response.data}');
 
       return PaginatedResponse<FoodModel>.fromJson(
         response.data['data'] as Map<String, dynamic>,
         (json) => FoodModel.fromJson(json as Map<String, dynamic>),
       );
     } on DioException catch (e) {
+      _logger.e('Error searching foods: $e, response: ${e.response?.data}');
       throw Exception(e.response?.data['message'] ?? 'Network error');
     }
   }
@@ -44,7 +51,6 @@ class FoodRepository {
       throw Exception(e.response?.data['message'] ?? 'Network error');
     }
   }
-
 }
 
 final foodRepository = FoodRepository();

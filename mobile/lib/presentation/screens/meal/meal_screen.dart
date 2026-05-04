@@ -8,6 +8,8 @@ import 'widgets/calorie_dashboard_card.dart';
 import 'widgets/weight_goal_card.dart';
 import 'widgets/ai_suggestion_banner.dart';
 import 'widgets/browse_meals_list.dart';
+import 'widgets/meal_header.dart';
+import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
 
 class MealScreen extends StatefulWidget {
   const MealScreen({super.key});
@@ -19,14 +21,22 @@ class MealScreen extends StatefulWidget {
 class _MealScreenState extends State<MealScreen> {
   String _getStepsAmount(String goal) {
     switch (goal) {
-      case 'LOSE_1KG': return '15,000';
-      case 'LOSE_0_5KG': return '12,000';
-      case 'HEALTHY_LIFESTYLE': return '10,000';
-      case 'MAINTAIN': return '8,000';
-      case 'GAIN_MUSCLE': return '6,000';
-      case 'GAIN_0_5KG': return '5,000';
-      case 'GAIN_1KG': return '4,000';
-      default: return '8,000';
+      case 'LOSE_1KG':
+        return '15,000';
+      case 'LOSE_0_5KG':
+        return '12,000';
+      case 'HEALTHY_LIFESTYLE':
+        return '10,000';
+      case 'MAINTAIN':
+        return '8,000';
+      case 'GAIN_MUSCLE':
+        return '6,000';
+      case 'GAIN_0_5KG':
+        return '5,000';
+      case 'GAIN_1KG':
+        return '4,000';
+      default:
+        return '8,000';
     }
   }
 
@@ -52,68 +62,128 @@ class _MealScreenState extends State<MealScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final statusBarHeight = MediaQuery.of(context).padding.top;
+    
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
-      appBar: AppBar(
-        title: Text('Meals', style: AppTheme.headlineStyle.copyWith(fontSize: 22)),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        automaticallyImplyLeading: false,
-      ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: BlocBuilder<UserCubit, UserState>(
-            builder: (context, state) {
-              double weight = 0.0;
-              String goal = 'MAINTAIN';
-
-              if (state is UserLoaded) {
-                weight = state.user.metrics?.weight ?? 0.0;
-                goal = state.user.metrics?.goal ?? 'MAINTAIN';
-              }
-
-              String stepsStr = _getStepsAmount(goal);
-              String waterStr = _getWaterAmount(goal, weight);
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  CalorieDashboardCard(),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildStatCard(
-                          title: 'Steps',
-                          value: stepsStr,
-                          unit: 'steps',
-                          icon: FontAwesomeIcons.shoePrints,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _buildStatCard(
-                          title: 'Water',
-                          value: waterStr,
-                          unit: 'ml',
-                          icon: FontAwesomeIcons.glassWater,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 32),
-                  const WeightGoalCard(),
-                  const SizedBox(height: 32),
-                  const AiSuggestionBanner(),
-                  const SizedBox(height: 32),
-                  const BrowseMealsList(),
-                  const SizedBox(height: 32),
-                ],
-              );
-            },
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFA0AEC0), // Slate Grey
+              Color(0xFFD6CCC2), // Warm Beige
+            ],
           ),
+        ),
+        child: BlocBuilder<UserCubit, UserState>(
+          builder: (context, state) {
+            double weight = 0.0;
+            String goal = 'MAINTAIN';
+            String? userName;
+            String? avatarUrl;
+
+            if (state is UserLoaded) {
+              weight = state.user.metrics?.weight ?? 0.0;
+              goal = state.user.metrics?.goal ?? 'MAINTAIN';
+              userName = state.user.profile?.fullName;
+              avatarUrl = state.user.profile?.avatarUrl;
+            }
+
+            String stepsStr = _getStepsAmount(goal);
+            String waterStr = _getWaterAmount(goal, weight);
+
+            return CustomScrollView(
+              physics: const BouncingScrollPhysics(),
+              slivers: [
+                SliverAppBar(
+                  expandedHeight: 120,
+                  pinned: true,
+                  stretch: true,
+                  backgroundColor: Colors.transparent,
+                  elevation: 0,
+                  flexibleSpace: FlexibleSpaceBar(
+                    stretchModes: const [StretchMode.zoomBackground],
+                    background: Container(
+                      color: Colors.transparent,
+                      padding: EdgeInsets.fromLTRB(24, statusBarHeight + 10, 24, 10),
+                      child: Row(
+                        children: [
+                          HeroProfileAvatar(
+                            avatarUrl: avatarUrl,
+                            radius: 22,
+                            heroTag: 'profile_avatar',
+                            border: Border.all(color: Colors.white, width: 2),
+                          ),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Daily Intake',
+                                  style: AppTheme.bodyStyle.copyWith(
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                                Text(
+                                  'Nutrition Plan',
+                                  style: AppTheme.headlineStyle.copyWith(color: const Color(0xFF1E293B), fontSize: 20),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        CalorieDashboardCard(),
+                        const SizedBox(height: 24),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _buildStatCard(
+                                title: 'Steps',
+                                value: stepsStr,
+                                unit: 'steps',
+                                icon: FontAwesomeIcons.shoePrints,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _buildStatCard(
+                                title: 'Water',
+                                value: waterStr,
+                                unit: 'ml',
+                                icon: FontAwesomeIcons.glassWater,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 32),
+                        const WeightGoalCard(),
+                        const SizedBox(height: 32),
+                        const AiSuggestionBanner(),
+                        const SizedBox(height: 32),
+                        const BrowseMealsList(),
+                        const SizedBox(height: 32),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );
@@ -130,13 +200,7 @@ class _MealScreenState extends State<MealScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,13 +236,7 @@ class _MealScreenState extends State<MealScreen> {
               const SizedBox(width: 4),
               Padding(
                 padding: const EdgeInsets.only(bottom: 2.0),
-                child: Text(
-                  unit,
-                  style: AppTheme.bodyStyle.copyWith(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
+                child: Text(unit, style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: Colors.grey.shade600)),
               ),
             ],
           ),

@@ -36,4 +36,8 @@ class UserCubit extends Cubit<UserState> {
       return false;
     }
   }
+
+  void clear() {
+    emit(UserInitial());
+  }
 }

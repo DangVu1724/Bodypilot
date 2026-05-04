@@ -4,6 +4,8 @@ import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/auth/login_cubit.dart';
 import 'package:mobile/presentation/bloc/auth/login_state.dart';
+import 'package:mobile/presentation/bloc/user/user_cubit.dart';
+import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/widgets/black_button_2.dart';
 
 class LoginScreen extends StatelessWidget {
@@ -23,6 +25,10 @@ class LoginView extends StatelessWidget {
     return BlocListener<LoginCubit, LoginState>(
       listener: (context, state) {
         if (state.status == LoginStatus.success) {
+          // Fetch data immediately after successful login
+          context.read<UserCubit>().fetchUserProfile();
+          context.read<FoodCubit>().init();
+          
           if (state.isProfileComplete == true) {
             Navigator.pushReplacementNamed(context, AppRoutes.home);
           } else {

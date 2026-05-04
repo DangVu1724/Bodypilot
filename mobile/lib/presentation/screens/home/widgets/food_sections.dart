@@ -42,7 +42,7 @@ class FoodCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         final routeName = isIngredient ? AppRoutes.ingredientDetail : AppRoutes.foodDetail;
-        Navigator.pushNamed(context, routeName, arguments: food.id);
+        Navigator.of(context, rootNavigator: true).pushNamed(routeName, arguments: food.id);
       },
       child: Container(
         width: 280,
