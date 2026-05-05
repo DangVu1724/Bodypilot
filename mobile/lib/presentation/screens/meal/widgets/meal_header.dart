@@ -28,7 +28,7 @@ class MealHeader extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text('Ready for eating 🍽️', style: TextStyle(color: Colors.grey, fontSize: 13)),
+                    Text('Ready for eating 🍽️', style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 13)),
                     Row(
                       children: [
                         Text(userName, style: AppTheme.headlineStyle.copyWith(fontSize: 20)),

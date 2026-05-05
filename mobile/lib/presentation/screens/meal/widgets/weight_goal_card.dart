@@ -73,7 +73,7 @@ class WeightGoalCard extends StatelessWidget {
                         children: [
                           Text(
                             'TARGET WEIGHT',
-                            style: TextStyle(
+                            style: AppTheme.bodyStyle.copyWith(
                               color: Colors.white.withOpacity(0.7),
                               fontSize: 11,
                               letterSpacing: 1.2,
@@ -90,7 +90,7 @@ class WeightGoalCard extends StatelessWidget {
                                 ),
                                 TextSpan(
                                   text: ' kg',
-                                  style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 16),
+                                  style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.8), fontSize: 16),
                                 ),
                               ],
                             ),
@@ -159,10 +159,10 @@ class WeightGoalCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 11)),
+        Text(label, style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.6), fontSize: 11)),
         Text(
           value,
-          style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w600),
+          style: AppTheme.semiboldStyle.copyWith(color: Colors.white, fontSize: 14),
         ),
       ],
     );

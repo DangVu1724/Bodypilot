@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -22,12 +23,12 @@ class WelcomeScreen extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 const Spacer(),
-                const Text(
+                Text(
                   'Welcome to BodyPilot',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: AppTheme.headlineStyle.copyWith(fontSize: 24, color: Colors.white),
                 ),
                 const SizedBox(height: 10),
-                const Text('Your personal fitness AI Assistant', style: TextStyle(fontSize: 16, color: Colors.white)),
+                Text('Your personal fitness AI Assistant', style: AppTheme.bodyStyle.copyWith(fontSize: 16, color: Colors.white)),
                 const SizedBox(height: 30),
                 ElevatedButton(
                   onPressed: () {
@@ -45,15 +46,15 @@ class WelcomeScreen extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Text('Already have an account?', style: TextStyle(color: Colors.white)),
+                    Text('Already have an account?', style: AppTheme.bodyStyle.copyWith(color: Colors.white)),
                     const SizedBox(width: 5),
                     TextButton(
                       onPressed: () {
                         Navigator.pushNamed(context, AppRoutes.login);
                       },
-                      child: const Text(
+                      child:  Text(
                         'Login',
-                        style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        style: AppTheme.semiboldStyle.copyWith(color: Colors.white),
                       ),
                     ),
                   ],

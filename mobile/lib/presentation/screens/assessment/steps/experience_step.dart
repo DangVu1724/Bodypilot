@@ -98,7 +98,7 @@ class ExperienceStep extends StatelessWidget {
                   ),
                   child: Text(
                     'Đã chọn: ${hasExperience ? 'Đã từng tập' : 'Chưa từng tập'}',
-                    style: GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary),
+                    style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: AppTheme.primary),
                   ),
                 ),
               SizedBox(

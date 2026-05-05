@@ -99,7 +99,7 @@ class _GenderStepState extends State<GenderStep> {
                     ),
                     child: Text(
                       'Giới tính: $selectedGender',
-                      style: GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary),
+                      style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: AppTheme.primary),
                     ),
                   ),
                 SizedBox(

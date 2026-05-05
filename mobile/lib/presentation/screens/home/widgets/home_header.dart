@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
@@ -116,15 +115,14 @@ class HomeHeader extends StatelessWidget {
               children: [
                 Text(
                   date,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
+                  style: AppTheme.headlineStyle.copyWith(
                     fontSize: 16,
                     color: isSelected ? Colors.black : Colors.grey.shade700,
                   ),
                 ),
                 Text(
                   day,
-                  style: TextStyle(fontSize: 10, color: isSelected ? Colors.grey.shade600 : Colors.grey.shade500),
+                  style: AppTheme.bodyStyle.copyWith(fontSize: 10, color: isSelected ? Colors.grey.shade600 : Colors.grey.shade500),
                 ),
                 if (isSelected)
                   Container(
@@ -155,9 +153,9 @@ class HomeHeader extends StatelessWidget {
           child: Container(
             padding: const EdgeInsets.all(4),
             decoration: const BoxDecoration(color: Colors.orange, shape: BoxShape.circle),
-            child: const Text(
+            child:  Text(
               '8',
-              style: TextStyle(color: Colors.white, fontSize: 8, fontWeight: FontWeight.bold),
+              style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 8),
             ),
           ),
         ),

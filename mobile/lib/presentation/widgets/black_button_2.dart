@@ -1,5 +1,6 @@
 // black_button.dart
 import 'package:flutter/material.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 
 class BlackButton2 extends StatelessWidget {
   const BlackButton2({
@@ -32,13 +33,13 @@ class BlackButton2 extends StatelessWidget {
               const SizedBox(width: 10),
               Text(
                 label,
-                style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w600),
+                style: AppTheme.semiboldStyle.copyWith(color: textColor, fontSize: 16),
               ),
             ],
           )
         : Text(
             label,
-            style: TextStyle(color: textColor, fontSize: 16, fontWeight: FontWeight.w600),
+            style: AppTheme.semiboldStyle.copyWith(color: textColor, fontSize: 16),
           );
 
     return ElevatedButton(

@@ -93,9 +93,8 @@ class _InjuryStepState extends State<InjuryStep> {
                               const SizedBox(width: 8),
                               Text(
                                 _formatBodyPart(bodyPart),
-                                style: GoogleFonts.workSans(
+                                style: AppTheme.headlineStyle.copyWith(
                                   fontSize: 16,
-                                  fontWeight: FontWeight.bold,
                                   color: Colors.black87,
                                   letterSpacing: 0.5,
                                 ),
@@ -208,9 +207,8 @@ class _InjuryStepState extends State<InjuryStep> {
                     child: Text(
                       title,
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.workSans(
+                      style: AppTheme.semiboldStyle.copyWith(
                         fontSize: 14,
-                        fontWeight: FontWeight.w600,
                         color: isSelected ? Colors.white : Colors.black87,
                       ),
                     ),
@@ -249,9 +247,8 @@ class _InjuryStepState extends State<InjuryStep> {
               ),
               child: Text(
                 'Đã chọn ${selectedInjuries.length} chấn thương',
-                style: GoogleFonts.workSans(
+                style: AppTheme.semiboldStyle.copyWith(
                   fontSize: 14,
-                  fontWeight: FontWeight.w600,
                   color: AppTheme.primary,
                 ),
               ),

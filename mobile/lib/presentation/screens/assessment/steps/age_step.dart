@@ -103,9 +103,8 @@ class _AgeStepState extends State<AgeStep> {
                         duration: const Duration(milliseconds: 200),
                         child: Text(
                           '$age',
-                          style: GoogleFonts.workSans(
+                          style: AppTheme.headlineStyle.copyWith(
                             fontSize: diff == 0 ? 64 : 60,
-                            fontWeight: FontWeight.bold,
                             color: diff == 0 ? Colors.white : Colors.grey.shade500,
                           ),
                         ),

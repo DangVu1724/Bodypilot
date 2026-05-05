@@ -397,15 +397,12 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        title: const Text('Logout', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text('Logout', style: AppTheme.headlineStyle.copyWith(fontSize: 18)),
         content: const Text('Are you sure you want to sign out from your account?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text(
-              'Cancel',
-              style: TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.w600),
-            ),
+            child:  Text('Cancel', style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary)),
           ),
           Container(
             margin: const EdgeInsets.only(right: 8),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_cubit.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_state.dart';
 import 'package:mobile/presentation/screens/assessment/steps/age_step.dart';
@@ -90,7 +91,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                   decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(20)),
                   child: Text(
                     '${currentIndex + 1}/${steps.length}',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: AppTheme.semiboldStyle.copyWith(fontSize: 16),
                   ),
                 ),
               ],

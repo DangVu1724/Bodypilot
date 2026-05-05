@@ -43,6 +43,7 @@ class AppTheme {
       scaffoldBackgroundColor: const Color(0xFFE5E5E5),
       canvasColor: const Color(0xFFE5E5E5),
       cardColor: Colors.white,
+      fontFamily: GoogleFonts.workSans().fontFamily,
       textTheme: textTheme,
       primaryTextTheme: textTheme,
       appBarTheme: const AppBarTheme(
@@ -107,6 +108,7 @@ class AppTheme {
       scaffoldBackgroundColor: darkBackground,
       canvasColor: darkBackground,
       cardColor: darkSurface,
+      fontFamily: GoogleFonts.workSans().fontFamily,
       textTheme: textTheme,
       primaryTextTheme: textTheme,
       appBarTheme: const AppBarTheme(

@@ -51,7 +51,7 @@ class _BodyStepState extends State<BodyStep> {
     return Expanded(
       child: Column(
         children: [
-          Text(label, style: GoogleFonts.workSans(fontSize: 18, fontWeight: FontWeight.w600)),
+          Text(label, style: AppTheme.semiboldStyle.copyWith(fontSize: 18)),
           const SizedBox(height: 12),
           Expanded(
             child: Stack(
@@ -84,9 +84,8 @@ class _BodyStepState extends State<BodyStep> {
                           duration: const Duration(milliseconds: 200),
                           child: Text(
                             '$value',
-                            style: GoogleFonts.workSans(
+                            style: AppTheme.headlineStyle.copyWith(
                               fontSize: diff == 0 ? 54 : 38,
-                              fontWeight: FontWeight.bold,
                               color: color,
                             ),
                           ),
@@ -108,7 +107,7 @@ class _BodyStepState extends State<BodyStep> {
             ),
           ),
           const SizedBox(height: 12),
-          Text('$selectedValue $unit', style: GoogleFonts.workSans(fontSize: 20, fontWeight: FontWeight.w700)),
+          Text('$selectedValue $unit', style: AppTheme.headlineStyle.copyWith(fontSize: 20)),
         ],
       ),
     );
@@ -256,7 +255,7 @@ class _RulerPickerState extends State<RulerPicker> {
       children: [
         Text(
           '${_value.toStringAsFixed(0)} ${widget.unit}',
-          style: GoogleFonts.workSans(fontSize: 48, fontWeight: FontWeight.bold, color: AppTheme.primary),
+          style: AppTheme.headlineStyle.copyWith(fontSize: 48, color: AppTheme.primary),
         ),
         const SizedBox(height: 20),
         Expanded(
@@ -305,9 +304,8 @@ class _RulerPickerState extends State<RulerPicker> {
                                 if (isMajor)
                                   Text(
                                     value.toStringAsFixed(0),
-                                    style: GoogleFonts.workSans(
+                                    style: AppTheme.semiboldStyle.copyWith(
                                       fontSize: 12,
-                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w400,
                                       color: color,
                                     ),
                                   ),
@@ -328,9 +326,8 @@ class _RulerPickerState extends State<RulerPicker> {
                               if (isMajor)
                                 Text(
                                   value.toStringAsFixed(0),
-                                  style: GoogleFonts.workSans(
+                                  style: AppTheme.semiboldStyle.copyWith(
                                     fontSize: 14,
-                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w400,
                                     color: color,
                                   ),
                                 ),

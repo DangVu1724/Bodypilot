@@ -61,12 +61,12 @@ class LoginView extends StatelessWidget {
                     const SizedBox(height: 40),
                     Text(
                       'Welcome Back',
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                      style: AppTheme.headlineStyle.copyWith(fontSize: 28),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Sign in to continue',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+                      style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600),
                     ),
                     const SizedBox(height: 40),
                     TextField(
@@ -113,7 +113,7 @@ class LoginView extends StatelessWidget {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () {},
-                        child: Text('Forgot Password?', style: TextStyle(color: AppTheme.primary)),
+                        child: Text('Forgot Password?', style: AppTheme.bodyStyle.copyWith(color: AppTheme.primary)),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -135,7 +135,7 @@ class LoginView extends StatelessWidget {
                         Expanded(child: Divider(color: Colors.grey.shade300)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('Or', style: TextStyle(color: Colors.grey.shade600)),
+                          child: Text('Or', style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600)),
                         ),
                         Expanded(child: Divider(color: Colors.grey.shade300)),
                       ],
@@ -172,14 +172,14 @@ class LoginView extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Don't have an account? ", style: TextStyle(color: Colors.grey.shade600)),
+                        Text("Don't have an account? ", style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600)),
                         TextButton(
                           onPressed: () {
                             Navigator.pushReplacementNamed(context, AppRoutes.signup);
                           },
                           child: Text(
                             'Sign Up',
-                            style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
+                            style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary),
                           ),
                         ),
                       ],

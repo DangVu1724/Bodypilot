@@ -86,7 +86,7 @@ class _GoalStepState extends State<GoalStep> {
                   ),
                   child: Text(
                     'Đã chọn: ${options.firstWhere((o) => o.value == selectedGoal).title}',
-                    style: GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary),
+                    style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: AppTheme.primary),
                   ),
                 ),
               SizedBox(

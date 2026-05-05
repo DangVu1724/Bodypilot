@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/onboarding/onboarding_cubit.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -58,7 +59,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             onPressed: () {
                               Navigator.pushReplacementNamed(context, AppRoutes.welcome);
                             },
-                            child: const Text('Skip', style: TextStyle(fontSize: 16, color: Colors.white)),
+                            child: Text('Skip', style: AppTheme.bodyStyle.copyWith(fontSize: 16, color: Colors.white)),
                           ),
                         ),
                       ),
@@ -151,14 +152,14 @@ Widget _buildOnboardingPage(OnboardingPage data) {
         const Spacer(),
         Text(
           data.title, // Title sẽ thay đổi theo từng trang
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.white),
+          style: AppTheme.headlineStyle.copyWith(fontSize: 28, color: Colors.white),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 20),
 
         Text(
           data.description, // Description sẽ thay đổi theo từng trang
-          style: const TextStyle(fontSize: 16, color: Colors.white),
+          style: AppTheme.bodyStyle.copyWith(fontSize: 16, color: Colors.white),
           textAlign: TextAlign.center,
         ),
       ],

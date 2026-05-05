@@ -90,7 +90,7 @@ class _ActivityLevelStepState extends State<ActivityLevelStep> {
                   ),
                   child: Text(
                     'Đã chọn: ${options.firstWhere((o) => o.value == selectedActivityLevel).title}',
-                    style: GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.w600, color: AppTheme.primary),
+                    style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: AppTheme.primary),
                   ),
                 ),
 

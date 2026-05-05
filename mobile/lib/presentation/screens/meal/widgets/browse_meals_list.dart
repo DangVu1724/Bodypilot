@@ -17,8 +17,7 @@ class BrowseMealsList extends StatelessWidget {
       children: [
         SectionHeader(
           title: 'Browse Meals',
-          onSeeAll: () => Navigator.of(context, rootNavigator: true)
-              .pushNamed(AppRoutes.foodList, arguments: 'DISH'),
+          onSeeAll: () => Navigator.of(context, rootNavigator: true).pushNamed(AppRoutes.foodList, arguments: 'DISH'),
         ),
         const SizedBox(height: 16),
         BlocBuilder<FoodCubit, FoodState>(
@@ -26,10 +25,7 @@ class BrowseMealsList extends StatelessWidget {
             final dishes = state.foods.where((f) => f.type == 'DISH').toList();
             if (dishes.isEmpty) {
               return const Center(
-                child: Padding(
-                  padding: EdgeInsets.all(20.0),
-                  child: Text('No meals found.'),
-                ),
+                child: Padding(padding: EdgeInsets.all(20.0), child: Text('No meals found.')),
               );
             }
 
@@ -44,15 +40,12 @@ class BrowseMealsList extends StatelessWidget {
               itemBuilder: (context, index) {
                 final food = displayDishes[index];
                 return GestureDetector(
-                  onTap: () => Navigator.of(context, rootNavigator: true)
-                      .pushNamed(AppRoutes.foodDetail, arguments: food.id),
+                  onTap: () =>
+                      Navigator.of(context, rootNavigator: true).pushNamed(AppRoutes.foodDetail, arguments: food.id),
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
+                    decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
                     child: Row(
                       children: [
                         Expanded(
@@ -78,9 +71,9 @@ class BrowseMealsList extends StatelessWidget {
                                     '${food.caloriesPer100g.toStringAsFixed(0)}kcal',
                                     style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: Colors.grey.shade600),
                                   ),
-                                  const Padding(
+                                  Padding(
                                     padding: EdgeInsets.symmetric(horizontal: 6),
-                                    child: Text('•', style: TextStyle(color: Colors.grey)),
+                                    child: Text('•', style: AppTheme.bodyStyle.copyWith(color: Colors.grey)),
                                   ),
                                   Icon(Icons.health_and_safety, size: 14, color: Colors.amber.shade500),
                                   const SizedBox(width: 4),
@@ -88,9 +81,9 @@ class BrowseMealsList extends StatelessWidget {
                                     '${food.healthScore}',
                                     style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: Colors.grey.shade600),
                                   ),
-                                  const Padding(
+                                  Padding(
                                     padding: EdgeInsets.symmetric(horizontal: 6),
-                                    child: Text('•', style: TextStyle(color: Colors.grey)),
+                                    child: Text('•', style: AppTheme.bodyStyle.copyWith(color: Colors.grey)),
                                   ),
                                   Icon(Icons.access_time_filled, size: 14, color: Colors.blue.shade400),
                                   const SizedBox(width: 4),
