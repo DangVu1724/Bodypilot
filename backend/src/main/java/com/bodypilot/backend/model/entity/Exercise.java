@@ -1,14 +1,7 @@
 package com.bodypilot.backend.model.entity;
 
 import com.bodypilot.backend.model.enums.DifficultyLevel;
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
@@ -18,6 +11,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "exercises")
@@ -31,6 +25,22 @@ public class Exercise extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private WorkoutCategory category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "body_part_id")
+    private BodyPart bodyPart;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "target_muscle_id")
+    private Muscle targetMuscle;
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "exercise_secondary_muscles",
+            joinColumns = @JoinColumn(name = "exercise_id"),
+            inverseJoinColumns = @JoinColumn(name = "muscle_id")
+    )
+    private Set<Muscle> secondaryMuscles;
 
     @Column(unique = true, nullable = false)
     private String code;

@@ -1,6 +1,5 @@
 package com.bodypilot.backend.model.entity;
 
-import com.bodypilot.backend.model.enums.BodyPart;
 import com.bodypilot.backend.model.enums.SeverityLevel;
 import jakarta.persistence.*;
 import lombok.*;
@@ -25,7 +24,8 @@ public class Injury extends BaseEntity {
     @Column(columnDefinition = "TEXT")
     private String description;
 
-    @Enumerated(EnumType.STRING)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "body_part_id")
     private BodyPart bodyPart;
 
     @Enumerated(EnumType.STRING)

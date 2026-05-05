@@ -11,9 +11,10 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class WorkoutCategoryDTO {
+public class BodyPartDTO {
     private UUID id;
     private String code;
     private String name;
     private String description;
+    private String imageUrl;
 }

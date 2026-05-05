@@ -14,15 +14,20 @@ import java.util.UUID;
 @Repository
 public interface ExerciseRepository extends JpaRepository<Exercise, UUID> {
 
-    @EntityGraph(attributePaths = {"category"})
-    @Query("SELECT e FROM Exercise e WHERE " +
+    @EntityGraph(attributePaths = {"category", "bodyPart", "targetMuscle"})
+    @Query("SELECT e FROM Exercise e " +
+           "LEFT JOIN e.bodyPart bp " +
+           "LEFT JOIN e.targetMuscle tm " +
+           "WHERE " +
            "(cast(:name as string) IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', cast(:name as string), '%'))) AND " +
            "(cast(:categoryId as string) IS NULL OR cast(e.category.id as string) = cast(:categoryId as string)) AND " +
            "(cast(:categoryCode as string) IS NULL OR LOWER(e.category.code) = LOWER(cast(:categoryCode as string))) AND " +
-           "(cast(:workoutType as string) IS NULL OR cast(e.category.workoutType as string) = cast(:workoutType as string))")
+           "(cast(:bodyPartCode as string) IS NULL OR LOWER(bp.code) = LOWER(cast(:bodyPartCode as string))) AND " +
+           "(cast(:muscleCode as string) IS NULL OR LOWER(tm.code) = LOWER(cast(:muscleCode as string)))")
     Page<Exercise> searchExercises(@Param("name") String name, 
                                    @Param("categoryId") String categoryId, 
                                    @Param("categoryCode") String categoryCode, 
-                                   @Param("workoutType") String workoutType,
+                                   @Param("bodyPartCode") String bodyPartCode,
+                                   @Param("muscleCode") String muscleCode,
                                    Pageable pageable);
 }

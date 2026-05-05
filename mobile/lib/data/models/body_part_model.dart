@@ -1,21 +1,25 @@
-class WorkoutCategoryModel {
+class BodyPartModel {
   final String id;
   final String code;
   final String name;
   final String? description;
-  WorkoutCategoryModel({
+  final String? imageUrl;
+
+  BodyPartModel({
     required this.id,
     required this.code,
     required this.name,
     this.description,
+    this.imageUrl,
   });
 
-  factory WorkoutCategoryModel.fromJson(Map<String, dynamic> json) {
-    return WorkoutCategoryModel(
+  factory BodyPartModel.fromJson(Map<String, dynamic> json) {
+    return BodyPartModel(
       id: json['id'] as String,
       code: json['code'] as String,
       name: json['name'] as String,
       description: json['description'] as String?,
+      imageUrl: json['imageUrl'] as String?,
     );
   }
 
@@ -25,6 +29,7 @@ class WorkoutCategoryModel {
       'code': code,
       'name': name,
       'description': description,
+      'imageUrl': imageUrl,
     };
   }
 }

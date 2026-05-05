@@ -11,7 +11,8 @@ class ExerciseRepository {
     String? name,
     String? categoryId,
     String? categoryCode,
-    String? workoutType,
+    String? bodyPartCode,
+    String? muscleCode,
     int page = 0,
     int size = 10,
   }) async {
@@ -24,7 +25,8 @@ class ExerciseRepository {
       if (name != null) queryParams['name'] = name;
       if (categoryId != null) queryParams['categoryId'] = categoryId;
       if (categoryCode != null) queryParams['categoryCode'] = categoryCode;
-      if (workoutType != null) queryParams['workoutType'] = workoutType;
+      if (bodyPartCode != null) queryParams['bodyPartCode'] = bodyPartCode;
+      if (muscleCode != null) queryParams['muscleCode'] = muscleCode;
 
       _logger.d('Fetching exercises with params: $queryParams');
       final response = await apiClient.get('/exercises', queryParameters: queryParams);

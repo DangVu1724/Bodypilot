@@ -24,4 +24,7 @@ public class ExerciseDTO {
     private Double metValue;
     private List<String> equipment;
     private WorkoutCategoryDTO category;
+    private BodyPartDTO bodyPart;
+    private MuscleDTO targetMuscle;
+    private List<MuscleDTO> secondaryMuscles;
 }

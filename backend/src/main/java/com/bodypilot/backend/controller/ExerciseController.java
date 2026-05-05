@@ -3,7 +3,6 @@ package com.bodypilot.backend.controller;
 import com.bodypilot.backend.model.dto.ExerciseDTO;
 import com.bodypilot.backend.model.dto.PageResponse;
 import com.bodypilot.backend.model.dto.WorkoutCategoryDTO;
-import com.bodypilot.backend.model.enums.WorkoutType;
 import com.bodypilot.backend.service.ExerciseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -29,10 +28,11 @@ public class ExerciseController {
             @RequestParam(required = false) String name,
             @RequestParam(required = false) UUID categoryId,
             @RequestParam(required = false) String categoryCode,
-            @RequestParam(required = false) WorkoutType workoutType,
+            @RequestParam(required = false) String bodyPartCode,
+            @RequestParam(required = false) String muscleCode,
             Pageable pageable) {
         
-        PageResponse<ExerciseDTO> response = exerciseService.searchExercises(name, categoryId, categoryCode, workoutType, pageable);
+        PageResponse<ExerciseDTO> response = exerciseService.searchExercises(name, categoryId, categoryCode, bodyPartCode, muscleCode, pageable);
         return ResponseEntity.ok(response);
     }
 

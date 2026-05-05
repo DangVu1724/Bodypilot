@@ -1,5 +1,4 @@
 package com.bodypilot.backend.model.entity;
-
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Table;
@@ -10,13 +9,13 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 @Entity
-@Table(name = "workout_categories")
+@Table(name = "body_parts")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class WorkoutCategory extends BaseEntity {
+public class BodyPart extends BaseEntity {
 
     @Column(unique = true, nullable = false)
     private String code;
@@ -26,4 +25,7 @@ public class WorkoutCategory extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @Column(name = "image_url", columnDefinition = "TEXT")
+    private String imageUrl;
 }
