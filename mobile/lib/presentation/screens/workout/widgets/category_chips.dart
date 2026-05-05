@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import '../../../bloc/workout/workout_category_cubit.dart';
 import '../../../bloc/workout/workout_category_state.dart';
 import '../category_exercises_screen.dart';
+import 'workout_skeleton.dart';
 
 class CategoryChips extends StatelessWidget {
   const CategoryChips({super.key});
@@ -12,7 +14,7 @@ class CategoryChips extends StatelessWidget {
     return BlocBuilder<WorkoutCategoryCubit, WorkoutCategoryState>(
       builder: (context, state) {
         if (state is WorkoutCategoryLoading) {
-          return const Center(child: CircularProgressIndicator());
+          return const CategoryChipSkeleton();
         }
 
         if (state is WorkoutCategoryLoaded) {
@@ -26,8 +28,7 @@ class CategoryChips extends StatelessWidget {
                   padding: const EdgeInsets.only(right: 8.0),
                   child: InkWell(
                     onTap: () {
-                      Navigator.push(
-                        context,
+                      Navigator.of(context, rootNavigator: true).push(
                         MaterialPageRoute(
                           builder: (context) => CategoryExercisesScreen(category: cat),
                         ),
@@ -35,7 +36,7 @@ class CategoryChips extends StatelessWidget {
                     },
                     child: Chip(
                       avatar: Icon(_getIconForCategory(cat.code), size: 16, color: Colors.grey[700]),
-                      label: Text(cat.name, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      label: Text(cat.name, style: AppTheme.semiboldStyle),
                       backgroundColor: Colors.grey[100],
                       side: BorderSide.none,
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

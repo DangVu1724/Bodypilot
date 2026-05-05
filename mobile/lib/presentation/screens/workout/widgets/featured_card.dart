@@ -40,7 +40,7 @@ class FeaturedCard extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                       decoration: BoxDecoration(color: Colors.white.withOpacity(0.3), borderRadius: BorderRadius.circular(8)),
-                      child: const Text('Endurance', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                      child: Text('Endurance', style: AppTheme.semiboldStyle.copyWith(color: Colors.white, fontSize: 12)),
                     ),
                     Row(
                       children: const [
@@ -58,21 +58,21 @@ class FeaturedCard extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text('Total Body Circuit', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                        Text('Total Body Circuit', style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 20)),
                         const SizedBox(height: 4),
                         Row(
-                          children: const [
+                          children:  [
                             Icon(Icons.access_time, color: Colors.blue, size: 14),
                             SizedBox(width: 4),
-                            Text('50min', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                            Text('50min', style: AppTheme.bodyStyle.copyWith(color: Colors.white70, fontSize: 12)),
                             SizedBox(width: 12),
                             Icon(Icons.local_fire_department, color: Colors.orange, size: 14),
                             SizedBox(width: 4),
-                            Text('251kcal', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                            Text('251kcal', style: AppTheme.bodyStyle.copyWith(color: Colors.white70, fontSize: 12)),
                             SizedBox(width: 12),
                             Icon(Icons.fitness_center, color: Colors.white70, size: 14),
                             SizedBox(width: 4),
-                            Text('Upper Body', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                            Text('Upper Body', style: AppTheme.bodyStyle.copyWith(color: Colors.white70, fontSize: 12)),
                           ],
                         ),
                       ],

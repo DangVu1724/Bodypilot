@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import '../../../data/models/workout_category_model.dart';
+import '../../../data/models/exercise_model.dart';
 import '../../../data/repositories/exercise_repository.dart';
 import '../../bloc/workout/exercise_cubit.dart';
 import '../../bloc/workout/exercise_state.dart';
+import 'widgets/workout_skeleton.dart';
+import 'exercise_detail_screen.dart';
 
 class CategoryExercisesScreen extends StatelessWidget {
   final WorkoutCategoryModel category;
@@ -13,15 +17,10 @@ class CategoryExercisesScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => ExerciseCubit(ExerciseRepository())
-        ..fetchExercisesByCategory(category.id),
+      create: (context) => ExerciseCubit(ExerciseRepository())..fetchExercisesByCategory(category.id),
       child: Scaffold(
-        body: CustomScrollView(
-          slivers: [
-            _buildHeader(context),
-            _buildExerciseList(),
-          ],
-        ),
+        backgroundColor: Colors.white,
+        body: CustomScrollView(slivers: [_buildHeader(context), _buildExerciseList()]),
       ),
     );
   }
@@ -41,6 +40,7 @@ class CategoryExercisesScreen extends StatelessWidget {
         ),
       ),
       flexibleSpace: FlexibleSpaceBar(
+        collapseMode: CollapseMode.parallax,
         background: Stack(
           fit: StackFit.expand,
           children: [
@@ -53,10 +53,7 @@ class CategoryExercisesScreen extends StatelessWidget {
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withOpacity(0.3),
-                    Colors.black.withOpacity(0.8),
-                  ],
+                  colors: [Colors.black.withOpacity(0.3), Colors.black.withOpacity(0.8)],
                 ),
               ),
             ),
@@ -70,14 +67,7 @@ class CategoryExercisesScreen extends StatelessWidget {
                     children: [
                       const Icon(Icons.fitness_center, color: Colors.white, size: 28),
                       const SizedBox(width: 8),
-                      Text(
-                        category.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                      Text(category.code, style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 32)),
                       const Spacer(),
                       BlocBuilder<ExerciseCubit, ExerciseState>(
                         builder: (context, state) {
@@ -93,7 +83,7 @@ class CategoryExercisesScreen extends StatelessWidget {
                             ),
                             child: Text(
                               '$total Total',
-                              style: const TextStyle(color: Colors.white, fontSize: 12),
+                              style: AppTheme.bodyStyle.copyWith(color: Colors.white, fontSize: 12),
                             ),
                           );
                         },
@@ -102,11 +92,9 @@ class CategoryExercisesScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    category.description ?? 'Build your muscles bigger & stronger with this exercise. Train everyday to get bulk!',
-                    style: TextStyle(
-                      color: Colors.white.withOpacity(0.8),
-                      fontSize: 14,
-                    ),
+                    category.description ??
+                        'Build your muscles bigger & stronger with this exercise. Train everyday to get bulk!',
+                    style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
                   ),
                 ],
               ),
@@ -119,136 +107,123 @@ class CategoryExercisesScreen extends StatelessWidget {
 
   Widget _buildExerciseList() {
     return SliverToBoxAdapter(
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(30),
-            topRight: Radius.circular(30),
+      child: Transform.translate(
+        offset: const Offset(0, -20),
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.only(topLeft: Radius.circular(30), topRight: Radius.circular(30)),
           ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'All Workouts',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                Row(
-                  children: [
-                    Text(
-                      'Newest First',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                    const SizedBox(width: 4),
-                    Icon(Icons.wifi_tethering, color: Colors.orange[300], size: 16),
-                  ],
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            BlocBuilder<ExerciseCubit, ExerciseState>(
-              builder: (context, state) {
-                if (state is ExerciseLoading) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (state is ExerciseLoaded) {
-                  return ListView.separated(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemCount: state.exercises.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 12),
-                    itemBuilder: (context, index) {
-                      final exercise = state.exercises[index];
-                      return _buildExerciseCard(exercise);
-                    },
-                  );
-                }
-                if (state is ExerciseError) {
-                  return Center(child: Text(state.message));
-                }
-                return const SizedBox.shrink();
-              },
-            ),
-          ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text('All Workouts', style: AppTheme.headlineStyle.copyWith(fontSize: 18)),
+                  Row(
+                    children: [
+                      Text('Newest First', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                      const SizedBox(width: 4),
+                      Icon(Icons.wifi_tethering, color: Colors.orange[300], size: 16),
+                    ],
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              BlocBuilder<ExerciseCubit, ExerciseState>(
+                builder: (context, state) {
+                  if (state is ExerciseLoading) {
+                    return const ExerciseVerticalSkeleton();
+                  }
+                  if (state is ExerciseLoaded) {
+                    return ListView.separated(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      itemCount: state.exercises.length,
+                      separatorBuilder: (context, index) => const SizedBox(height: 12),
+                      itemBuilder: (context, index) {
+                        final exercise = state.exercises[index];
+                        return _buildExerciseCard(context, exercise);
+                      },
+                    );
+                  }
+                  if (state is ExerciseError) {
+                    return Center(child: Text(state.message));
+                  }
+                  return const SizedBox.shrink();
+                },
+              ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildExerciseCard(dynamic exercise) {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: Colors.grey[50],
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.grey[200]!),
-      ),
-      child: Row(
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(15),
-            child: Stack(
-              children: [
-                _buildExerciseImage(exercise.thumbnailUrl),
-                Positioned(
-                  bottom: 5,
-                  left: 5,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.blue,
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: const Text(
-                      'New',
-                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
+  Widget _buildExerciseCard(BuildContext context, ExerciseModel exercise) {
+    return InkWell(
+      onTap: () => Navigator.of(context, rootNavigator: true)
+          .push(MaterialPageRoute(builder: (context) => ExerciseDetailScreen(exercise: exercise))),
+      borderRadius: BorderRadius.circular(20),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: Colors.grey[50],
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: Colors.grey[200]!),
+        ),
+        child: Row(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(15),
+              child: Stack(
+                children: [
+                  _buildExerciseImage(exercise.thumbnailUrl),
+                  Positioned(
+                    bottom: 5,
+                    left: 5,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(5)),
+                      child: Text('New', style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 10)),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  exercise.name,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${exercise.difficulty ?? 'Intermediate'}',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(Icons.explore, size: 14, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${exercise.metValue ?? 5.0} METs',
-                      style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                    ),
-                  ],
-                ),
-              ],
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(exercise.name, style: AppTheme.headlineStyle.copyWith(fontSize: 16)),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text(
+                        '${exercise.difficulty ?? 'Intermediate'}',
+                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    children: [
+                      Icon(Icons.explore, size: 14, color: Colors.grey[600]),
+                      const SizedBox(width: 4),
+                      Text('${exercise.metValue ?? 5.0} METs', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                    ],
+                  ),
+                ],
+              ),
             ),
-          ),
-          Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
-        ],
+            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+          ],
+        ),
       ),
     );
   }

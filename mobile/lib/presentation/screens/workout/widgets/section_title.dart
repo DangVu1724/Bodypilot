@@ -16,14 +16,14 @@ class SectionTitle extends StatelessWidget {
       children: [
         Row(
           children: [
-            Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(title, style: AppTheme.headlineStyle.copyWith(fontSize: 18)),
             if (subtitle != null) ...[
               const SizedBox(width: 4),
-              Text(subtitle!, style: TextStyle(fontSize: 16, color: Colors.grey, fontWeight: FontWeight.w500)),
+              Text(subtitle!, style: AppTheme.semiboldStyle.copyWith(fontSize: 16, color: Colors.grey)),
             ]
           ],
         ),
-        Text(actionText, style: const TextStyle(color: AppTheme.primary, fontWeight: FontWeight.w600, fontSize: 14)),
+        Text(actionText, style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary, fontSize: 14)),
       ],
     );
   }

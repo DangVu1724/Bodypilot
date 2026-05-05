@@ -11,7 +11,6 @@ class ExerciseCubit extends Cubit<ExerciseState> {
     emit(ExerciseLoading());
     try {
       final response = await _repository.searchExercises(
-        workoutType: 'STRENGTH',
         size: 10,
       );
       emit(ExerciseLoaded(response.content));

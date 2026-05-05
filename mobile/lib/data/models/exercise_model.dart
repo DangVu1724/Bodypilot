@@ -1,4 +1,6 @@
 import 'workout_category_model.dart';
+import 'body_part_model.dart';
+import 'muscle_model.dart';
 
 class ExerciseModel {
   final String id;
@@ -11,6 +13,11 @@ class ExerciseModel {
   final double? metValue;
   final List<String>? equipment;
   final WorkoutCategoryModel? category;
+  final BodyPartModel? bodyPart;
+  final MuscleModel? targetMuscle;
+  final List<MuscleModel>? secondaryMuscles;
+  final int? defaultDuration;
+  final String? durationUnit;
 
   ExerciseModel({
     required this.id,
@@ -23,6 +30,11 @@ class ExerciseModel {
     this.metValue,
     this.equipment,
     this.category,
+    this.bodyPart,
+    this.targetMuscle,
+    this.secondaryMuscles,
+    this.defaultDuration,
+    this.durationUnit,
   });
 
   factory ExerciseModel.fromJson(Map<String, dynamic> json) {
@@ -37,6 +49,11 @@ class ExerciseModel {
       metValue: (json['metValue'] as num?)?.toDouble(),
       equipment: (json['equipment'] as List<dynamic>?)?.map((e) => e as String).toList(),
       category: json['category'] != null ? WorkoutCategoryModel.fromJson(json['category']) : null,
+      bodyPart: json['bodyPart'] != null ? BodyPartModel.fromJson(json['bodyPart']) : null,
+      targetMuscle: json['targetMuscle'] != null ? MuscleModel.fromJson(json['targetMuscle']) : null,
+      secondaryMuscles: (json['secondaryMuscles'] as List<dynamic>?)?.map((e) => MuscleModel.fromJson(e)).toList(),
+      defaultDuration: json['default_duration'] as int?,
+      durationUnit: json['duration_unit'] as String?,
     );
   }
 
@@ -52,6 +69,11 @@ class ExerciseModel {
       'metValue': metValue,
       'equipment': equipment,
       'category': category?.toJson(),
+      'bodyPart': bodyPart?.toJson(),
+      'targetMuscle': targetMuscle?.toJson(),
+      'secondaryMuscles': secondaryMuscles?.map((e) => e.toJson()).toList(),
+      'default_duration': defaultDuration,
+      'duration_unit': durationUnit,
     };
   }
 }

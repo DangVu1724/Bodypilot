@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 
 class AiSuggestionBanner extends StatelessWidget {
   const AiSuggestionBanner({super.key});
@@ -18,7 +19,7 @@ class AiSuggestionBanner extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             'You have 12 AI workout suggestions.',
-            style: TextStyle(color: Colors.blue[800], fontWeight: FontWeight.w600, fontSize: 14),
+            style: AppTheme.semiboldStyle.copyWith(color: Colors.blue[800], fontSize: 14),
           ),
         ],
       ),

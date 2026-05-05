@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'section_title.dart';
 
 class AiSuggestionCard extends StatelessWidget {
@@ -33,24 +34,24 @@ class AiSuggestionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(color: Colors.black.withOpacity(0.3), borderRadius: BorderRadius.circular(8)),
-                child: const Text('Yoga & Meditation', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                child: Text('Yoga & Meditation', style: AppTheme.semiboldStyle.copyWith(color: Colors.white, fontSize: 12)),
               ),
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Metaverse\nYoga Training', style: TextStyle(color: Colors.white, fontSize: 22, fontWeight: FontWeight.bold, height: 1.1)),
+                  Text('Metaverse\nYoga Training', style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 22, height: 1.1)),
                   const SizedBox(height: 4),
-                  const Text('Brenda Lee Sensei', style: TextStyle(color: Colors.white70, fontSize: 13)),
+                  Text('Brenda Lee Sensei', style: AppTheme.bodyStyle.copyWith(color: Colors.white70, fontSize: 13)),
                   const SizedBox(height: 12),
                   Row(
-                    children: const [
+                    children:  [
                       Icon(Icons.access_time, color: Colors.white, size: 14),
                       SizedBox(width: 4),
-                      Text('25min', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text('25min', style: AppTheme.semiboldStyle.copyWith(color: Colors.white, fontSize: 12)),
                       SizedBox(width: 16),
                       Icon(Icons.local_fire_department, color: Colors.white, size: 14),
                       SizedBox(width: 4),
-                      Text('578kcal', style: TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                      Text('578kcal', style: AppTheme.semiboldStyle.copyWith(color: Colors.white, fontSize: 12)),
                     ],
                   ),
                 ],

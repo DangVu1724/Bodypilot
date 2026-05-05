@@ -101,7 +101,7 @@ class _FoodListScreenState extends State<FoodListScreen> {
               onChanged: (value) => _loadFoods(),
               decoration: InputDecoration(
                 hintText: 'Search delicious ${widget.type.toLowerCase()}s...',
-                hintStyle: TextStyle(color: Colors.grey[400], fontSize: 14),
+                hintStyle: AppTheme.bodyStyle.copyWith(color: Colors.grey[400], fontSize: 14),
                 prefixIcon: const Icon(Icons.search_rounded, color: Colors.black54),
                 suffixIcon: Container(
                   margin: const EdgeInsets.all(8),
@@ -302,9 +302,9 @@ class _DishListItem extends StatelessWidget {
                         '${food.caloriesPer100g.toStringAsFixed(0)}kcal',
                         style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.7), fontSize: 12),
                       ),
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 8),
-                        child: Text('•', style: TextStyle(color: Colors.white70)),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Text('•', style: AppTheme.bodyStyle.copyWith(color: Colors.white70)),
                       ),
                       Text(
                         '${food.recipe?.cookingTimeMinutes ?? 0} mins',
