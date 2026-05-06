@@ -1,25 +1,19 @@
 package com.bodypilot.backend.service.impl;
 
 import com.bodypilot.backend.exception.ResourceNotFoundException;
-import com.bodypilot.backend.model.dto.AssessmentSubmissionRequest;
 import com.bodypilot.backend.model.dto.UserProfileResponse;
-import com.bodypilot.backend.model.dto.UserRegistrationRequest;
 import com.bodypilot.backend.model.dto.UserResponse;
 import com.bodypilot.backend.model.entity.*;
-import com.bodypilot.backend.model.dto.CalorieCalculationResult;
-import com.bodypilot.backend.model.enums.ActivityLevel;
-import com.bodypilot.backend.model.enums.Gender;
-import com.bodypilot.backend.service.CalorieCalculatorService;
-import com.bodypilot.backend.repository.*;
-import com.bodypilot.backend.service.UserService;
 import com.bodypilot.backend.model.dto.UserMetricsResponse;
 import com.bodypilot.backend.model.dto.GoalResponse;
+import com.bodypilot.backend.repository.*;
+import com.bodypilot.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -39,6 +33,18 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserResponse getUserDetails(UUID userId) {
         User user = getById(userId);
+        return mapToUserResponse(user);
+    }
+
+    @Override
+    public List<UserResponse> getAllUsers() {
+        return userRepository.findAll().stream()
+                .map(this::mapToUserResponse)
+                .collect(Collectors.toList());
+    }
+
+    private UserResponse mapToUserResponse(User user) {
+        UUID userId = user.getId();
         UserProfile profile = user.getProfile();
         
         UserMetricHistory latestMetric = userMetricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)
@@ -78,8 +84,6 @@ public class UserServiceImpl implements UserService {
                 .goal(goalResponse)
                 .build();
     }
-
-
 
     @Override
     public boolean isProfileComplete(UUID userId) {

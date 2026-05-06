@@ -29,6 +29,24 @@ public class FoodController {
         return ResponseEntity.ok(ApiResponse.ok("Search successful", results));
     }
 
+    @GetMapping("/ingredients")
+    public ResponseEntity<ApiResponse<PageResponse<FoodSummaryResponse>>> getIngredients(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        PageResponse<FoodSummaryResponse> results = foodService.getFoodsByType("INGREDIENT", pageable);
+        return ResponseEntity.ok(ApiResponse.ok("Ingredients retrieved", results));
+    }
+
+    @GetMapping("/dishes")
+    public ResponseEntity<ApiResponse<PageResponse<FoodSummaryResponse>>> getDishes(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "100") int size) {
+        Pageable pageable = PageRequest.of(page, size);
+        PageResponse<FoodSummaryResponse> results = foodService.getFoodsByType("DISH", pageable);
+        return ResponseEntity.ok(ApiResponse.ok("Dishes retrieved", results));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<FoodResponse>> getById(@PathVariable UUID id) {
         FoodResponse food = foodService.getFoodById(id);
@@ -45,5 +63,23 @@ public class FoodController {
     public ResponseEntity<ApiResponse<List<DietTagDTO>>> getDietTags() {
         List<DietTagDTO> tags = foodService.getDietTags();
         return ResponseEntity.ok(ApiResponse.ok("Diet tags retrieved", tags));
+    }
+
+    @PostMapping
+    public ResponseEntity<ApiResponse<FoodResponse>> createFood(@RequestBody com.bodypilot.backend.model.dto.FoodRequest request) {
+        FoodResponse food = foodService.createFood(request);
+        return ResponseEntity.ok(ApiResponse.ok("Food created", food));
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<FoodResponse>> updateFood(@PathVariable UUID id, @RequestBody com.bodypilot.backend.model.dto.FoodRequest request) {
+        FoodResponse food = foodService.updateFood(id, request);
+        return ResponseEntity.ok(ApiResponse.ok("Food updated", food));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<ApiResponse<Void>> deleteFood(@PathVariable UUID id) {
+        foodService.deleteFood(id);
+        return ResponseEntity.ok(ApiResponse.ok("Food deleted", null));
     }
 }

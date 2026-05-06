@@ -45,4 +45,30 @@ public class ExerciseController {
     public ResponseEntity<List<WorkoutCategoryDTO>> getCategories() {
         return ResponseEntity.ok(exerciseService.getAllCategories());
     }
+
+    @GetMapping("/body-parts")
+    public ResponseEntity<List<com.bodypilot.backend.model.dto.BodyPartDTO>> getBodyParts() {
+        return ResponseEntity.ok(exerciseService.getAllBodyParts());
+    }
+
+    @GetMapping("/muscles")
+    public ResponseEntity<List<com.bodypilot.backend.model.dto.MuscleDTO>> getMuscles() {
+        return ResponseEntity.ok(exerciseService.getAllMuscles());
+    }
+
+    @org.springframework.web.bind.annotation.PostMapping
+    public ResponseEntity<ExerciseDTO> createExercise(@org.springframework.web.bind.annotation.RequestBody com.bodypilot.backend.model.dto.ExerciseRequest request) {
+        return ResponseEntity.ok(exerciseService.createExercise(request));
+    }
+
+    @org.springframework.web.bind.annotation.PutMapping("/{id}")
+    public ResponseEntity<ExerciseDTO> updateExercise(@PathVariable UUID id, @org.springframework.web.bind.annotation.RequestBody com.bodypilot.backend.model.dto.ExerciseRequest request) {
+        return ResponseEntity.ok(exerciseService.updateExercise(id, request));
+    }
+
+    @org.springframework.web.bind.annotation.DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteExercise(@PathVariable UUID id) {
+        exerciseService.deleteExercise(id);
+        return ResponseEntity.noContent().build();
+    }
 }

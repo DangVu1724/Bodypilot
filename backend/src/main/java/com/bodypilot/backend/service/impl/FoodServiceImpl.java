@@ -13,6 +13,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -29,6 +30,17 @@ public class FoodServiceImpl implements FoodService {
     @Transactional(readOnly = true)
     public PageResponse<FoodSummaryResponse> searchFoods(String query, UUID categoryId, Pageable pageable) {
         Page<Food> foodPage = foodRepository.searchFoods(query, categoryId, pageable);
+        List<FoodSummaryResponse> content = foodPage.getContent().stream()
+                .map(this::mapToSummary)
+                .collect(Collectors.toList());
+        return PageResponse.fromPage(foodPage, content);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PageResponse<FoodSummaryResponse> getFoodsByType(String type, Pageable pageable) {
+        com.bodypilot.backend.model.enums.FoodType foodType = com.bodypilot.backend.model.enums.FoodType.valueOf(type.toUpperCase());
+        Page<Food> foodPage = foodRepository.findByType(foodType, pageable);
         List<FoodSummaryResponse> content = foodPage.getContent().stream()
                 .map(this::mapToSummary)
                 .collect(Collectors.toList());
@@ -143,5 +155,88 @@ public class FoodServiceImpl implements FoodService {
                 .foodName(ingredient.getFood().getName())
                 .quantityGrams(ingredient.getQuantityGrams())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public FoodResponse createFood(com.bodypilot.backend.model.dto.FoodRequest request) {
+        Food food = new Food();
+        updateFoodFromRequest(food, request);
+        Food savedFood = foodRepository.save(food);
+        return mapToResponse(savedFood);
+    }
+
+    @Override
+    @Transactional
+    public FoodResponse updateFood(UUID id, com.bodypilot.backend.model.dto.FoodRequest request) {
+        Food food = foodRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Food not found with id: " + id));
+        updateFoodFromRequest(food, request);
+        Food savedFood = foodRepository.save(food);
+        return mapToResponse(savedFood);
+    }
+
+    @Override
+    @Transactional
+    public void deleteFood(UUID id) {
+        if (!foodRepository.existsById(id)) {
+            throw new ResourceNotFoundException("Food not found with id: " + id);
+        }
+        foodRepository.deleteById(id);
+    }
+
+    private void updateFoodFromRequest(Food food, com.bodypilot.backend.model.dto.FoodRequest request) {
+        food.setName(request.getName());
+        if (request.getType() != null) {
+            food.setType(com.bodypilot.backend.model.enums.FoodType.valueOf(request.getType()));
+        }
+        food.setCaloriesPer100g(BigDecimal.valueOf(request.getCaloriesPer100g()));
+        food.setProteinPer100g(BigDecimal.valueOf(request.getProteinPer100g()));
+        food.setFatPer100g(BigDecimal.valueOf(request.getFatPer100g()));
+        food.setCarbsPer100g(BigDecimal.valueOf(request.getCarbsPer100g()));
+        food.setFiberPer100g(BigDecimal.valueOf(request.getFiberPer100g()));
+        food.setSugarPer100g(BigDecimal.valueOf(request.getSugarPer100g()));
+        food.setSodiumMgPer100g(BigDecimal.valueOf(request.getSodiumMgPer100g()));
+        food.setDefaultServingSize(BigDecimal.valueOf(request.getDefaultServingSize()));
+        food.setDefaultUnit(request.getDefaultUnit());
+        food.setImageUrl(request.getImageUrl());
+        food.setDescription(request.getDescription());
+        food.setHealthScore(request.getHealthScore());
+
+        if (request.getCategoryId() != null) {
+            food.setCategory(foodCategoryRepository.findById(request.getCategoryId()).orElse(null));
+        } else {
+            food.setCategory(null);
+        }
+
+        if (food.getType() == com.bodypilot.backend.model.enums.FoodType.DISH && request.getRecipe() != null) {
+            Recipe recipe = food.getRecipe();
+            if (recipe == null) {
+                recipe = new Recipe();
+                recipe.setFood(food);
+                food.setRecipe(recipe);
+            }
+            recipe.setServings(request.getRecipe().getServings() != null ? request.getRecipe().getServings() : 1);
+            recipe.setCookingTimeMinutes(request.getRecipe().getCookingTimeMinutes());
+            recipe.setInstructions(request.getRecipe().getInstructions());
+
+            if (request.getRecipe().getIngredients() != null) {
+                recipe.getIngredients().clear();
+                for (com.bodypilot.backend.model.dto.RecipeIngredientRequest riReq : request.getRecipe().getIngredients()) {
+                    Food ingredientFood = foodRepository.findById(riReq.getFoodId())
+                            .orElseThrow(() -> new ResourceNotFoundException("Ingredient not found: " + riReq.getFoodId()));
+                    RecipeIngredient ri = new RecipeIngredient();
+                    ri.setRecipe(recipe);
+                    ri.setFood(ingredientFood);
+                    ri.setQuantityGrams(riReq.getQuantityGrams() != null ? BigDecimal.valueOf(riReq.getQuantityGrams()) : BigDecimal.ZERO);
+                    recipe.getIngredients().add(ri);
+                }
+            }
+        } else if (food.getType() == com.bodypilot.backend.model.enums.FoodType.INGREDIENT) {
+            // Remove recipe if it's an ingredient
+            if (food.getRecipe() != null) {
+                food.setRecipe(null);
+            }
+        }
     }
 }
