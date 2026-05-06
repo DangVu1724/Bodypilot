@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'package:core_shared/models/exercise_model.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../data/models/exercise_model.dart';
 
 class ExerciseTimerScreen extends StatefulWidget {
   final ExerciseModel exercise;

@@ -1,7 +1,7 @@
+import 'package:core_shared/models/exercise_model.dart';
 import 'package:flutter/material.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
-import '../../../../data/models/exercise_model.dart';
 import 'exercise_timer_screen.dart';
 
 class ExerciseDetailScreen extends StatefulWidget {

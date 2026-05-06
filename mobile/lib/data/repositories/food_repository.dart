@@ -1,8 +1,8 @@
+import 'package:core_shared/models/food_category_model.dart';
+import 'package:core_shared/models/food_model.dart';
+import 'package:core_shared/models/paginated_response.dart';
 import 'package:dio/dio.dart';
 import 'package:mobile/core/network/api_client.dart';
-import 'package:mobile/data/models/food_category_model.dart';
-import 'package:mobile/data/models/food_model.dart';
-import 'package:mobile/data/models/paginated_response.dart';
 import 'package:logger/logger.dart';
 
 final _logger = Logger();
@@ -20,7 +20,7 @@ class FoodRepository {
         '/foods/search',
         queryParameters: {'query': query, if (categoryId != null) 'categoryId': categoryId, 'page': page, 'size': size},
       );
-      
+
       _logger.d('Fetch foods response data: ${response.data}');
 
       return PaginatedResponse<FoodModel>.fromJson(

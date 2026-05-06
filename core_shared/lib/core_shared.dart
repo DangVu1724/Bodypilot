@@ -1,0 +1,19 @@
+library core_shared;
+
+export 'models/body_part_model.dart';
+export 'models/diet_tag_model.dart';
+export 'models/exercise_model.dart';
+export 'models/food_category_model.dart';
+export 'models/food_model.dart';
+export 'models/food_serving_model.dart';
+export 'models/goal_model.dart';
+export 'models/health_condition_model.dart';
+export 'models/injury_model.dart';
+export 'models/muscle_model.dart';
+export 'models/paginated_response.dart';
+export 'models/recipe_ingredient_model.dart';
+export 'models/recipe_model.dart';
+export 'models/user_metrics_model.dart';
+export 'models/user_model.dart';
+export 'models/user_profile_model.dart';
+export 'models/workout_category_model.dart';

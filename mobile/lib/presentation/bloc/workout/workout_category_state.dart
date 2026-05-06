@@ -1,5 +1,5 @@
+import 'package:core_shared/models/workout_category_model.dart';
 import 'package:equatable/equatable.dart';
-import '../../../data/models/workout_category_model.dart';
 
 abstract class WorkoutCategoryState extends Equatable {
   const WorkoutCategoryState();

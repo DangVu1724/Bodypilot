@@ -1,8 +1,7 @@
+import 'package:core_shared/models/health_condition_model.dart';
+import 'package:core_shared/models/injury_model.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile/data/models/health_condition_model.dart';
-import 'package:mobile/data/models/injury_model.dart';
-import 'package:mobile/core/theme/app_theme.dart';
 
 enum AssessmentStatus { initial, loading, success, failure }
 

@@ -1,6 +1,6 @@
 import 'dart:convert';
+import 'package:core_shared/models/user_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:mobile/data/models/user_model.dart';
 
 class TokenService {
   static const String _tokenKey = 'jwt_token';

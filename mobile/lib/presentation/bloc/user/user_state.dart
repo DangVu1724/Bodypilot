@@ -1,7 +1,7 @@
+import 'package:core_shared/models/user_model.dart';
 import 'package:equatable/equatable.dart';
-import 'package:mobile/data/models/user_model.dart';
 
-abstract class UserState extends Equatable {
+abstract class UserState extends Equatable  {
   const UserState();
 
   @override

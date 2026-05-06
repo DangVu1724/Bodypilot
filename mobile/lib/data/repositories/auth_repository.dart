@@ -1,7 +1,7 @@
+import 'package:core_shared/models/user_model.dart';
 import 'package:dio/dio.dart';
 import 'package:mobile/core/network/api_client.dart';
 import 'package:mobile/data/services/token_service.dart';
-import 'package:mobile/data/models/user_model.dart';
 
 class AuthRepository {
   Future<bool> login(String email, String password) async {

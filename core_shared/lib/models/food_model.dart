@@ -95,7 +95,7 @@ class FoodModel {
       'fiberPer100g': fiberPer100g,
       'sugarPer100g': sugarPer100g,
       'sodiumMgPer100g': sodiumMgPer100g,
-      'category': category?.toJson(),
+      'categoryId': category?.id,
       'categoryName': categoryName,
       'defaultServingSize': defaultServingSize,
       'defaultUnit': defaultUnit,

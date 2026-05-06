@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/data/models/food_model.dart';
 import 'package:mobile/data/repositories/food_repository.dart';
 import 'food_list_state.dart';
+import 'package:core_shared/models/food_model.dart';
 
 class FoodListCubit extends Cubit<FoodListState> {
   final FoodRepository _foodRepository;

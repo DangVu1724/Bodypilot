@@ -1,8 +1,9 @@
+import 'package:core_shared/models/exercise_model.dart';
+import 'package:core_shared/models/workout_category_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/app_theme.dart';
-import '../../../data/models/workout_category_model.dart';
-import '../../../data/models/exercise_model.dart';
+
 import '../../../data/repositories/exercise_repository.dart';
 import '../../bloc/workout/exercise_cubit.dart';
 import '../../bloc/workout/exercise_state.dart';

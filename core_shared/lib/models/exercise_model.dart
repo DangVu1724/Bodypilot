@@ -68,12 +68,12 @@ class ExerciseModel {
       'difficulty': difficulty,
       'metValue': metValue,
       'equipment': equipment,
-      'category': category?.toJson(),
-      'bodyPart': bodyPart?.toJson(),
-      'targetMuscle': targetMuscle?.toJson(),
-      'secondaryMuscles': secondaryMuscles?.map((e) => e.toJson()).toList(),
-      'default_duration': defaultDuration,
-      'duration_unit': durationUnit,
+      'categoryId': category?.id,
+      'bodyPartId': bodyPart?.id,
+      'targetMuscleId': targetMuscle?.id,
+      'secondaryMuscleIds': secondaryMuscles?.map((e) => e.id).toList(),
+      'defaultDuration': defaultDuration,
+      'durationUnit': durationUnit,
     };
   }
 }

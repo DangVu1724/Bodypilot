@@ -1,5 +1,5 @@
+import 'package:core_shared/models/food_model.dart';
 import 'package:equatable/equatable.dart';
-import 'package:mobile/data/models/food_model.dart';
 
 enum FoodListStatus { initial, loading, success, failure }
 

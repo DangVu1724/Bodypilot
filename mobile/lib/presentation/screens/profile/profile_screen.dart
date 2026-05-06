@@ -1,3 +1,5 @@
+import 'package:core_shared/models/user_metrics_model.dart';
+import 'package:core_shared/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/app_theme.dart';
@@ -6,8 +8,7 @@ import 'package:mobile/presentation/bloc/user/user_state.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
-import 'package:mobile/data/models/user_model.dart';
-import 'package:mobile/data/models/user_metrics_model.dart';
+
 import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
 
 class ProfileScreen extends StatelessWidget {
@@ -402,7 +403,7 @@ class ProfileScreen extends StatelessWidget {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child:  Text('Cancel', style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary)),
+            child: Text('Cancel', style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary)),
           ),
           Container(
             margin: const EdgeInsets.only(right: 8),
