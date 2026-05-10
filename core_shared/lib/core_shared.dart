@@ -17,3 +17,6 @@ export 'models/user_metrics_model.dart';
 export 'models/user_model.dart';
 export 'models/user_profile_model.dart';
 export 'models/workout_category_model.dart';
+export 'models/workout_plan_model.dart';
+export 'models/workout_session_model.dart';
+export 'models/workout_session_exercise_model.dart';
