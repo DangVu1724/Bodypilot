@@ -1,8 +1,22 @@
 package com.bodypilot.backend.service.impl;
 
+import com.bodypilot.backend.model.entity.nutrition.RecipeIngredient;
+import com.bodypilot.backend.model.entity.nutrition.Recipe;
+import com.bodypilot.backend.model.entity.nutrition.FoodServing;
+import com.bodypilot.backend.model.entity.nutrition.FoodCategory;
+import com.bodypilot.backend.model.entity.nutrition.Food;
+import com.bodypilot.backend.model.entity.nutrition.DietTag;
+import com.bodypilot.backend.model.dto.nutrition.RecipeIngredientRequest;
+import com.bodypilot.backend.model.dto.nutrition.RecipeIngredientDTO;
+import com.bodypilot.backend.model.dto.nutrition.RecipeDTO;
+import com.bodypilot.backend.model.dto.nutrition.FoodSummaryResponse;
+import com.bodypilot.backend.model.dto.nutrition.FoodServingDTO;
+import com.bodypilot.backend.model.dto.nutrition.FoodResponse;
+import com.bodypilot.backend.model.dto.nutrition.FoodRequest;
+import com.bodypilot.backend.model.dto.nutrition.FoodCategoryDTO;
+import com.bodypilot.backend.model.dto.nutrition.DietTagDTO;
+import com.bodypilot.backend.model.dto.common.PageResponse;
 import com.bodypilot.backend.exception.ResourceNotFoundException;
-import com.bodypilot.backend.model.dto.*;
-import com.bodypilot.backend.model.entity.*;
 import com.bodypilot.backend.repository.DietTagRepository;
 import com.bodypilot.backend.repository.FoodCategoryRepository;
 import com.bodypilot.backend.repository.FoodRepository;
@@ -159,7 +173,7 @@ public class FoodServiceImpl implements FoodService {
 
     @Override
     @Transactional
-    public FoodResponse createFood(com.bodypilot.backend.model.dto.FoodRequest request) {
+    public FoodResponse createFood(com.bodypilot.backend.model.dto.nutrition.FoodRequest request) {
         Food food = new Food();
         updateFoodFromRequest(food, request);
         Food savedFood = foodRepository.save(food);
@@ -168,7 +182,7 @@ public class FoodServiceImpl implements FoodService {
 
     @Override
     @Transactional
-    public FoodResponse updateFood(UUID id, com.bodypilot.backend.model.dto.FoodRequest request) {
+    public FoodResponse updateFood(UUID id, com.bodypilot.backend.model.dto.nutrition.FoodRequest request) {
         Food food = foodRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Food not found with id: " + id));
         updateFoodFromRequest(food, request);
@@ -185,7 +199,7 @@ public class FoodServiceImpl implements FoodService {
         foodRepository.deleteById(id);
     }
 
-    private void updateFoodFromRequest(Food food, com.bodypilot.backend.model.dto.FoodRequest request) {
+    private void updateFoodFromRequest(Food food, com.bodypilot.backend.model.dto.nutrition.FoodRequest request) {
         food.setName(request.getName());
         if (request.getType() != null) {
             food.setType(com.bodypilot.backend.model.enums.FoodType.valueOf(request.getType()));
@@ -222,7 +236,7 @@ public class FoodServiceImpl implements FoodService {
 
             if (request.getRecipe().getIngredients() != null) {
                 recipe.getIngredients().clear();
-                for (com.bodypilot.backend.model.dto.RecipeIngredientRequest riReq : request.getRecipe().getIngredients()) {
+                for (com.bodypilot.backend.model.dto.nutrition.RecipeIngredientRequest riReq : request.getRecipe().getIngredients()) {
                     Food ingredientFood = foodRepository.findById(riReq.getFoodId())
                             .orElseThrow(() -> new ResourceNotFoundException("Ingredient not found: " + riReq.getFoodId()));
                     RecipeIngredient ri = new RecipeIngredient();

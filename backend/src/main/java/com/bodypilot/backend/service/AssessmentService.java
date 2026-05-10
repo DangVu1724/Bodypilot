@@ -1,6 +1,6 @@
 package com.bodypilot.backend.service;
 
-import com.bodypilot.backend.model.dto.AssessmentSubmissionRequest;
+import com.bodypilot.backend.model.dto.user.AssessmentSubmissionRequest;
 import java.util.UUID;
 
 public interface AssessmentService {

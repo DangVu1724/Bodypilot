@@ -1,7 +1,8 @@
 package com.bodypilot.backend.controller;
 
-import com.bodypilot.backend.model.dto.ApiResponse;
-import com.bodypilot.backend.model.dto.UserResponse;
+import com.bodypilot.backend.model.entity.user.User;
+import com.bodypilot.backend.model.dto.common.ApiResponse;
+import com.bodypilot.backend.model.dto.user.UserResponse;
 import com.bodypilot.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

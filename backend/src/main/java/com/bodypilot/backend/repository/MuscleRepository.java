@@ -1,6 +1,6 @@
 package com.bodypilot.backend.repository;
 
-import com.bodypilot.backend.model.entity.Muscle;
+import com.bodypilot.backend.model.entity.workout.Muscle;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

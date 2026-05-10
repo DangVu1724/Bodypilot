@@ -1,6 +1,13 @@
 package com.bodypilot.backend.controller;
 
-import com.bodypilot.backend.model.dto.*;
+import com.bodypilot.backend.model.entity.nutrition.Food;
+import com.bodypilot.backend.model.dto.nutrition.FoodSummaryResponse;
+import com.bodypilot.backend.model.dto.nutrition.FoodResponse;
+import com.bodypilot.backend.model.dto.nutrition.FoodRequest;
+import com.bodypilot.backend.model.dto.nutrition.FoodCategoryDTO;
+import com.bodypilot.backend.model.dto.nutrition.DietTagDTO;
+import com.bodypilot.backend.model.dto.common.PageResponse;
+import com.bodypilot.backend.model.dto.common.ApiResponse;
 import com.bodypilot.backend.service.FoodService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.PageRequest;
@@ -66,13 +73,13 @@ public class FoodController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<FoodResponse>> createFood(@RequestBody com.bodypilot.backend.model.dto.FoodRequest request) {
+    public ResponseEntity<ApiResponse<FoodResponse>> createFood(@RequestBody com.bodypilot.backend.model.dto.nutrition.FoodRequest request) {
         FoodResponse food = foodService.createFood(request);
         return ResponseEntity.ok(ApiResponse.ok("Food created", food));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<FoodResponse>> updateFood(@PathVariable UUID id, @RequestBody com.bodypilot.backend.model.dto.FoodRequest request) {
+    public ResponseEntity<ApiResponse<FoodResponse>> updateFood(@PathVariable UUID id, @RequestBody com.bodypilot.backend.model.dto.nutrition.FoodRequest request) {
         FoodResponse food = foodService.updateFood(id, request);
         return ResponseEntity.ok(ApiResponse.ok("Food updated", food));
     }

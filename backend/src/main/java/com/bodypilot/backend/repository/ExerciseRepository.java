@@ -1,6 +1,6 @@
 package com.bodypilot.backend.repository;
 
-import com.bodypilot.backend.model.entity.Exercise;
+import com.bodypilot.backend.model.entity.workout.Exercise;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -13,6 +13,7 @@ import java.util.UUID;
 
 @Repository
 public interface ExerciseRepository extends JpaRepository<Exercise, UUID> {
+
 
     @EntityGraph(attributePaths = {"category", "bodyPart", "targetMuscle"})
     @Query("SELECT e FROM Exercise e " +

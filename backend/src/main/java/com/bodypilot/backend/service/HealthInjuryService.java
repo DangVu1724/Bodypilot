@@ -1,10 +1,10 @@
 package com.bodypilot.backend.service;
 
-import com.bodypilot.backend.model.entity.HealthCondition;
-import com.bodypilot.backend.model.entity.Injury;
-import com.bodypilot.backend.model.entity.User;
-import com.bodypilot.backend.model.entity.UserHealthCondition;
-import com.bodypilot.backend.model.entity.UserInjury;
+import com.bodypilot.backend.model.entity.health.HealthCondition;
+import com.bodypilot.backend.model.entity.health.Injury;
+import com.bodypilot.backend.model.entity.user.User;
+import com.bodypilot.backend.model.entity.user.UserHealthCondition;
+import com.bodypilot.backend.model.entity.user.UserInjury;
 import com.bodypilot.backend.model.enums.RecoveryStatus;
 import com.bodypilot.backend.model.enums.SeverityLevel;
 import com.bodypilot.backend.repository.HealthConditionRepository;

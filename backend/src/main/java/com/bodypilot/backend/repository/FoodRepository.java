@@ -1,6 +1,6 @@
 package com.bodypilot.backend.repository;
 
-import com.bodypilot.backend.model.entity.Food;
+import com.bodypilot.backend.model.entity.nutrition.Food;
 import com.bodypilot.backend.model.enums.FoodType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

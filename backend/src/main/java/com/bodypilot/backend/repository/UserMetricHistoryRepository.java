@@ -1,6 +1,6 @@
 package com.bodypilot.backend.repository;
 
-import com.bodypilot.backend.model.entity.UserMetricHistory;
+import com.bodypilot.backend.model.entity.user.UserMetricHistory;
 import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 import java.util.UUID;

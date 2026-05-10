@@ -1,5 +1,6 @@
 package com.bodypilot.backend.config;
 
+import com.bodypilot.backend.model.entity.user.User;
 import com.bodypilot.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;

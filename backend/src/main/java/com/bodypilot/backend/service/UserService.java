@@ -1,9 +1,9 @@
 package com.bodypilot.backend.service;
 
-import com.bodypilot.backend.model.dto.AssessmentSubmissionRequest;
-import com.bodypilot.backend.model.dto.UserRegistrationRequest;
-import com.bodypilot.backend.model.dto.UserResponse;
-import com.bodypilot.backend.model.entity.User;
+import com.bodypilot.backend.model.dto.user.AssessmentSubmissionRequest;
+import com.bodypilot.backend.model.dto.auth.UserRegistrationRequest;
+import com.bodypilot.backend.model.dto.user.UserResponse;
+import com.bodypilot.backend.model.entity.user.User;
 import java.util.List;
 import java.util.UUID;
 

@@ -1,9 +1,9 @@
 package com.bodypilot.backend.controller;
 
-import com.bodypilot.backend.model.dto.ApiResponse;
-import com.bodypilot.backend.model.dto.AuthResponse;
-import com.bodypilot.backend.model.dto.LoginRequest;
-import com.bodypilot.backend.model.dto.UserRegistrationRequest;
+import com.bodypilot.backend.model.dto.common.ApiResponse;
+import com.bodypilot.backend.model.dto.auth.AuthResponse;
+import com.bodypilot.backend.model.dto.auth.LoginRequest;
+import com.bodypilot.backend.model.dto.auth.UserRegistrationRequest;
 import com.bodypilot.backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

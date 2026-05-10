@@ -1,11 +1,14 @@
 package com.bodypilot.backend.service.impl;
 
+import com.bodypilot.backend.model.entity.user.UserProfile;
+import com.bodypilot.backend.model.entity.user.UserMetricHistory;
+import com.bodypilot.backend.model.entity.user.User;
+import com.bodypilot.backend.model.entity.user.UserGoal;
 import com.bodypilot.backend.exception.ResourceNotFoundException;
-import com.bodypilot.backend.model.dto.UserProfileResponse;
-import com.bodypilot.backend.model.dto.UserResponse;
-import com.bodypilot.backend.model.entity.*;
-import com.bodypilot.backend.model.dto.UserMetricsResponse;
-import com.bodypilot.backend.model.dto.GoalResponse;
+import com.bodypilot.backend.model.dto.user.UserProfileResponse;
+import com.bodypilot.backend.model.dto.user.UserResponse;
+import com.bodypilot.backend.model.dto.user.UserMetricsResponse;
+import com.bodypilot.backend.model.dto.health.GoalResponse;
 import com.bodypilot.backend.repository.*;
 import com.bodypilot.backend.service.UserService;
 import lombok.RequiredArgsConstructor;
@@ -22,7 +25,7 @@ public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
     private final UserMetricHistoryRepository userMetricHistoryRepository;
-    private final GoalRepository goalRepository;
+    private final UserGoalRepository goalRepository;
 
     @Override
     public User getById(UUID id) {
@@ -50,7 +53,7 @@ public class UserServiceImpl implements UserService {
         UserMetricHistory latestMetric = userMetricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)
                 .stream().findFirst().orElse(null);
                 
-        Goal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
+        UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
                 .stream().findFirst().orElse(null);
                 
         UserMetricsResponse metricsResponse = latestMetric != null ? UserMetricsResponse.builder()

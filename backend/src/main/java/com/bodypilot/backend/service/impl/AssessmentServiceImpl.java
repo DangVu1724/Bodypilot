@@ -1,9 +1,14 @@
 package com.bodypilot.backend.service.impl;
 
+import com.bodypilot.backend.model.entity.user.UserProfile;
+import com.bodypilot.backend.model.entity.user.UserMetricHistory;
+import com.bodypilot.backend.model.entity.user.UserInjury;
+import com.bodypilot.backend.model.entity.user.UserHealthCondition;
+import com.bodypilot.backend.model.entity.user.User;
+import com.bodypilot.backend.model.entity.user.UserGoal;
 import com.bodypilot.backend.exception.ResourceNotFoundException;
-import com.bodypilot.backend.model.dto.AssessmentSubmissionRequest;
-import com.bodypilot.backend.model.dto.CalorieCalculationResult;
-import com.bodypilot.backend.model.entity.*;
+import com.bodypilot.backend.model.dto.user.AssessmentSubmissionRequest;
+import com.bodypilot.backend.model.dto.nutrition.CalorieCalculationResult;
 import com.bodypilot.backend.model.enums.ActivityLevel;
 import com.bodypilot.backend.model.enums.Gender;
 import com.bodypilot.backend.repository.*;
@@ -22,7 +27,7 @@ public class AssessmentServiceImpl implements AssessmentService {
 
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
-    private final GoalRepository goalRepository;
+    private final UserGoalRepository goalRepository;
     private final HealthConditionRepository conditionRepository;
     private final InjuryRepository injuryRepository;
     private final UserHealthConditionRepository userConditionRepository;
@@ -92,8 +97,8 @@ public class AssessmentServiceImpl implements AssessmentService {
         userMetricHistoryRepository.save(history);
 
         // 2. Create/Update Goal (Update instead of creating a new row if exists)
-        Goal goal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE").stream().findFirst()
-                .orElse(Goal.builder().user(user).status("ACTIVE").build());
+        UserGoal goal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE").stream().findFirst()
+                .orElse(UserGoal.builder().user(user).status("ACTIVE").build());
                 
         goal.setType(request.getSelectedGoal());
         goal.setTargetWeight(request.getTargetWeight());

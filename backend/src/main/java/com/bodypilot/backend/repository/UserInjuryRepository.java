@@ -1,8 +1,8 @@
 package com.bodypilot.backend.repository;
 
-import com.bodypilot.backend.model.entity.Injury;
-import com.bodypilot.backend.model.entity.User;
-import com.bodypilot.backend.model.entity.UserInjury;
+import com.bodypilot.backend.model.entity.health.Injury;
+import com.bodypilot.backend.model.entity.user.User;
+import com.bodypilot.backend.model.entity.user.UserInjury;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

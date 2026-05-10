@@ -1,14 +1,15 @@
 package com.bodypilot.backend.service.impl;
 
-import com.bodypilot.backend.model.dto.ExerciseDTO;
-import com.bodypilot.backend.model.dto.PageResponse;
-import com.bodypilot.backend.model.dto.WorkoutCategoryDTO;
-import com.bodypilot.backend.model.dto.BodyPartDTO;
-import com.bodypilot.backend.model.dto.MuscleDTO;
-import com.bodypilot.backend.model.entity.Exercise;
-import com.bodypilot.backend.model.entity.WorkoutCategory;
-import com.bodypilot.backend.model.entity.BodyPart;
-import com.bodypilot.backend.model.entity.Muscle;
+import com.bodypilot.backend.model.dto.workout.ExerciseRequest;
+import com.bodypilot.backend.model.dto.workout.ExerciseDTO;
+import com.bodypilot.backend.model.dto.common.PageResponse;
+import com.bodypilot.backend.model.dto.workout.WorkoutCategoryDTO;
+import com.bodypilot.backend.model.dto.workout.BodyPartDTO;
+import com.bodypilot.backend.model.dto.workout.MuscleDTO;
+import com.bodypilot.backend.model.entity.workout.Exercise;
+import com.bodypilot.backend.model.entity.workout.WorkoutCategory;
+import com.bodypilot.backend.model.entity.workout.BodyPart;
+import com.bodypilot.backend.model.entity.workout.Muscle;
 import com.bodypilot.backend.repository.ExerciseRepository;
 import com.bodypilot.backend.repository.WorkoutCategoryRepository;
 import com.bodypilot.backend.repository.BodyPartRepository;
@@ -141,7 +142,7 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     @Override
     @Transactional
-    public ExerciseDTO createExercise(com.bodypilot.backend.model.dto.ExerciseRequest request) {
+    public ExerciseDTO createExercise(com.bodypilot.backend.model.dto.workout.ExerciseRequest request) {
         Exercise exercise = new Exercise();
         updateExerciseFromRequest(exercise, request);
         Exercise savedExercise = exerciseRepository.save(exercise);
@@ -150,7 +151,7 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     @Override
     @Transactional
-    public ExerciseDTO updateExercise(UUID id, com.bodypilot.backend.model.dto.ExerciseRequest request) {
+    public ExerciseDTO updateExercise(UUID id, com.bodypilot.backend.model.dto.workout.ExerciseRequest request) {
         Exercise exercise = exerciseRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Exercise not found with ID: " + id));
         updateExerciseFromRequest(exercise, request);
@@ -167,7 +168,7 @@ public class ExerciseServiceImpl implements ExerciseService {
         exerciseRepository.deleteById(id);
     }
 
-    private void updateExerciseFromRequest(Exercise exercise, com.bodypilot.backend.model.dto.ExerciseRequest request) {
+    private void updateExerciseFromRequest(Exercise exercise, com.bodypilot.backend.model.dto.workout.ExerciseRequest request) {
         exercise.setCode(request.getCode());
         exercise.setName(request.getName());
         exercise.setDescription(request.getDescription());

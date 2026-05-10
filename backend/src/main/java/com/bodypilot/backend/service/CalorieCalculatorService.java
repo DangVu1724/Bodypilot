@@ -1,6 +1,7 @@
 package com.bodypilot.backend.service;
 
-import com.bodypilot.backend.model.dto.CalorieCalculationResult;
+import com.bodypilot.backend.model.entity.user.UserGoal;
+import com.bodypilot.backend.model.dto.nutrition.CalorieCalculationResult;
 import com.bodypilot.backend.model.enums.ActivityLevel;
 import com.bodypilot.backend.model.enums.Gender;
 import com.bodypilot.backend.model.enums.Goal;

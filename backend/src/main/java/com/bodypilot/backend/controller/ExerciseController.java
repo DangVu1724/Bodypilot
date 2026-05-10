@@ -1,8 +1,11 @@
 package com.bodypilot.backend.controller;
 
-import com.bodypilot.backend.model.dto.ExerciseDTO;
-import com.bodypilot.backend.model.dto.PageResponse;
-import com.bodypilot.backend.model.dto.WorkoutCategoryDTO;
+import com.bodypilot.backend.model.dto.workout.MuscleDTO;
+import com.bodypilot.backend.model.dto.workout.ExerciseRequest;
+import com.bodypilot.backend.model.dto.workout.BodyPartDTO;
+import com.bodypilot.backend.model.dto.workout.ExerciseDTO;
+import com.bodypilot.backend.model.dto.common.PageResponse;
+import com.bodypilot.backend.model.dto.workout.WorkoutCategoryDTO;
 import com.bodypilot.backend.service.ExerciseService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Pageable;
@@ -47,22 +50,22 @@ public class ExerciseController {
     }
 
     @GetMapping("/body-parts")
-    public ResponseEntity<List<com.bodypilot.backend.model.dto.BodyPartDTO>> getBodyParts() {
+    public ResponseEntity<List<com.bodypilot.backend.model.dto.workout.BodyPartDTO>> getBodyParts() {
         return ResponseEntity.ok(exerciseService.getAllBodyParts());
     }
 
     @GetMapping("/muscles")
-    public ResponseEntity<List<com.bodypilot.backend.model.dto.MuscleDTO>> getMuscles() {
+    public ResponseEntity<List<com.bodypilot.backend.model.dto.workout.MuscleDTO>> getMuscles() {
         return ResponseEntity.ok(exerciseService.getAllMuscles());
     }
 
     @org.springframework.web.bind.annotation.PostMapping
-    public ResponseEntity<ExerciseDTO> createExercise(@org.springframework.web.bind.annotation.RequestBody com.bodypilot.backend.model.dto.ExerciseRequest request) {
+    public ResponseEntity<ExerciseDTO> createExercise(@org.springframework.web.bind.annotation.RequestBody com.bodypilot.backend.model.dto.workout.ExerciseRequest request) {
         return ResponseEntity.ok(exerciseService.createExercise(request));
     }
 
     @org.springframework.web.bind.annotation.PutMapping("/{id}")
-    public ResponseEntity<ExerciseDTO> updateExercise(@PathVariable UUID id, @org.springframework.web.bind.annotation.RequestBody com.bodypilot.backend.model.dto.ExerciseRequest request) {
+    public ResponseEntity<ExerciseDTO> updateExercise(@PathVariable UUID id, @org.springframework.web.bind.annotation.RequestBody com.bodypilot.backend.model.dto.workout.ExerciseRequest request) {
         return ResponseEntity.ok(exerciseService.updateExercise(id, request));
     }
 

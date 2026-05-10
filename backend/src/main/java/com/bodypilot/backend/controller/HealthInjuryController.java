@@ -1,7 +1,7 @@
 package com.bodypilot.backend.controller;
 
-import com.bodypilot.backend.model.entity.HealthCondition;
-import com.bodypilot.backend.model.entity.Injury;
+import com.bodypilot.backend.model.entity.health.HealthCondition;
+import com.bodypilot.backend.model.entity.health.Injury;
 import com.bodypilot.backend.model.enums.RecoveryStatus;
 import com.bodypilot.backend.model.enums.SeverityLevel;
 import com.bodypilot.backend.service.HealthInjuryService;
