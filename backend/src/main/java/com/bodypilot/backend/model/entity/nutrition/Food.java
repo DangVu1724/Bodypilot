@@ -56,12 +56,10 @@ public class Food extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private FoodCategory category;
-
-    @Column(name = "default_serving_size")
-    private BigDecimal defaultServingSize;
-
-    @Column(name = "default_unit")
-    private String defaultUnit;
+    
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "default_serving_id")
+    private FoodServing defaultServing;
 
     @Column(name = "image_url", columnDefinition = "TEXT")
     private String imageUrl;

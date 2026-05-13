@@ -15,6 +15,6 @@ import java.util.UUID;
 public class FoodServingDTO {
     private UUID id;
     private String name;
+    private String unitCode;
     private BigDecimal grams;
-    private boolean isDefault;
 }

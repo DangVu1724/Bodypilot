@@ -28,4 +28,11 @@ class FoodCategoryModel {
       'appliesTo': appliesTo,
     };
   }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || (other is FoodCategoryModel && other.id == id);
+
+  @override
+  int get hashCode => id.hashCode;
 }

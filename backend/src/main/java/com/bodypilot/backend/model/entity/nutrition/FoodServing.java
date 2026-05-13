@@ -22,10 +22,10 @@ public class FoodServing extends BaseEntity {
     @Column(nullable = false)
     private String name;
 
+    @Column(name = "unit_code", nullable = false)
+    @Builder.Default
+    private String unitCode = "GRAM";
+
     @Column(nullable = false)
     private BigDecimal grams;
-
-    @Column(name = "is_default", nullable = false)
-    @Builder.Default
-    private boolean isDefault = false;
 }

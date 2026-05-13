@@ -168,6 +168,31 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
               _buildMetaItem('Health Score', '${ingredient.healthScore ?? 0}', Colors.orange),
             ],
           ),
+          const SizedBox(height: 32),
+          const Divider(),
+          const SizedBox(height: 24),
+          const Text('Danh sách khẩu phần', style: TextStyle(fontSize: 14, color: AppTheme.textSecondary, fontWeight: FontWeight.bold)),
+          const SizedBox(height: 12),
+          if (ingredient.servings.isEmpty)
+            const Text('Chưa có thông tin khẩu phần', style: TextStyle(color: Colors.grey))
+          else
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: ingredient.servings.length,
+              itemBuilder: (context, index) {
+                final s = ingredient.servings[index];
+                final isDefault = s.id == ingredient.defaultServingId;
+                return ListTile(
+                  dense: true,
+                  contentPadding: EdgeInsets.zero,
+                  leading: Icon(isDefault ? Icons.check_circle : Icons.circle_outlined, color: isDefault ? Colors.green : Colors.grey, size: 18),
+                  title: Text(s.name, style: TextStyle(fontSize: 14, fontWeight: isDefault ? FontWeight.bold : FontWeight.normal)),
+                  subtitle: Text('${s.unitCode} | ${s.grams}g', style: const TextStyle(fontSize: 12)),
+                  trailing: isDefault ? const Text('Mặc định', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)) : null,
+                );
+              },
+            ),
         ],
       ),
     );

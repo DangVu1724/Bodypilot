@@ -22,8 +22,7 @@ public class FoodRequest {
     private Double sugarPer100g;
     private Double sodiumMgPer100g;
     private UUID categoryId;
-    private Double defaultServingSize;
-    private String defaultUnit;
+    private UUID defaultServingId;
     private String imageUrl;
     private String description;
     private Integer healthScore;

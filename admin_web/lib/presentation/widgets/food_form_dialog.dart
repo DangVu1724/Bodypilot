@@ -24,11 +24,13 @@ class _FoodFormDialogState extends State<FoodFormDialog> {
   late TextEditingController _fiberController;
   late TextEditingController _sugarController;
   late TextEditingController _sodiumController;
-  late TextEditingController _servingSizeController;
-  late TextEditingController _unitController;
   late TextEditingController _imageUrlController;
   late TextEditingController _descController;
   late TextEditingController _healthScoreController;
+
+  // Servings management
+  List<FoodServingModel> _servings = [];
+  String? _selectedDefaultServingId;
 
   bool _isLoading = true;
   List<FoodCategoryModel> _categories = [];
@@ -46,12 +48,13 @@ class _FoodFormDialogState extends State<FoodFormDialog> {
     _fiberController = TextEditingController(text: f?.fiberPer100g?.toString() ?? '');
     _sugarController = TextEditingController(text: f?.sugarPer100g?.toString() ?? '');
     _sodiumController = TextEditingController(text: f?.sodiumMgPer100g?.toString() ?? '');
-    _servingSizeController = TextEditingController(text: f?.defaultServingSize?.toString() ?? '');
-    _unitController = TextEditingController(text: f?.defaultUnit ?? 'g');
     _imageUrlController = TextEditingController(text: f?.imageUrl ?? '');
     _descController = TextEditingController(text: f?.description ?? '');
     _healthScoreController = TextEditingController(text: f?.healthScore?.toString() ?? '');
-    
+
+    _servings = List.from(f?.servings ?? []);
+    _selectedDefaultServingId = f?.defaultServingId;
+
     _loadData();
   }
 
@@ -61,10 +64,19 @@ class _FoodFormDialogState extends State<FoodFormDialog> {
       if (!mounted) return;
       setState(() {
         _categories = allCategories.where((c) => c.appliesTo == widget.type || c.appliesTo == 'BOTH').toList();
-        if (widget.food?.categoryName != null) {
-          try {
-            _selectedCategory = _categories.firstWhere((c) => c.name == widget.food!.categoryName);
-          } catch (_) {}
+        final food = widget.food;
+        if (food != null) {
+          // Prefer matching by ID, fallback to name
+          if (food.category?.id != null) {
+            try {
+              _selectedCategory = _categories.firstWhere((c) => c.id == food.category!.id);
+            } catch (_) {}
+          }
+          if (_selectedCategory == null && food.categoryName != null) {
+            try {
+              _selectedCategory = _categories.firstWhere((c) => c.name == food.categoryName);
+            } catch (_) {}
+          }
         }
         _isLoading = false;
       });
@@ -86,8 +98,6 @@ class _FoodFormDialogState extends State<FoodFormDialog> {
     _fiberController.dispose();
     _sugarController.dispose();
     _sodiumController.dispose();
-    _servingSizeController.dispose();
-    _unitController.dispose();
     _imageUrlController.dispose();
     _descController.dispose();
     _healthScoreController.dispose();
@@ -107,12 +117,13 @@ class _FoodFormDialogState extends State<FoodFormDialog> {
         fiberPer100g: double.tryParse(_fiberController.text),
         sugarPer100g: double.tryParse(_sugarController.text),
         sodiumMgPer100g: double.tryParse(_sodiumController.text),
-        defaultServingSize: double.tryParse(_servingSizeController.text),
-        defaultUnit: _unitController.text,
+        defaultServingId: _selectedDefaultServingId,
         imageUrl: _imageUrlController.text,
         description: _descController.text,
         healthScore: int.tryParse(_healthScoreController.text),
-        categoryName: _selectedCategory?.name, // Only categoryName is in FoodModel for now, or you can map id if needed
+        servings: _servings,
+        category: _selectedCategory,
+        categoryName: _selectedCategory?.name,
       );
       Navigator.of(context).pop(updatedFood);
     }
@@ -122,139 +133,144 @@ class _FoodFormDialogState extends State<FoodFormDialog> {
   Widget build(BuildContext context) {
     final titleType = widget.type == 'DISH' ? 'Món ăn' : 'Nguyên liệu';
     return AlertDialog(
-      title: Text(widget.food == null ? 'Thêm $titleType' : 'Sửa $titleType', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+      title: Text(
+        widget.food == null ? 'Thêm $titleType' : 'Sửa $titleType',
+        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+      ),
       content: SizedBox(
         width: 600,
         child: _isLoading
             ? const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()))
             : SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: _nameController,
-                  decoration: const InputDecoration(labelText: 'Tên thực phẩm'),
-                  validator: (v) => v!.isEmpty ? 'Vui lòng nhập tên' : null,
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      TextFormField(
+                        controller: _nameController,
+                        decoration: const InputDecoration(labelText: 'Tên thực phẩm'),
+                        validator: (v) => v!.isEmpty ? 'Vui lòng nhập tên' : null,
+                      ),
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<FoodCategoryModel>(
+                        value: _selectedCategory,
+                        decoration: const InputDecoration(labelText: 'Danh mục (Category)'),
+                        items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
+                        onChanged: (v) => setState(() => _selectedCategory = v),
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _descController,
+                        decoration: const InputDecoration(labelText: 'Mô tả'),
+                        maxLines: 2,
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _caloriesController,
+                              decoration: const InputDecoration(labelText: 'Calo/100g'),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _proteinController,
+                              decoration: const InputDecoration(labelText: 'Protein/100g'),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _fatController,
+                              decoration: const InputDecoration(labelText: 'Fat/100g'),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _carbsController,
+                              decoration: const InputDecoration(labelText: 'Carbs/100g'),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: _fiberController,
+                              decoration: const InputDecoration(labelText: 'Chất xơ/100g'),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _sugarController,
+                              decoration: const InputDecoration(labelText: 'Đường/100g'),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _sodiumController,
+                              decoration: const InputDecoration(labelText: 'Natri(mg)/100g'),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: _selectedDefaultServingId,
+                              decoration: const InputDecoration(labelText: 'Khẩu phần mặc định'),
+                              hint: const Text('Chọn mặc định'),
+                              items: _servings
+                                  .map((s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.grams}g)')))
+                                  .toList(),
+                              onChanged: (v) => setState(() => _selectedDefaultServingId = v),
+                              validator: (v) => _servings.isNotEmpty && v == null ? 'Bắt buộc' : null,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: _healthScoreController,
+                              decoration: const InputDecoration(labelText: 'Health Score (0-100)'),
+                              keyboardType: TextInputType.number,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      TextFormField(
+                        controller: _imageUrlController,
+                        decoration: const InputDecoration(labelText: 'Image URL'),
+                      ),
+                      const SizedBox(height: 24),
+                      const Divider(),
+                      const SizedBox(height: 12),
+                      _buildServingsSection(),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: 12),
-                DropdownButtonFormField<FoodCategoryModel>(
-                  value: _selectedCategory,
-                  decoration: const InputDecoration(labelText: 'Danh mục (Category)'),
-                  items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
-                  onChanged: (v) => setState(() => _selectedCategory = v),
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _descController,
-                  decoration: const InputDecoration(labelText: 'Mô tả'),
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _caloriesController,
-                        decoration: const InputDecoration(labelText: 'Calo/100g'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _proteinController,
-                        decoration: const InputDecoration(labelText: 'Protein/100g'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _fatController,
-                        decoration: const InputDecoration(labelText: 'Fat/100g'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _carbsController,
-                        decoration: const InputDecoration(labelText: 'Carbs/100g'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _fiberController,
-                        decoration: const InputDecoration(labelText: 'Chất xơ/100g'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _sugarController,
-                        decoration: const InputDecoration(labelText: 'Đường/100g'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _sodiumController,
-                        decoration: const InputDecoration(labelText: 'Natri(mg)/100g'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: TextFormField(
-                        controller: _servingSizeController,
-                        decoration: const InputDecoration(labelText: 'Serving mặc định (số lượng)'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _unitController,
-                        decoration: const InputDecoration(labelText: 'Đơn vị (g, ml, bowl...)'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: TextFormField(
-                        controller: _healthScoreController,
-                        decoration: const InputDecoration(labelText: 'Health Score (0-100)'),
-                        keyboardType: TextInputType.number,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _imageUrlController,
-                  decoration: const InputDecoration(labelText: 'Image URL'),
-                ),
-              ],
-            ),
-          ),
-        ),
+              ),
       ),
       actions: [
         TextButton(
@@ -267,6 +283,148 @@ class _FoodFormDialogState extends State<FoodFormDialog> {
           child: const Text('Lưu'),
         ),
       ],
+    );
+  }
+
+  Widget _buildServingsSection() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text('Khẩu phần (Servings)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+            TextButton.icon(
+              onPressed: () => _showAddEditServingDialog(),
+              icon: const Icon(Icons.add, size: 18),
+              label: const Text('Thêm'),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        if (_servings.isEmpty)
+          const Text('Chưa có khẩu phần nào.', style: TextStyle(color: Colors.grey, fontSize: 13))
+        else
+          ListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _servings.length,
+            itemBuilder: (context, index) {
+              final s = _servings[index];
+              final isDefault = s.id == _selectedDefaultServingId;
+              return ListTile(
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                title: Text(s.name, style: TextStyle(fontWeight: isDefault ? FontWeight.bold : FontWeight.normal)),
+                subtitle: Text('${s.unitCode} | ${s.grams}g'),
+                leading: isDefault
+                    ? const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                    : const Icon(Icons.circle_outlined, size: 20),
+                trailing: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      onPressed: () => _showAddEditServingDialog(s),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
+                      onPressed: () {
+                        setState(() {
+                          _servings.removeAt(index);
+                          if (isDefault && _servings.isNotEmpty) {
+                            _selectedDefaultServingId = _servings.first.id;
+                          } else if (_servings.isEmpty) {
+                            _selectedDefaultServingId = null;
+                          }
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+      ],
+    );
+  }
+
+  void _showAddEditServingDialog([FoodServingModel? serving]) {
+    final nameController = TextEditingController(text: serving?.name ?? '');
+    final gramsController = TextEditingController(text: serving?.grams.toString() ?? '');
+    String selectedUnitCode = serving?.unitCode ?? 'GRAM';
+
+    showDialog(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setStateDialog) => AlertDialog(
+          title: Text(serving == null ? 'Thêm khẩu phần' : 'Sửa khẩu phần'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: nameController,
+                decoration: const InputDecoration(labelText: 'Tên (vd: Bát, Cái)'),
+              ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<String>(
+                value: selectedUnitCode,
+                decoration: const InputDecoration(labelText: 'Mã đơn vị'),
+                items: [
+                  'GRAM',
+                  'ML',
+                  'PIECE',
+                  'BOWL',
+                  'CUP',
+                  'SLICE',
+                  'PORTION',
+                ].map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),
+                onChanged: (v) => setStateDialog(() => selectedUnitCode = v!),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: gramsController,
+                decoration: const InputDecoration(labelText: 'Khối lượng (g)'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Hủy')),
+            ElevatedButton(
+              onPressed: () {
+                final grams = double.tryParse(gramsController.text) ?? 0;
+                if (nameController.text.isNotEmpty && grams > 0) {
+                  setState(() {
+                    if (serving == null) {
+                      final newServing = FoodServingModel(
+                        id: DateTime.now().millisecondsSinceEpoch.toString(),
+                        name: nameController.text,
+                        unitCode: selectedUnitCode,
+                        grams: grams,
+                      );
+                      _servings.add(newServing);
+                      if (_servings.length == 1) _selectedDefaultServingId = newServing.id;
+                    } else {
+                      final index = _servings.indexWhere((s) => s.id == serving.id);
+                      if (index != -1) {
+                        _servings[index] = FoodServingModel(
+                          id: serving.id,
+                          name: nameController.text,
+                          unitCode: selectedUnitCode,
+                          grams: grams,
+                        );
+                      }
+                    }
+                  });
+                  Navigator.pop(ctx);
+                }
+              },
+              child: const Text('Lưu'),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

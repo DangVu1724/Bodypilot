@@ -15,9 +15,8 @@ class FoodModel {
   final double? sugarPer100g;
   final double? sodiumMgPer100g;
   final FoodCategoryModel? category;
-  final String? categoryName; 
-  final double? defaultServingSize;
-  final String? defaultUnit;
+  final String? categoryName;
+  final String? defaultServingId; // New field
   final String? imageUrl;
   final String? description;
   final int? healthScore;
@@ -38,8 +37,7 @@ class FoodModel {
     this.sodiumMgPer100g,
     this.category,
     this.categoryName,
-    this.defaultServingSize,
-    this.defaultUnit,
+    this.defaultServingId,
     this.imageUrl,
     this.description,
     this.healthScore,
@@ -64,8 +62,8 @@ class FoodModel {
           ? FoodCategoryModel.fromJson(json['category'] as Map<String, dynamic>)
           : null,
       categoryName: json['categoryName'] as String?,
-      defaultServingSize: (json['defaultServingSize'] as num?)?.toDouble(),
-      defaultUnit: json['defaultUnit'] as String?,
+      defaultServingId: json['defaultServingId'] as String? ?? 
+          (json['defaultServing'] != null ? (json['defaultServing'] as Map<String, dynamic>)['id'] as String? : null),
       imageUrl: json['imageUrl'] as String?,
       description: json['description'] as String?,
       healthScore: json['healthScore'] as int?,
@@ -97,8 +95,7 @@ class FoodModel {
       'sodiumMgPer100g': sodiumMgPer100g,
       'categoryId': category?.id,
       'categoryName': categoryName,
-      'defaultServingSize': defaultServingSize,
-      'defaultUnit': defaultUnit,
+      'defaultServingId': defaultServingId,
       'imageUrl': imageUrl,
       'description': description,
       'healthScore': healthScore,

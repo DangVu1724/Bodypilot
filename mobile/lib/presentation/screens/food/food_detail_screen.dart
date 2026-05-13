@@ -1,4 +1,4 @@
-import 'package:core_shared/models/food_model.dart';
+import 'package:core_shared/core_shared.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/app_theme.dart';
@@ -18,6 +18,7 @@ class FoodDetailScreen extends StatefulWidget {
 class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   bool _isDescriptionExpanded = false;
+  FoodServingModel? _selectedServing;
 
   @override
   void initState() {
@@ -48,6 +49,13 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
           final food = state.selectedFood;
           if (food == null) {
             return const Center(child: Text('Food not found'));
+          }
+
+          if (_selectedServing == null && food.servings.isNotEmpty) {
+            _selectedServing = food.servings.firstWhere(
+              (s) => s.id == food.defaultServingId,
+              orElse: () => food.servings.first,
+            );
           }
 
           return CustomScrollView(
@@ -169,7 +177,45 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
                 ),
               ],
             ),
+          const SizedBox(height: 12),
+          if (food.servings.isNotEmpty) _buildServingSelector(food),
           const SizedBox(height: 24),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildServingSelector(FoodModel food) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppTheme.primary.withOpacity(0.1)),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.restaurant, color: AppTheme.primary, size: 20),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Serving Size', style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: AppTheme.textSecondary)),
+                Text('${_selectedServing?.name ?? "100g"} (${_selectedServing?.grams ?? 100}g)', style: AppTheme.semiboldStyle),
+              ],
+            ),
+          ),
+          PopupMenuButton<FoodServingModel>(
+            icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textPrimary),
+            onSelected: (serving) => setState(() => _selectedServing = serving),
+            itemBuilder: (context) => food.servings
+                .map((s) => PopupMenuItem<FoodServingModel>(
+                      value: s,
+                      child: Text('${s.name} (${s.grams}g)'),
+                    ))
+                .toList(),
+          ),
         ],
       ),
     );
@@ -204,7 +250,10 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
               ),
               const SizedBox(width: 16),
               Expanded(child: Text(ingredient.foodName, style: AppTheme.semiboldStyle)),
-              Text('${ingredient.quantityGrams}g', style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary)),
+              Text(
+                ingredient.displayQuantity ?? '${ingredient.quantityGrams}g',
+                style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary),
+              ),
             ],
           ),
         );
@@ -342,15 +391,16 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
   }
 
   Widget _buildNutritionGrid(FoodModel food) {
+    final factor = (_selectedServing?.grams ?? 100) / 100;
     final items = [
-      _NutrientItem('Calories', '${food.caloriesPer100g}', 'kcal', Icons.local_fire_department_outlined),
-      _NutrientItem('Protein', '${food.proteinPer100g}', 'g', Icons.egg_outlined),
-      _NutrientItem('Carbs', '${food.carbsPer100g}', 'g', Icons.grain),
-      _NutrientItem('Fats', '${food.fatPer100g}', 'g', Icons.pie_chart_outline),
-      if (food.fiberPer100g != null) _NutrientItem('Fiber', '${food.fiberPer100g}', 'g', Icons.eco_outlined),
-      if (food.sugarPer100g != null) _NutrientItem('Sugar', '${food.sugarPer100g}', 'g', Icons.opacity),
+      _NutrientItem('Calories', '${(food.caloriesPer100g * factor).toStringAsFixed(0)}', 'kcal', Icons.local_fire_department_outlined),
+      _NutrientItem('Protein', '${(food.proteinPer100g * factor).toStringAsFixed(1)}', 'g', Icons.egg_outlined),
+      _NutrientItem('Carbs', '${(food.carbsPer100g * factor).toStringAsFixed(1)}', 'g', Icons.grain),
+      _NutrientItem('Fats', '${(food.fatPer100g * factor).toStringAsFixed(1)}', 'g', Icons.pie_chart_outline),
+      if (food.fiberPer100g != null) _NutrientItem('Fiber', '${(food.fiberPer100g! * factor).toStringAsFixed(1)}', 'g', Icons.eco_outlined),
+      if (food.sugarPer100g != null) _NutrientItem('Sugar', '${(food.sugarPer100g! * factor).toStringAsFixed(1)}', 'g', Icons.opacity),
       if (food.sodiumMgPer100g != null)
-        _NutrientItem('Sodium', '${food.sodiumMgPer100g}', 'mg', Icons.science_outlined),
+        _NutrientItem('Sodium', '${(food.sodiumMgPer100g! * factor).toStringAsFixed(0)}', 'mg', Icons.science_outlined),
     ];
 
     return GridView.builder(

@@ -1,4 +1,4 @@
-import 'package:core_shared/models/food_model.dart';
+import 'package:core_shared/core_shared.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/app_theme.dart';
@@ -16,6 +16,7 @@ class IngredientDetailScreen extends StatefulWidget {
 }
 
 class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
+  FoodServingModel? _selectedServing;
   @override
   void initState() {
     super.initState();
@@ -39,6 +40,13 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
           final food = state.selectedFood;
           if (food == null) {
             return const Center(child: Text('Ingredient not found'));
+          }
+
+          if (_selectedServing == null && food.servings.isNotEmpty) {
+            _selectedServing = food.servings.firstWhere(
+              (s) => s.id == food.defaultServingId,
+              orElse: () => food.servings.first,
+            );
           }
 
           return CustomScrollView(
@@ -138,27 +146,68 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
   }
 
   Widget _buildNutritionInfo(FoodModel food) {
+    final factor = (_selectedServing?.grams ?? 100) / 100;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('Nutrition Facts', style: AppTheme.semiboldStyle.copyWith(fontSize: 18)),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text('Nutrition Facts', style: AppTheme.semiboldStyle.copyWith(fontSize: 18)),
+            if (food.servings.isNotEmpty) _buildServingSelector(food),
+          ],
+        ),
         const SizedBox(height: 4),
-        Text('Per 100g', style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 12)),
+        Text(
+          'Per ${_selectedServing?.name ?? "100g"} (${_selectedServing?.grams ?? 100}g)',
+          style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 12),
+        ),
         const SizedBox(height: 20),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            _buildNutrientItem('Calories', food.caloriesPer100g.toStringAsFixed(0), 'kcal', AppTheme.primary),
-            _buildNutrientItem('Protein', food.proteinPer100g.toStringAsFixed(1), 'g', Colors.blue),
-            _buildNutrientItem('Fat', food.fatPer100g.toStringAsFixed(1), 'g', Colors.orange),
-            _buildNutrientItem('Carbs', food.carbsPer100g.toStringAsFixed(1), 'g', Colors.green),
+            _buildNutrientItem('Calories', (food.caloriesPer100g * factor).toStringAsFixed(0), 'kcal', AppTheme.primary),
+            _buildNutrientItem('Protein', (food.proteinPer100g * factor).toStringAsFixed(1), 'g', Colors.blue),
+            _buildNutrientItem('Fat', (food.fatPer100g * factor).toStringAsFixed(1), 'g', Colors.orange),
+            _buildNutrientItem('Carbs', (food.carbsPer100g * factor).toStringAsFixed(1), 'g', Colors.green),
           ],
         ),
         const SizedBox(height: 24),
-        _buildDetailedNutrient('Fiber', food.fiberPer100g, 'g'),
-        _buildDetailedNutrient('Sugar', food.sugarPer100g, 'g'),
-        _buildDetailedNutrient('Sodium', food.sodiumMgPer100g, 'mg'),
+        _buildDetailedNutrient('Fiber', food.fiberPer100g != null ? food.fiberPer100g! * factor : null, 'g'),
+        _buildDetailedNutrient('Sugar', food.sugarPer100g != null ? food.sugarPer100g! * factor : null, 'g'),
+        _buildDetailedNutrient('Sodium', food.sodiumMgPer100g != null ? food.sodiumMgPer100g! * factor : null, 'mg'),
       ],
+    );
+  }
+
+  Widget _buildServingSelector(FoodModel food) {
+    return PopupMenuButton<FoodServingModel>(
+      offset: const Offset(0, 40),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: AppTheme.surface,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: AppTheme.primary.withOpacity(0.1)),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _selectedServing?.name ?? '100g',
+              style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary, fontSize: 12),
+            ),
+            const Icon(Icons.keyboard_arrow_down, color: AppTheme.primary, size: 16),
+          ],
+        ),
+      ),
+      onSelected: (serving) => setState(() => _selectedServing = serving),
+      itemBuilder: (context) => food.servings
+          .map((s) => PopupMenuItem<FoodServingModel>(
+                value: s,
+                child: Text('${s.name} (${s.grams}g)'),
+              ))
+          .toList(),
     );
   }
 

@@ -20,7 +20,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> with SingleTickerPr
   void initState() {
     super.initState();
     _dishFuture = adminRepository.getFoodById(widget.dishId);
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -277,6 +277,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> with SingleTickerPr
             indicatorColor: AppTheme.primaryColor,
             indicatorWeight: 3,
             tabs: const [
+              Tab(text: 'Khẩu phần'),
               Tab(text: 'Nguyên liệu'),
               Tab(text: 'Cách chế biến'),
             ],
@@ -286,6 +287,7 @@ class _DishDetailScreenState extends State<DishDetailScreen> with SingleTickerPr
             child: TabBarView(
               controller: _tabController,
               children: [
+                _buildServingsTab(dish),
                 _buildIngredientsTab(dish),
                 _buildInstructionsTab(dish),
               ],
@@ -293,6 +295,30 @@ class _DishDetailScreenState extends State<DishDetailScreen> with SingleTickerPr
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildServingsTab(FoodModel dish) {
+    final servings = dish.servings;
+    if (servings.isEmpty) return const Center(child: Text('Chưa có thông tin khẩu phần'));
+
+    return ListView.builder(
+      padding: const EdgeInsets.all(32),
+      itemCount: servings.length,
+      itemBuilder: (context, index) {
+        final s = servings[index];
+        final isDefault = s.id == dish.defaultServingId;
+        return ListTile(
+          leading: Icon(isDefault ? Icons.check_circle : Icons.circle_outlined, color: isDefault ? Colors.green : Colors.grey),
+          title: Text(s.name, style: TextStyle(fontWeight: isDefault ? FontWeight.bold : FontWeight.normal)),
+          subtitle: Text('${s.unitCode} | ${s.grams}g'),
+          trailing: isDefault ? Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(color: Colors.green.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+            child: const Text('Mặc định', style: TextStyle(color: Colors.green, fontSize: 10, fontWeight: FontWeight.bold)),
+          ) : null,
+        );
+      },
     );
   }
 
@@ -306,7 +332,18 @@ class _DishDetailScreenState extends State<DishDetailScreen> with SingleTickerPr
         return ListTile(
           leading: const CircleAvatar(backgroundColor: Colors.orange, child: Icon(Icons.restaurant, color: Colors.white, size: 20)),
           title: Text(ing.foodName, style: const TextStyle(fontWeight: FontWeight.bold)),
-          trailing: Text('${ing.quantityGrams.toInt()}g', style: const TextStyle(fontSize: 16, color: AppTheme.textSecondary)),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              if (ing.displayQuantity != null)
+                Text(ing.displayQuantity!, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary))
+              else
+                Text('${ing.quantityGrams.toInt()}g', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textPrimary)),
+              if (ing.displayQuantity != null && ing.quantityGrams > 0)
+                Text('≈ ${ing.quantityGrams.toInt()}g', style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+            ],
+          ),
         );
       },
     );

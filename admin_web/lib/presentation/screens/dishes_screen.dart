@@ -101,10 +101,11 @@ class _DishesScreenState extends State<DishesScreen> {
           subtitle: 'Quản lý các thành phẩm (Dishes) từ hệ thống',
           onRefresh: _refreshDishes,
           onAddPressed: () => _showAddEditDialog(),
-          columns: const ['ID', 'Tên món', 'Calo/100g', 'Protein', 'Carbs', 'Thao tác'],
+          columns: const ['ID', 'Tên món', 'Hạng mục', 'Calo/100g', 'Protein', 'Carbs', 'Thao tác'],
           rows: dishes.map((dish) => DataRow(cells: [
             DataCell(Text(dish.id.substring(0, 8))),
             DataCell(Text(dish.name)),
+            DataCell(Text(dish.categoryName ?? 'Chưa phân loại')),
             DataCell(Text('${dish.caloriesPer100g} kcal')),
             DataCell(Text('${dish.proteinPer100g}g')),
             DataCell(Text('${dish.carbsPer100g}g')),

@@ -113,8 +113,7 @@ public class FoodServiceImpl implements FoodService {
                 .sugarPer100g(food.getSugarPer100g())
                 .sodiumMgPer100g(food.getSodiumMgPer100g())
                 .category(mapToCategoryDTO(food.getCategory()))
-                .defaultServingSize(food.getDefaultServingSize())
-                .defaultUnit(food.getDefaultUnit())
+                .defaultServing(mapToServingDTO(food.getDefaultServing()))
                 .imageUrl(food.getImageUrl())
                 .description(food.getDescription())
                 .healthScore(food.getHealthScore())
@@ -135,11 +134,12 @@ public class FoodServiceImpl implements FoodService {
     }
 
     private FoodServingDTO mapToServingDTO(FoodServing serving) {
+        if (serving == null) return null;
         return FoodServingDTO.builder()
                 .id(serving.getId())
                 .name(serving.getName())
+                .unitCode(serving.getUnitCode())
                 .grams(serving.getGrams())
-                .isDefault(serving.isDefault())
                 .build();
     }
 
@@ -168,6 +168,7 @@ public class FoodServiceImpl implements FoodService {
                 .foodId(ingredient.getFood().getId())
                 .foodName(ingredient.getFood().getName())
                 .quantityGrams(ingredient.getQuantityGrams())
+                .displayQuantity(ingredient.getDisplayQuantity())
                 .build();
     }
 
@@ -211,8 +212,16 @@ public class FoodServiceImpl implements FoodService {
         food.setFiberPer100g(BigDecimal.valueOf(request.getFiberPer100g()));
         food.setSugarPer100g(BigDecimal.valueOf(request.getSugarPer100g()));
         food.setSodiumMgPer100g(BigDecimal.valueOf(request.getSodiumMgPer100g()));
-        food.setDefaultServingSize(BigDecimal.valueOf(request.getDefaultServingSize()));
-        food.setDefaultUnit(request.getDefaultUnit());
+        
+        // Handle default serving reference
+        if (request.getDefaultServingId() != null) {
+            // Find in current servings or assume it will be added/exists
+            food.getServings().stream()
+                .filter(s -> s.getId().equals(request.getDefaultServingId()))
+                .findFirst()
+                .ifPresent(food::setDefaultServing);
+        }
+        
         food.setImageUrl(request.getImageUrl());
         food.setDescription(request.getDescription());
         food.setHealthScore(request.getHealthScore());
@@ -242,7 +251,12 @@ public class FoodServiceImpl implements FoodService {
                     RecipeIngredient ri = new RecipeIngredient();
                     ri.setRecipe(recipe);
                     ri.setFood(ingredientFood);
-                    ri.setQuantityGrams(riReq.getQuantityGrams() != null ? BigDecimal.valueOf(riReq.getQuantityGrams()) : BigDecimal.ZERO);
+                    if (riReq.getQuantityGrams() != null) {
+                        ri.setQuantityGrams(BigDecimal.valueOf(riReq.getQuantityGrams()));
+                    } else {
+                        ri.setQuantityGrams(BigDecimal.ZERO);
+                    }
+                    ri.setDisplayQuantity(riReq.getDisplayQuantity());
                     recipe.getIngredients().add(ri);
                 }
             }

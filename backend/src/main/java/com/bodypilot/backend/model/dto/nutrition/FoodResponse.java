@@ -26,8 +26,7 @@ public class FoodResponse {
     private BigDecimal sugarPer100g;
     private BigDecimal sodiumMgPer100g;
     private FoodCategoryDTO category;
-    private BigDecimal defaultServingSize;
-    private String defaultUnit;
+    private FoodServingDTO defaultServing;
     private String imageUrl;
     private String description;
     private Integer healthScore;
