@@ -7,13 +7,15 @@ class WorkoutCategoryCubit extends Cubit<WorkoutCategoryState> {
 
   WorkoutCategoryCubit(this._repository) : super(WorkoutCategoryInitial());
 
-  Future<void> fetchCategories() async {
-    emit(WorkoutCategoryLoading());
+  Future<void> fetchCategories({bool forceRefresh = false}) async {
+    if (!forceRefresh && state is WorkoutCategoryLoaded) return;
+
+    if (!isClosed) emit(WorkoutCategoryLoading());
     try {
       final categories = await _repository.getWorkoutCategories();
-      emit(WorkoutCategoryLoaded(categories));
+      if (!isClosed) emit(WorkoutCategoryLoaded(categories));
     } catch (e) {
-      emit(WorkoutCategoryError(e.toString()));
+      if (!isClosed) emit(WorkoutCategoryError(e.toString()));
     }
   }
 

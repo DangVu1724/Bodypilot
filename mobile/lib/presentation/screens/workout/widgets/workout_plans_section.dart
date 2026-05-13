@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:core_shared/models/workout_plan_model.dart';
-import '../workout_plan_detail_screen.dart';
-import '../../../bloc/workout/workout_plan_cubit.dart';
-import '../../../bloc/workout/workout_plan_state.dart';
-import '../../../../core/theme/app_theme.dart';
-import 'section_title.dart';
+import 'package:mobile/presentation/screens/workout/workout_plan_detail_screen.dart';
+import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
+import 'package:mobile/presentation/bloc/workout/workout_plan_state.dart';
+import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/presentation/screens/workout/widgets/section_title.dart';
+import 'package:mobile/presentation/screens/workout/widgets/workout_skeleton.dart';
 
 class WorkoutPlansSection extends StatelessWidget {
   const WorkoutPlansSection({super.key});
@@ -20,7 +21,7 @@ class WorkoutPlansSection extends StatelessWidget {
         BlocBuilder<WorkoutPlanCubit, WorkoutPlanState>(
           builder: (context, state) {
             if (state is WorkoutPlanLoading) {
-              return const Center(child: CircularProgressIndicator());
+              return const WorkoutPlanSkeleton();
             } else if (state is WorkoutPlanLoaded) {
               if (state.plans.isEmpty) {
                 return const Center(child: Text('No workout plans available.'));

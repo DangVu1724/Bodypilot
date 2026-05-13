@@ -131,3 +131,25 @@ class ExerciseVerticalSkeleton extends StatelessWidget {
     );
   }
 }
+
+class WorkoutPlanSkeleton extends StatelessWidget {
+  const WorkoutPlanSkeleton({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 220,
+      child: ListView.separated(
+        scrollDirection: Axis.horizontal,
+        physics: const NeverScrollableScrollPhysics(),
+        itemCount: 3,
+        separatorBuilder: (context, index) => const SizedBox(width: 16),
+        itemBuilder: (context, index) => SkeletonContainer(
+          width: 280,
+          height: 220,
+          borderRadius: BorderRadius.circular(20),
+        ),
+      ),
+    );
+  }
+}

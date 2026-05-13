@@ -62,3 +62,5 @@ class WorkoutRepository {
     }
   }
 }
+
+final workoutRepository = WorkoutRepository();

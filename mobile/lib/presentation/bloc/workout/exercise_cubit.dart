@@ -7,28 +7,30 @@ class ExerciseCubit extends Cubit<ExerciseState> {
 
   ExerciseCubit(this._repository) : super(ExerciseInitial());
 
-  Future<void> fetchStrengthExercises() async {
-    emit(ExerciseLoading());
+  Future<void> fetchStrengthExercises({bool forceRefresh = false}) async {
+    if (!forceRefresh && state is ExerciseLoaded) return;
+    
+    if (!isClosed) emit(ExerciseLoading());
     try {
       final response = await _repository.searchExercises(
         size: 10,
       );
-      emit(ExerciseLoaded(response.content));
+      if (!isClosed) emit(ExerciseLoaded(response.content));
     } catch (e) {
-      emit(ExerciseError(e.toString()));
+      if (!isClosed) emit(ExerciseError(e.toString()));
     }
   }
 
   Future<void> fetchExercisesByCategory(String categoryId) async {
-    emit(ExerciseLoading());
+    if (!isClosed) emit(ExerciseLoading());
     try {
       final response = await _repository.searchExercises(
         categoryId: categoryId,
         size: 20,
       );
-      emit(ExerciseLoaded(response.content));
+      if (!isClosed) emit(ExerciseLoaded(response.content));
     } catch (e) {
-      emit(ExerciseError(e.toString()));
+      if (!isClosed) emit(ExerciseError(e.toString()));
     }
   }
 

@@ -84,7 +84,7 @@ class _WorkoutPlanDetailScreenState extends State<WorkoutPlanDetailScreen> {
         final scrollOffset = constraints.scrollOffset;
         final expandedHeight = 340.0;
         final collapsedHeight = MediaQuery.of(context).padding.top + kToolbarHeight;
-        
+
         // Fully collapsed when scrollOffset reaches expandedHeight - collapsedHeight
         final isCollapsed = scrollOffset > (expandedHeight - collapsedHeight - 20);
         final contentColor = isCollapsed ? AppTheme.textPrimary : Colors.white;

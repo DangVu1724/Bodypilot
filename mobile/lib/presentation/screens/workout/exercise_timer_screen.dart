@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:audioplayers/audioplayers.dart';
 import 'package:core_shared/models/exercise_model.dart';
 import 'package:flutter/material.dart';
 import '../../../../core/theme/app_theme.dart';
@@ -16,7 +17,10 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
   late int _timeLeft;
   late int _totalDuration;
   Timer? _timer;
-  bool _isPaused = false;
+  bool _isPaused = true;
+  Timer? _autoStartTimer;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _hasStartedMusic = false;
 
   @override
   void initState() {
@@ -24,6 +28,42 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
     _totalDuration = _calculateTotalSeconds();
     _timeLeft = _totalDuration;
     _startTimer();
+
+    _audioPlayer.setReleaseMode(ReleaseMode.loop);
+
+    _autoStartTimer = Timer(const Duration(seconds: 5), () {
+      if (mounted && _isPaused) {
+        _resumeWorkout();
+      }
+    });
+  }
+
+  void _resumeWorkout() {
+    setState(() {
+      _isPaused = false;
+    });
+    if (!_hasStartedMusic) {
+      _hasStartedMusic = true;
+      _audioPlayer.play(UrlSource('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'));
+    } else {
+      _audioPlayer.resume();
+    }
+  }
+
+  void _pauseWorkout() {
+    setState(() {
+      _isPaused = true;
+    });
+    _audioPlayer.pause();
+  }
+
+  void _togglePause() {
+    _autoStartTimer?.cancel();
+    if (_isPaused) {
+      _resumeWorkout();
+    } else {
+      _pauseWorkout();
+    }
   }
 
   int _calculateTotalSeconds() {
@@ -46,6 +86,7 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
             _timeLeft--;
           } else {
             _timer?.cancel();
+            _audioPlayer.stop();
             // Handle completion if needed
           }
         });
@@ -55,7 +96,9 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
 
   @override
   void dispose() {
+    _autoStartTimer?.cancel();
     _timer?.cancel();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -68,10 +111,7 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
         children: [
           // Background Image
           ColorFiltered(
-            colorFilter: ColorFilter.mode(
-              Colors.black.withOpacity(0.4),
-              BlendMode.darken,
-            ),
+            colorFilter: ColorFilter.mode(Colors.black.withOpacity(0.4), BlendMode.darken),
             child: Image.network(
               widget.exercise.thumbnailUrl ?? 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=800&q=80',
               fit: BoxFit.cover,
@@ -83,11 +123,7 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withOpacity(0.3),
-                  Colors.transparent,
-                  Colors.black.withOpacity(0.9),
-                ],
+                colors: [Colors.black.withOpacity(0.3), Colors.transparent, Colors.black.withOpacity(0.9)],
                 stops: const [0.0, 0.4, 1.0],
               ),
             ),
@@ -100,10 +136,7 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
               onTap: () => Navigator.pop(context),
               child: Container(
                 padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
                 child: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 20),
               ),
             ),
@@ -163,11 +196,7 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
                     color: const Color(0xFF1A1A1A),
                     borderRadius: BorderRadius.circular(32),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 10),
-                      ),
+                      BoxShadow(color: Colors.black.withOpacity(0.3), blurRadius: 20, offset: const Offset(0, 10)),
                     ],
                   ),
                   child: Row(
@@ -186,10 +215,7 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
                               valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
                             ),
                           ),
-                          Text(
-                            '$_timeLeft',
-                            style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 16),
-                          ),
+                          Text('$_timeLeft', style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 16)),
                         ],
                       ),
                       const SizedBox(width: 20),
@@ -210,7 +236,10 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
                                 const SizedBox(width: 4),
                                 Text(
                                   'Keep it up!',
-                                  style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.5), fontSize: 12),
+                                  style: AppTheme.bodyStyle.copyWith(
+                                    color: Colors.white.withOpacity(0.5),
+                                    fontSize: 12,
+                                  ),
                                 ),
                               ],
                             ),
@@ -219,7 +248,7 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
                       ),
                       // Pause Button
                       GestureDetector(
-                        onTap: () => setState(() => _isPaused = !_isPaused),
+                        onTap: _togglePause,
                         child: Container(
                           width: 56,
                           height: 56,

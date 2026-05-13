@@ -3,13 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
+import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
 import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
 import '../../bloc/workout/exercise_cubit.dart';
 import '../../bloc/workout/workout_category_cubit.dart';
-import '../../../data/repositories/exercise_repository.dart';
 import 'widgets/category_chips.dart';
 import 'widgets/ai_suggestion_banner.dart';
-import 'widgets/featured_card.dart';
+import 'widgets/workout_plans_section.dart';
 import 'widgets/strength_section.dart';
 import 'widgets/ai_suggestion_card.dart';
 
@@ -18,38 +18,40 @@ class WorkoutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final exerciseRepository = ExerciseRepository();
     final statusBarHeight = MediaQuery.of(context).padding.top;
 
-    return MultiBlocProvider(
-      providers: [
-        BlocProvider(create: (context) => ExerciseCubit(exerciseRepository)..fetchStrengthExercises()),
-        BlocProvider(create: (context) => WorkoutCategoryCubit(exerciseRepository)..fetchCategories()),
-      ],
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [
-                Color(0xFFA0AEC0), // Slate Grey
-                Color(0xFFD6CCC2), // Warm Beige
-              ],
-            ),
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [
+              Color(0xFFA0AEC0), // Slate Grey
+              Color(0xFFD6CCC2), // Warm Beige
+            ],
           ),
-          child: BlocBuilder<UserCubit, UserState>(
-            builder: (context, state) {
-              String? userName;
-              String? avatarUrl;
+        ),
+        child: BlocBuilder<UserCubit, UserState>(
+          builder: (context, state) {
+            String? userName;
+            String? avatarUrl;
 
-              if (state is UserLoaded) {
-                userName = state.user.profile?.fullName;
-                avatarUrl = state.user.profile?.avatarUrl;
-              }
+            if (state is UserLoaded) {
+              userName = state.user.profile?.fullName;
+              avatarUrl = state.user.profile?.avatarUrl;
+            }
 
-              return CustomScrollView(
+            return RefreshIndicator(
+              onRefresh: () async {
+                await Future.wait([
+                  context.read<WorkoutPlanCubit>().fetchPlansFull(forceRefresh: true),
+                  context.read<ExerciseCubit>().fetchStrengthExercises(forceRefresh: true),
+                  context.read<WorkoutCategoryCubit>().fetchCategories(forceRefresh: true),
+                ]);
+              },
+              child: CustomScrollView(
                 physics: const BouncingScrollPhysics(),
                 slivers: [
                   SliverAppBar(
@@ -109,7 +111,7 @@ class WorkoutScreen extends StatelessWidget {
                           SizedBox(height: 16),
                           AiSuggestionBanner(),
                           SizedBox(height: 24),
-                          FeaturedCard(),
+                          WorkoutPlansSection(),
                           SizedBox(height: 24),
                           StrengthSection(),
                           SizedBox(height: 24),
@@ -120,9 +122,9 @@ class WorkoutScreen extends StatelessWidget {
                     ),
                   ),
                 ],
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
       ),
     );

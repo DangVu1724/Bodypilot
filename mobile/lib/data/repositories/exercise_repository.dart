@@ -47,3 +47,5 @@ class ExerciseRepository {
     }
   }
 }
+
+final exerciseRepository = ExerciseRepository();
