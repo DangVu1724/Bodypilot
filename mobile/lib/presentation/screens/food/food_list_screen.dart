@@ -24,7 +24,18 @@ class _FoodListScreenState extends State<FoodListScreen> {
   @override
   void initState() {
     super.initState();
+    _initializeFromCache();
     _loadFoods();
+  }
+
+  void _initializeFromCache() {
+    final globalFoodState = context.read<FoodCubit>().state;
+    if (globalFoodState.foods.isNotEmpty) {
+      context.read<FoodListCubit>().initializeWithCache(
+        initialFoods: globalFoodState.foods,
+        type: widget.type,
+      );
+    }
   }
 
   void _loadFoods() {

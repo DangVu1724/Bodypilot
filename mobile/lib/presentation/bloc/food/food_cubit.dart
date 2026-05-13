@@ -9,7 +9,10 @@ class FoodCubit extends Cubit<FoodState> {
 
   Future<void> init() async {
     await loadCategories();
-    await searchFoods();
+    // 1. Quick Load for Home Screen
+    await searchFoods(size: 20);
+    // 2. Background Prefetch for Cache
+    _prefetchFoods(size: 100);
   }
 
   Future<void> loadCategories() async {
@@ -54,6 +57,29 @@ class FoodCubit extends Cubit<FoodState> {
         status: FoodStatus.failure,
         errorMessage: e.toString(),
       ));
+    }
+  }
+
+  Future<void> _prefetchFoods({int size = 100}) async {
+    try {
+      final response = await foodRepository.searchFoods(
+        '',
+        page: 0,
+        size: size,
+      );
+
+      // Merge unique foods
+      final existingIds = state.foods.map((f) => f.id).toSet();
+      final newUniqueFoods = response.content.where((f) => !existingIds.contains(f.id)).toList();
+
+      if (newUniqueFoods.isNotEmpty) {
+        emit(state.copyWith(
+          foods: [...state.foods, ...newUniqueFoods],
+        ));
+      }
+    } catch (e) {
+      // Silently fail for prefetch
+      print('Prefetch error: $e');
     }
   }
 
