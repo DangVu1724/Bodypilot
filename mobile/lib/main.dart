@@ -8,6 +8,11 @@ import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/data/repositories/user_repository.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/data/repositories/food_repository.dart';
+import 'package:mobile/data/repositories/workout_repository.dart';
+import 'package:mobile/data/repositories/exercise_repository.dart';
+import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
+import 'package:mobile/presentation/bloc/workout/exercise_cubit.dart';
+import 'package:mobile/presentation/bloc/workout/workout_category_cubit.dart';
 
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -30,6 +35,9 @@ class BodyPilotApp extends StatelessWidget {
       providers: [
         BlocProvider(create: (context) => UserCubit(userRepository)..fetchUserProfile()),
         BlocProvider(create: (context) => FoodCubit(foodRepository)..init()),
+        BlocProvider(create: (context) => WorkoutPlanCubit(workoutRepository)..fetchPlansFull()),
+        BlocProvider(create: (context) => ExerciseCubit(exerciseRepository)..fetchStrengthExercises()),
+        BlocProvider(create: (context) => WorkoutCategoryCubit(exerciseRepository)..fetchCategories()),
       ],
       child: MaterialApp(
         title: 'BodyPilot',

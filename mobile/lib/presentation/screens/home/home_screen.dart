@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
 import 'widgets/home_header.dart';
 import 'widgets/metric_section.dart';
-import 'widgets/workout_section.dart';
 import 'widgets/food_sections.dart';
 import 'widgets/section_header.dart';
+import 'package:mobile/presentation/screens/workout/widgets/workout_plans_section.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -24,7 +26,11 @@ class HomeScreen extends StatelessWidget {
             ],
           ),
         ),
-        child: CustomScrollView(
+        child: RefreshIndicator(
+          onRefresh: () async {
+            await context.read<WorkoutPlanCubit>().fetchPlansFull(forceRefresh: true);
+          },
+          child: CustomScrollView(
           slivers: [
             const HomeHeader(),
             SliverToBoxAdapter(
@@ -39,9 +45,7 @@ class HomeScreen extends StatelessWidget {
                     const SizedBox(height: 16),
                     const MetricSection(),
                     const SizedBox(height: 32),
-                    SectionHeader(title: 'Workouts', onSeeAll: () {}),
-                    const SizedBox(height: 16),
-                    const WorkoutSection(),
+                    const WorkoutPlansSection(),
                     const SizedBox(height: 32),
                     SectionHeader(
                       title: 'Tra cứu món ăn',
@@ -64,6 +68,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ],
+          ),
         ),
       ),
     );
