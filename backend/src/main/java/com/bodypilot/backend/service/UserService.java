@@ -9,6 +9,7 @@ import java.util.UUID;
 
 public interface UserService {
     User getById(UUID id);
+    User getUserByEmail(String email);
     UserResponse getUserDetails(UUID userId);
     List<UserResponse> getAllUsers();
     boolean isProfileComplete(UUID userId);

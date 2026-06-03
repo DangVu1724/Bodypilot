@@ -17,4 +17,5 @@ public class RecipeIngredientDTO {
     private UUID foodId;
     private String foodName;
     private BigDecimal quantityGrams;
+    private String displayQuantity;
 }

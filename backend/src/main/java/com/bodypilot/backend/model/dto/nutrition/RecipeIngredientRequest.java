@@ -14,4 +14,5 @@ import java.util.UUID;
 public class RecipeIngredientRequest {
     private UUID foodId;
     private Double quantityGrams;
+    private String displayQuantity;
 }

@@ -23,6 +23,9 @@ public class RecipeIngredient extends BaseEntity {
     @JoinColumn(name = "food_id", nullable = false)
     private Food food;
 
-    @Column(name = "quantity_grams", nullable = false)
+    @Column(name = "quantity_grams")
     private BigDecimal quantityGrams;
+
+    @Column(name = "display_quantity")
+    private String displayQuantity;
 }
