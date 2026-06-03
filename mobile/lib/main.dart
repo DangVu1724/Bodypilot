@@ -13,6 +13,9 @@ import 'package:mobile/data/repositories/exercise_repository.dart';
 import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/exercise_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_category_cubit.dart';
+import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
+import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
+
 
 import 'package:hive_flutter/hive_flutter.dart';
 
@@ -38,6 +41,8 @@ class BodyPilotApp extends StatelessWidget {
         BlocProvider(create: (context) => WorkoutPlanCubit(workoutRepository)..fetchPlansFull()),
         BlocProvider(create: (context) => ExerciseCubit(exerciseRepository)..fetchStrengthExercises()),
         BlocProvider(create: (context) => WorkoutCategoryCubit(exerciseRepository)..fetchCategories()),
+        BlocProvider(create: (context) => MealCubit(nutritionDiaryRepository)),
+
       ],
       child: MaterialApp(
         title: 'BodyPilot',

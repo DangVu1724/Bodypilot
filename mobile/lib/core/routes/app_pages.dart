@@ -3,8 +3,8 @@ import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/presentation/screens/assessment/assessment_screen.dart';
 import 'package:mobile/presentation/screens/auth/login_screen.dart';
 import 'package:mobile/presentation/screens/auth/signup_screen.dart';
-import 'package:mobile/presentation/screens/home/home_screen.dart';
 import 'package:mobile/presentation/screens/main/main_screen.dart';
+import 'package:mobile/presentation/screens/meal/meal_plan_screen.dart';
 import 'package:mobile/presentation/screens/food/food_detail_screen.dart';
 import 'package:mobile/presentation/screens/food/ingredient_detail_screen.dart';
 import 'package:mobile/presentation/screens/food/food_list_screen.dart';
@@ -35,6 +35,9 @@ class AppPages {
         return _buildRoute(const AssessmentScreen(), settings);
       case AppRoutes.home:
         return _buildRoute(const MainScreen(), settings);
+      case AppRoutes.mealPlan:
+        final selectedDate = settings.arguments as DateTime?;
+        return _buildRoute(MealPlanScreen(initialDate: selectedDate), settings);
       case AppRoutes.foodDetail:
         final foodId = settings.arguments as String;
         return _buildRoute(FoodDetailScreen(foodId: foodId), settings);

@@ -13,7 +13,7 @@ class WeightGoalCard extends StatelessWidget {
       builder: (context, state) {
         double currentWeight = 0.0;
         double targetWeight = 0.0;
-        double startWeight = 0.0; // Nên có thêm startWeight để tính % chính xác
+        double startWeight = 0.0; 
 
         if (state is UserLoaded) {
           currentWeight = state.user.metrics?.weight ?? 0.0;

@@ -10,8 +10,8 @@ class ApiClient {
     dio = Dio(
       BaseOptions(
         baseUrl: 'http://10.0.2.2:8080/api/v1', // Android Emulator IP
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 10),
+        connectTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 30),
         headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
       ),
     );
@@ -39,12 +39,24 @@ class ApiClient {
     );
   }
 
-  Future<Response> post(String path, {dynamic data}) async {
-    return await dio.post(path, data: data);
+  Future<Response> post(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
+    return await dio.post(path, data: data, queryParameters: queryParameters);
   }
 
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) async {
     return await dio.get(path, queryParameters: queryParameters);
+  }
+
+  Future<Response> put(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
+    return await dio.put(path, data: data, queryParameters: queryParameters);
+  }
+
+  Future<Response> patch(String path, {dynamic data, Map<String, dynamic>? queryParameters}) async {
+    return await dio.patch(path, data: data, queryParameters: queryParameters);
+  }
+
+  Future<Response> delete(String path, {Map<String, dynamic>? queryParameters}) async {
+    return await dio.delete(path, queryParameters: queryParameters);
   }
 }
 

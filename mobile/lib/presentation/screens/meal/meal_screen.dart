@@ -8,7 +8,7 @@ import 'widgets/calorie_dashboard_card.dart';
 import 'widgets/weight_goal_card.dart';
 import 'widgets/ai_suggestion_banner.dart';
 import 'widgets/browse_meals_list.dart';
-import 'widgets/meal_header.dart';
+import 'widgets/meal_plan_section.dart';
 import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
 
 class MealScreen extends StatefulWidget {
@@ -63,7 +63,7 @@ class _MealScreenState extends State<MealScreen> {
   @override
   Widget build(BuildContext context) {
     final statusBarHeight = MediaQuery.of(context).padding.top;
-    
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Container(
@@ -172,6 +172,8 @@ class _MealScreenState extends State<MealScreen> {
                         ),
                         const SizedBox(height: 32),
                         const WeightGoalCard(),
+                        const SizedBox(height: 32),
+                        const MealPlanSection(),
                         const SizedBox(height: 32),
                         const AiSuggestionBanner(),
                         const SizedBox(height: 32),
