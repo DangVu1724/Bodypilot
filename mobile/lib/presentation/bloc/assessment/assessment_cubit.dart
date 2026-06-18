@@ -17,9 +17,13 @@ class AssessmentCubit extends Cubit<AssessmentState> {
     try {
       final conditions = await userRepository.getHealthConditions();
       final injuries = await userRepository.getInjuries();
+      final allergies = await userRepository.getAllergies();
+      final dietTags = await userRepository.getDietTags();
       emit(state.copyWith(
         availableConditions: conditions,
         availableInjuries: injuries,
+        availableAllergies: allergies,
+        availableDietTags: dietTags,
       ));
     } catch (e) {
       if (kDebugMode) {
@@ -106,22 +110,27 @@ class AssessmentCubit extends Cubit<AssessmentState> {
     emit(state.copyWith(selectedInjuries: selectedInjuries));
   }
 
-  void selectAllergyCategory(String category) {
-    if (category == 'Không có') {
-      emit(state.copyWith(selectedAllergyCategory: category, selectedAllergies: []));
-    } else {
-      emit(state.copyWith(selectedAllergyCategory: category));
-    }
-  }
-
   void toggleAllergy(String allergy) {
-    final selectedAllergies = List<String>.from(state.selectedAllergies);
-    if (selectedAllergies.contains(allergy)) {
-      selectedAllergies.remove(allergy);
+    List<String> selectedAllergies = List<String>.from(state.selectedAllergies);
+    if (allergy == 'NONE') {
+      if (selectedAllergies.contains('NONE')) {
+        selectedAllergies.remove('NONE');
+      } else {
+        selectedAllergies = ['NONE'];
+      }
     } else {
-      selectedAllergies.add(allergy);
+      selectedAllergies.remove('NONE');
+      if (selectedAllergies.contains(allergy)) {
+        selectedAllergies.remove(allergy);
+      } else {
+        selectedAllergies.add(allergy);
+      }
     }
     emit(state.copyWith(selectedAllergies: selectedAllergies));
+  }
+
+  void setAllergyNote(String note) {
+    emit(state.copyWith(allergyNote: note));
   }
 
   void setTargetWeight(int weight) {
@@ -134,5 +143,59 @@ class AssessmentCubit extends Cubit<AssessmentState> {
 
   void selectActivityLevel(String level) {
     emit(state.copyWith(selectedActivityLevel: level));
+  }
+
+  void selectDietTag(String? dietTagId) {
+    emit(state.copyWith(selectedDietTagId: dietTagId));
+  }
+
+  void toggleDislikedFoodGroup(String group) {
+    List<String> disliked = List<String>.from(state.dislikedFoodGroups);
+    if (group == 'NONE') {
+      if (disliked.contains('NONE')) {
+        disliked.remove('NONE');
+      } else {
+        disliked = ['NONE'];
+      }
+    } else {
+      disliked.remove('NONE');
+      if (disliked.contains(group)) {
+        disliked.remove(group);
+      } else {
+        disliked.add(group);
+      }
+    }
+    emit(state.copyWith(dislikedFoodGroups: disliked));
+  }
+
+  void setDislikedFoodsNote(String note) {
+    emit(state.copyWith(dislikedFoodsNote: note));
+  }
+
+  void selectBudget(String budget) {
+    emit(state.copyWith(selectedBudget: budget));
+  }
+
+  Future<void> submitMealPreferences() async {
+    final userId = TokenService.getUserId();
+    if (userId == null) return;
+
+    emit(state.copyWith(status: AssessmentStatus.loading));
+
+    try {
+      final requestData = {
+        'selectedAllergies': state.selectedAllergies,
+        'allergyNote': state.allergyNote,
+        'selectedDietTagId': state.selectedDietTagId,
+        'dislikedFoodGroups': state.dislikedFoodGroups,
+        'dislikedFoodsNote': state.dislikedFoodsNote,
+        'foodBudget': state.selectedBudget,
+      };
+
+      await userRepository.updateUserPreferences(userId, requestData);
+      emit(state.copyWith(status: AssessmentStatus.success));
+    } catch (e) {
+      emit(state.copyWith(status: AssessmentStatus.failure));
+    }
   }
 }

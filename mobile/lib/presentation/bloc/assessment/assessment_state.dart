@@ -1,5 +1,7 @@
 import 'package:core_shared/models/health_condition_model.dart';
 import 'package:core_shared/models/injury_model.dart';
+import 'package:core_shared/models/allergy_model.dart';
+import 'package:core_shared/models/diet_tag_model.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 
@@ -69,16 +71,6 @@ class ActivityLevelOption extends Equatable {
 
   @override
   List<Object?> get props => [title, value, icon, description];
-}
-
-class AllergyOption extends Equatable {
-  final String name;
-  final String category;
-
-  const AllergyOption({required this.name, required this.category});
-
-  @override
-  List<Object?> get props => [name, category];
 }
 
 class SleepOption extends Equatable {
@@ -242,6 +234,33 @@ class AssessmentState extends Equatable {
     }
   }
 
+  static IconData getAllergyIcon(String code) {
+    switch (code) {
+      case 'NONE':
+        return Icons.check_circle_outline;
+      case 'MILK':
+        return Icons.local_cafe;
+      case 'EGG':
+        return Icons.egg;
+      case 'FISH':
+        return Icons.soup_kitchen;
+      case 'SHELLFISH':
+        return Icons.set_meal;
+      case 'PEANUT':
+        return Icons.cookie;
+      case 'TREE_NUT':
+        return Icons.eco;
+      case 'SOY':
+        return Icons.grass;
+      case 'GLUTEN':
+        return Icons.bakery_dining;
+      case 'SESAME':
+        return Icons.grain;
+      default:
+        return Icons.warning_amber_rounded;
+    }
+  }
+
   final String? selectedGoal;
   final String? selectedGender;
   final int selectedHeight;
@@ -251,8 +270,14 @@ class AssessmentState extends Equatable {
   final List<String> selectedInjuries; // Now stores codes
   final List<HealthConditionModel> availableConditions;
   final List<InjuryModel> availableInjuries;
-  final String? selectedAllergyCategory;
+  final List<AllergyModel> availableAllergies;
   final List<String> selectedAllergies;
+  final String allergyNote;
+  final List<DietTagModel> availableDietTags;
+  final String? selectedDietTagId;
+  final List<String> dislikedFoodGroups;
+  final String dislikedFoodsNote;
+  final String? selectedBudget;
   final int targetWeight;
   final bool? hasExperience;
   final String? selectedActivityLevel;
@@ -268,8 +293,14 @@ class AssessmentState extends Equatable {
     this.selectedInjuries = const [],
     this.availableConditions = const [],
     this.availableInjuries = const [],
-    this.selectedAllergyCategory,
+    this.availableAllergies = const [],
     this.selectedAllergies = const [],
+    this.allergyNote = '',
+    this.availableDietTags = const [],
+    this.selectedDietTagId,
+    this.dislikedFoodGroups = const [],
+    this.dislikedFoodsNote = '',
+    this.selectedBudget,
     this.targetWeight = 65,
     this.hasExperience,
     this.selectedActivityLevel,
@@ -286,8 +317,14 @@ class AssessmentState extends Equatable {
     List<String>? selectedInjuries,
     List<HealthConditionModel>? availableConditions,
     List<InjuryModel>? availableInjuries,
-    String? selectedAllergyCategory,
+    List<AllergyModel>? availableAllergies,
     List<String>? selectedAllergies,
+    String? allergyNote,
+    List<DietTagModel>? availableDietTags,
+    String? selectedDietTagId,
+    List<String>? dislikedFoodGroups,
+    String? dislikedFoodsNote,
+    String? selectedBudget,
     int? targetWeight,
     bool? hasExperience,
     String? selectedActivityLevel,
@@ -303,8 +340,14 @@ class AssessmentState extends Equatable {
       selectedInjuries: selectedInjuries ?? this.selectedInjuries,
       availableConditions: availableConditions ?? this.availableConditions,
       availableInjuries: availableInjuries ?? this.availableInjuries,
-      selectedAllergyCategory: selectedAllergyCategory ?? this.selectedAllergyCategory,
+      availableAllergies: availableAllergies ?? this.availableAllergies,
       selectedAllergies: selectedAllergies ?? this.selectedAllergies,
+      allergyNote: allergyNote ?? this.allergyNote,
+      availableDietTags: availableDietTags ?? this.availableDietTags,
+      selectedDietTagId: selectedDietTagId ?? this.selectedDietTagId,
+      dislikedFoodGroups: dislikedFoodGroups ?? this.dislikedFoodGroups,
+      dislikedFoodsNote: dislikedFoodsNote ?? this.dislikedFoodsNote,
+      selectedBudget: selectedBudget ?? this.selectedBudget,
       targetWeight: targetWeight ?? this.targetWeight,
       hasExperience: hasExperience ?? this.hasExperience,
       selectedActivityLevel: selectedActivityLevel ?? this.selectedActivityLevel,
@@ -321,8 +364,12 @@ class AssessmentState extends Equatable {
       'age': selectedAge,
       'selectedConditions': selectedConditions,
       'selectedInjuries': selectedInjuries,
-      'selectedAllergyCategory': selectedAllergyCategory,
       'selectedAllergies': selectedAllergies,
+      'allergyNote': allergyNote,
+      'selectedDietTagId': selectedDietTagId,
+      'dislikedFoodGroups': dislikedFoodGroups,
+      'dislikedFoodsNote': dislikedFoodsNote,
+      'foodBudget': selectedBudget,
       'targetWeight': targetWeight,
       'hasExperience': hasExperience,
       'activityLevel': selectedActivityLevel,
@@ -339,8 +386,14 @@ class AssessmentState extends Equatable {
       selectedAge: (json['selectedAge'] as num?)?.toInt() ?? 25,
       selectedConditions: List<String>.from(json['selectedConditions'] ?? []),
       selectedInjuries: List<String>.from(json['selectedInjuries'] ?? []),
-      selectedAllergyCategory: json['selectedAllergyCategory'] as String?,
+      availableAllergies: const [],
       selectedAllergies: List<String>.from(json['selectedAllergies'] ?? []),
+      allergyNote: json['allergyNote'] as String? ?? '',
+      availableDietTags: const [],
+      selectedDietTagId: json['selectedDietTagId'] as String?,
+      dislikedFoodGroups: List<String>.from(json['dislikedFoodGroups'] ?? []),
+      dislikedFoodsNote: json['dislikedFoodsNote'] as String? ?? '',
+      selectedBudget: json['foodBudget'] as String?,
       targetWeight: (json['targetWeight'] as num?)?.toInt() ?? 65,
       hasExperience: json['hasExperience'] as bool?,
       selectedActivityLevel: json['activityLevel'] as String?,
@@ -359,8 +412,14 @@ class AssessmentState extends Equatable {
     selectedInjuries,
     availableConditions,
     availableInjuries,
-    selectedAllergyCategory,
+    availableAllergies,
     selectedAllergies,
+    allergyNote,
+    availableDietTags,
+    selectedDietTagId,
+    dislikedFoodGroups,
+    dislikedFoodsNote,
+    selectedBudget,
     targetWeight,
     hasExperience,
     selectedActivityLevel,
