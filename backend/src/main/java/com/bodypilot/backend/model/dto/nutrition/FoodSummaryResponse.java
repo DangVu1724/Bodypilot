@@ -22,6 +22,7 @@ public class FoodSummaryResponse {
     private BigDecimal fatPer100g;
     private BigDecimal carbsPer100g;
     private String imageUrl;
+    private FoodCategoryDTO category;
     private String categoryName;
     private Integer healthScore;
 }

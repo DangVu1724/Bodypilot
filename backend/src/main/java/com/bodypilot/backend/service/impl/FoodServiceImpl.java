@@ -95,6 +95,7 @@ public class FoodServiceImpl implements FoodService {
                 .fatPer100g(food.getFatPer100g())
                 .carbsPer100g(food.getCarbsPer100g())
                 .imageUrl(food.getImageUrl())
+                .category(mapToCategoryDTO(food.getCategory()))
                 .categoryName(food.getCategory() != null ? food.getCategory().getName() : null)
                 .healthScore(food.getHealthScore())
                 .build();
