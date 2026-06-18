@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/presentation/screens/meal/allergy_survey_screen.dart';
+import 'package:mobile/presentation/screens/meal/ai_meal_suggestion_screen.dart';
 
 class AiSuggestionBanner extends StatelessWidget {
   const AiSuggestionBanner({super.key});
@@ -16,9 +18,18 @@ class AiSuggestionBanner extends StatelessWidget {
               'AI Suggestion',
               style: AppTheme.semiboldStyle.copyWith(fontSize: 16),
             ),
-            Text(
-              'See All',
-              style: AppTheme.semiboldStyle.copyWith(fontSize: 13, color: const Color(0xFFF07025)),
+            GestureDetector(
+              onTap: () {
+                Navigator.of(context, rootNavigator: true).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AiMealSuggestionScreen(),
+                  ),
+                );
+              },
+              child: Text(
+                'See All',
+                style: AppTheme.semiboldStyle.copyWith(fontSize: 13, color: const Color(0xFFF07025)),
+              ),
             ),
           ],
         ),
@@ -60,8 +71,19 @@ class AiSuggestionBanner extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
-                onPressed: () {
-                  // TODO: Implement AI diet generation
+                onPressed: () async {
+                  final result = await Navigator.of(context, rootNavigator: true).push<bool>(
+                    MaterialPageRoute(
+                      builder: (context) => const MealPreferenceSurveyScreen(),
+                    ),
+                  );
+                  if (result == true && context.mounted) {
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(
+                        builder: (context) => const AiMealSuggestionScreen(),
+                      ),
+                    );
+                  }
                 },
                 icon: const Icon(Icons.auto_awesome, size: 16),
                 label: const Text('Tạo ngay'),

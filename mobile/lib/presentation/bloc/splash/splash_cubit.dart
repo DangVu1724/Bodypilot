@@ -36,9 +36,15 @@ class SplashCubit extends Cubit<SplashStatus> {
       await TokenService.updateLastActivity();
 
       // 3. Fetch user profile in background
-      await userCubit.fetchUserProfile();
+      final isProfileFetched = await userCubit.fetchUserProfile();
 
       await minDuration;
+
+      if (!isProfileFetched) {
+        await TokenService.removeToken();
+        emit(SplashStatus.unauthenticated);
+        return;
+      }
 
       if (TokenService.isAssessmentCompleted()) {
         emit(SplashStatus.authenticated);
@@ -46,12 +52,9 @@ class SplashCubit extends Cubit<SplashStatus> {
         emit(SplashStatus.needsAssessment);
       }
     } catch (e) {
+      await TokenService.removeToken();
       await minDuration;
-      if (TokenService.isAssessmentCompleted()) {
-        emit(SplashStatus.authenticated);
-      } else {
-        emit(SplashStatus.needsAssessment);
-      }
+      emit(SplashStatus.unauthenticated);
     } finally {
       _isStarting = false;
     }

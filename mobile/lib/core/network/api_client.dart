@@ -11,7 +11,7 @@ class ApiClient {
       BaseOptions(
         baseUrl: 'http://10.0.2.2:8080/api/v1', // Android Emulator IP
         connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 120),
         headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
       ),
     );
@@ -22,6 +22,8 @@ class ApiClient {
           final token = TokenService.getToken();
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';
+          } else {
+            options.headers.remove('Authorization');
           }
           return handler.next(options);
         },
