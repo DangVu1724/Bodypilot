@@ -1,6 +1,7 @@
 package com.bodypilot.backend.model.entity.user;
 
 import com.bodypilot.backend.model.entity.common.BaseEntity;
+import com.bodypilot.backend.model.enums.FoodBudget;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,4 +36,8 @@ public class UserProfile extends BaseEntity {
     private boolean isAssessmentCompleted;
 
     private String activityLevel;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "food_budget")
+    private FoodBudget foodBudget;
 }

@@ -6,6 +6,15 @@ import com.bodypilot.backend.model.entity.user.UserInjury;
 import com.bodypilot.backend.model.entity.user.UserHealthCondition;
 import com.bodypilot.backend.model.entity.user.User;
 import com.bodypilot.backend.model.entity.user.UserGoal;
+import com.bodypilot.backend.model.entity.user.UserAllergy;
+import com.bodypilot.backend.model.entity.user.UserDietPreference;
+import com.bodypilot.backend.model.entity.user.UserFoodPreference;
+import com.bodypilot.backend.model.entity.health.AllergyMaster;
+import com.bodypilot.backend.model.entity.nutrition.DietTag;
+import com.bodypilot.backend.model.enums.SeverityLevel;
+import com.bodypilot.backend.model.enums.FoodBudget;
+import com.bodypilot.backend.model.enums.DislikedFoodGroup;
+import java.util.List;
 import com.bodypilot.backend.exception.ResourceNotFoundException;
 import com.bodypilot.backend.model.dto.user.AssessmentSubmissionRequest;
 import com.bodypilot.backend.model.dto.nutrition.CalorieCalculationResult;
@@ -34,6 +43,11 @@ public class AssessmentServiceImpl implements AssessmentService {
     private final UserInjuryRepository userInjuryRepository;
     private final UserMetricHistoryRepository userMetricHistoryRepository;
     private final CalorieCalculatorService calorieCalculatorService;
+    private final AllergyMasterRepository allergyMasterRepository;
+    private final UserAllergyRepository userAllergyRepository;
+    private final UserDietPreferenceRepository userDietPreferenceRepository;
+    private final DietTagRepository dietTagRepository;
+    private final UserFoodPreferenceRepository userFoodPreferenceRepository;
 
     @Override
     @Transactional
@@ -52,6 +66,13 @@ public class AssessmentServiceImpl implements AssessmentService {
         profile.setHasExperience(request.getHasExperience());
         profile.setActivityLevel(request.getActivityLevel());
         profile.setAssessmentCompleted(true);
+        if (request.getFoodBudget() != null) {
+            try {
+                profile.setFoodBudget(FoodBudget.valueOf(request.getFoodBudget().toUpperCase()));
+            } catch (Exception e) {
+                // Ignore invalid enums
+            }
+        }
         userProfileRepository.save(profile);
 
         // Map strings to Enums for calculation
@@ -132,6 +153,68 @@ public class AssessmentServiceImpl implements AssessmentService {
                                     .build();
                             userInjuryRepository.save(userInjury);
                         });
+            }
+        }
+
+        // 5. Link Allergies
+        if (request.getSelectedAllergies() != null) {
+            for (String allergyCode : request.getSelectedAllergies()) {
+                allergyMasterRepository.findByCode(allergyCode)
+                        .ifPresent(am -> {
+                            UserAllergy userAllergy = UserAllergy.builder()
+                                    .user(user)
+                                    .allergyMaster(am)
+                                    .severity(SeverityLevel.MEDIUM) // Default severity
+                                    .note(request.getAllergyNote())
+                                    .isActive(true)
+                                    .build();
+                            userAllergyRepository.save(userAllergy);
+                        });
+            }
+        }
+
+        // 6. Link Diet Preference
+        if (request.getSelectedDietTagId() != null) {
+            List<UserDietPreference> existingDiets = userDietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
+            for (UserDietPreference dp : existingDiets) {
+                dp.setIsActive(false);
+                userDietPreferenceRepository.save(dp);
+            }
+
+            dietTagRepository.findById(request.getSelectedDietTagId())
+                    .ifPresent(dt -> {
+                        UserDietPreference dietPreference = userDietPreferenceRepository.findByUserAndDietTag(user, dt)
+                                .orElse(UserDietPreference.builder().user(user).dietTag(dt).build());
+                        dietPreference.setIsActive(true);
+                        userDietPreferenceRepository.save(dietPreference);
+                    });
+        } else {
+            List<UserDietPreference> existingDiets = userDietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
+            for (UserDietPreference dp : existingDiets) {
+                dp.setIsActive(false);
+                userDietPreferenceRepository.save(dp);
+            }
+        }
+
+        // 7. Link Disliked / Restricted Foods
+        List<UserFoodPreference> existingPrefs = userFoodPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
+        for (UserFoodPreference fp : existingPrefs) {
+            fp.setIsActive(false);
+            userFoodPreferenceRepository.save(fp);
+        }
+
+        if (request.getDislikedFoodGroups() != null) {
+            for (String groupStr : request.getDislikedFoodGroups()) {
+                try {
+                    DislikedFoodGroup group = DislikedFoodGroup.valueOf(groupStr.toUpperCase());
+                    UserFoodPreference pref = userFoodPreferenceRepository.findByUserAndDislikedFoodGroup(user, group)
+                            .orElse(UserFoodPreference.builder().user(user).dislikedFoodGroup(group).build());
+                    pref.setIsActive(true);
+                    pref.setNote(request.getDislikedFoodsNote());
+                    userFoodPreferenceRepository.save(pref);
+                } catch (Exception e) {
+                    // Ignore invalid enums
+                }
             }
         }
     }

@@ -4,7 +4,6 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -12,20 +11,9 @@ import java.util.UUID;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class AssessmentSubmissionRequest {
-    private String selectedGoal;
-    private String selectedGender;
-    private Integer age;
-    private Double heightCm;
-    private Double weight;
-    private Double targetWeight;
-    private List<String> selectedConditions;
-    private List<String> selectedInjuries;
+public class UserPreferencesUpdateRequest {
     private List<String> selectedAllergies;
     private String allergyNote;
-    private Boolean hasExperience;
-    private String activityLevel;
-    
     private UUID selectedDietTagId;
     private List<String> dislikedFoodGroups;
     private String dislikedFoodsNote;
