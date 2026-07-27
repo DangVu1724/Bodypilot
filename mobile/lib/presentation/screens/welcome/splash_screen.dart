@@ -1,8 +1,8 @@
-// splash_screen.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/presentation/bloc/splash/splash_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 
@@ -27,15 +27,15 @@ class _SplashScreenState extends State<SplashScreen> {
           switch (status) {
             case SplashStatus.authenticated:
               _isNavigated = true;
-              Navigator.pushReplacementNamed(context, AppRoutes.home);
+              context.go(AppRoutes.home);
               break;
             case SplashStatus.needsAssessment:
               _isNavigated = true;
-              Navigator.pushReplacementNamed(context, AppRoutes.assessment);
+              context.go(AppRoutes.assessment);
               break;
             case SplashStatus.unauthenticated:
               _isNavigated = true;
-              Navigator.pushReplacementNamed(context, AppRoutes.welcome);
+              context.go(AppRoutes.welcome);
               break;
             case SplashStatus.loading:
             case SplashStatus.error:
@@ -49,10 +49,7 @@ class _SplashScreenState extends State<SplashScreen> {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Color(0xFF0F172A),
-                  Color(0xFF1E293B),
-                ],
+                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
               ),
             ),
             child: SafeArea(
@@ -61,7 +58,6 @@ class _SplashScreenState extends State<SplashScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Spacer(flex: 3),
-                    // Logo container with styling
                     Container(
                       width: 140,
                       height: 140,
@@ -70,21 +66,13 @@ class _SplashScreenState extends State<SplashScreen> {
                         shape: BoxShape.circle,
                         border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
                         boxShadow: [
-                          BoxShadow(
-                            color: const Color(0xFFF97316).withOpacity(0.2),
-                            blurRadius: 30,
-                            spreadRadius: 2,
-                          ),
+                          BoxShadow(color: const Color(0xFFF97316).withOpacity(0.2), blurRadius: 30, spreadRadius: 2),
                         ],
                       ),
                       padding: const EdgeInsets.all(24),
-                      child: Image.asset(
-                        'assets/images/logo.png',
-                        fit: BoxFit.contain,
-                      ),
+                      child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                     ),
                     const SizedBox(height: 24),
-                    // App Name
                     Text(
                       'BodyPilot',
                       style: GoogleFonts.plusJakartaSans(
@@ -95,17 +83,11 @@ class _SplashScreenState extends State<SplashScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    // Tagline
                     Text(
                       'Trợ lý Sức khỏe & Dinh dưỡng AI',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 15,
-                        color: Colors.white70,
-                        letterSpacing: 0.2,
-                      ),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 15, color: Colors.white70, letterSpacing: 0.2),
                     ),
                     const Spacer(flex: 2),
-                    // Loading indicator
                     const SizedBox(
                       width: 24,
                       height: 24,

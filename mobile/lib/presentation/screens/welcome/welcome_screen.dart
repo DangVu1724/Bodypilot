@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -10,7 +11,6 @@ class WelcomeScreen extends StatelessWidget {
     return Scaffold(
       body: Stack(
         children: [
-          // Background Image
           Positioned.fill(
             child: Container(
               decoration: const BoxDecoration(
@@ -21,7 +21,6 @@ class WelcomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Beautiful dark gradient overlay for better contrast
           Positioned.fill(
             child: Container(
               decoration: BoxDecoration(
@@ -38,7 +37,6 @@ class WelcomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          // Content
           SafeArea(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
@@ -46,7 +44,6 @@ class WelcomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Spacer(flex: 2),
-                  // App Brand Logo Container
                   Container(
                     width: 90,
                     height: 90,
@@ -62,7 +59,6 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // Welcome Title
                   Text(
                     'Chào mừng đến với\nBodyPilot',
                     style: GoogleFonts.plusJakartaSans(
@@ -75,7 +71,6 @@ class WelcomeScreen extends StatelessWidget {
                     textAlign: TextAlign.center,
                   ),
                   const SizedBox(height: 12),
-                  // Tagline
                   Text(
                     'Trợ lý sức khỏe và luyện tập AI cá nhân của bạn',
                     style: GoogleFonts.plusJakartaSans(
@@ -87,12 +82,11 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   const Spacer(flex: 3),
                   
-                  // Primary Action: Get Started Button
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, AppRoutes.onboarding);
+                        context.push(AppRoutes.onboarding);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFF97316),
@@ -115,7 +109,6 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   
-                  // Secondary Action: Login Link
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -129,7 +122,7 @@ class WelcomeScreen extends StatelessWidget {
                       const SizedBox(width: 4),
                       TextButton(
                         onPressed: () {
-                          Navigator.pushNamed(context, AppRoutes.login);
+                          context.push(AppRoutes.login);
                         },
                         style: TextButton.styleFrom(
                           foregroundColor: const Color(0xFFF97316),

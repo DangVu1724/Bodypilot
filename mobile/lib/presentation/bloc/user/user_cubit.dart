@@ -1,6 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/repositories/user_repository.dart';
 import 'package:mobile/data/services/token_service.dart';
+import 'package:core_shared/models/user_model.dart';
+import 'package:core_shared/models/user_metrics_model.dart';
 import 'user_state.dart';
 
 class UserCubit extends Cubit<UserState> {
@@ -34,6 +36,37 @@ class UserCubit extends Cubit<UserState> {
         emit(UserError(e.toString()));
       }
       return false;
+    }
+  }
+
+  Future<void> updateWeight(double newWeight) async {
+    if (state is UserLoaded) {
+      final currentUser = (state as UserLoaded).user;
+      
+      final updatedMetrics = UserMetricsModel(
+        weight: newWeight,
+        heightCm: currentUser.metrics?.heightCm,
+        age: currentUser.metrics?.age,
+        goal: currentUser.metrics?.goal,
+        activityLevel: currentUser.metrics?.activityLevel,
+        bmi: currentUser.metrics?.heightCm != null && currentUser.metrics!.heightCm! > 0
+            ? newWeight / ((currentUser.metrics!.heightCm! / 100) * (currentUser.metrics!.heightCm! / 100))
+            : currentUser.metrics?.bmi,
+        bmr: currentUser.metrics?.bmr,
+        tdee: currentUser.metrics?.tdee,
+        targetCalories: currentUser.metrics?.targetCalories,
+      );
+
+      final updatedUser = UserModel(
+        id: currentUser.id,
+        email: currentUser.email,
+        profile: currentUser.profile,
+        metrics: updatedMetrics,
+        goal: currentUser.goal,
+      );
+
+      await TokenService.saveUserCache(updatedUser);
+      emit(UserLoaded(updatedUser));
     }
   }
 

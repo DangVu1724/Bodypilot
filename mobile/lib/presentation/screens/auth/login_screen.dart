@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/auth/login_cubit.dart';
 import 'package:mobile/presentation/bloc/auth/login_state.dart';
@@ -30,9 +31,9 @@ class LoginView extends StatelessWidget {
           context.read<FoodCubit>().init();
           
           if (state.isProfileComplete == true) {
-            Navigator.pushReplacementNamed(context, AppRoutes.home);
+            context.go(AppRoutes.home);
           } else {
-            Navigator.pushReplacementNamed(context, AppRoutes.assessment);
+            context.go(AppRoutes.assessment);
           }
         } else if (state.status == LoginStatus.failure) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -56,7 +57,6 @@ class LoginView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 30),
-                    // App Logo
                     Center(
                       child: Container(
                         width: 90,
@@ -81,7 +81,6 @@ class LoginView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    // Title
                     Text(
                       'Chào mừng trở lại',
                       style: GoogleFonts.plusJakartaSans(
@@ -93,7 +92,6 @@ class LoginView extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
-                    // Subtitle
                     Text(
                       'Đăng nhập để tiếp tục hành trình sức khỏe của bạn',
                       style: GoogleFonts.plusJakartaSans(
@@ -104,7 +102,6 @@ class LoginView extends StatelessWidget {
                     ),
                     const SizedBox(height: 36),
                     
-                    // Email TextField
                     TextField(
                       onChanged: cubit.emailChanged,
                       keyboardType: TextInputType.emailAddress,
@@ -140,7 +137,6 @@ class LoginView extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Password TextField
                     TextField(
                       onChanged: cubit.passwordChanged,
                       obscureText: !state.isPasswordVisible,
@@ -185,7 +181,6 @@ class LoginView extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     
-                    // Forgot Password
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
@@ -206,7 +201,6 @@ class LoginView extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     
-                    // Sign In Button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -240,7 +234,6 @@ class LoginView extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     
-                    // Or divider
                     Row(
                       children: [
                         Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
@@ -259,7 +252,6 @@ class LoginView extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
                     
-                    // Social Sign In Buttons
                     Row(
                       children: [
                         Expanded(
@@ -310,7 +302,6 @@ class LoginView extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
                     
-                    // Sign Up Link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -323,7 +314,7 @@ class LoginView extends StatelessWidget {
                         ),
                         TextButton(
                           onPressed: () {
-                            Navigator.pushReplacementNamed(context, AppRoutes.signup);
+                             context.go(AppRoutes.signup);
                           },
                           style: TextButton.styleFrom(
                             padding: EdgeInsets.zero,

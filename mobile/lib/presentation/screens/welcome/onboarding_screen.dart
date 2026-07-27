@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/presentation/bloc/onboarding/onboarding_cubit.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -44,7 +45,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
             return Scaffold(
               body: Stack(
                 children: [
-                  // 1. Background full-screen PageView
                   Positioned.fill(
                     child: PageView.builder(
                       controller: _pageController,
@@ -58,16 +58,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                           width: double.infinity,
                           height: double.infinity,
                           color: const Color(0xFF0F172A),
-                          child: Image.asset(
-                            page.image,
-                            fit: BoxFit.cover,
-                          ),
+                          child: Image.asset(page.image, fit: BoxFit.cover),
                         );
                       },
                     ),
                   ),
 
-                  // 2. Dark gradient overlay for readability
                   Positioned.fill(
                     child: IgnorePointer(
                       child: Container(
@@ -87,24 +83,20 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                     ),
                   ),
 
-                  // 3. UI Content (Skip button and Bottom Card)
                   SafeArea(
                     child: Column(
                       children: [
-                        // Skip Button at top right
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                           child: Align(
                             alignment: Alignment.topRight,
                             child: TextButton(
                               onPressed: () {
-                                Navigator.pushReplacementNamed(context, AppRoutes.welcome);
+                                context.go(AppRoutes.welcome);
                               },
                               style: TextButton.styleFrom(
                                 backgroundColor: Colors.black.withOpacity(0.4),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                               ),
                               child: Text(
@@ -121,7 +113,6 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
                         const Spacer(),
 
-                        // Bottom Info Card
                         Padding(
                           padding: const EdgeInsets.only(left: 20, right: 20, bottom: 30),
                           child: ClipRRect(
@@ -134,15 +125,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                 decoration: BoxDecoration(
                                   color: Colors.white.withOpacity(0.08),
                                   borderRadius: BorderRadius.circular(32),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.15),
-                                    width: 1.5,
-                                  ),
+                                  border: Border.all(color: Colors.white.withOpacity(0.15), width: 1.5),
                                 ),
                                 child: Column(
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    // Dots Indicator
                                     Row(
                                       mainAxisAlignment: MainAxisAlignment.center,
                                       children: List.generate(OnboardingCubit.pages.length, (index) {
@@ -154,16 +141,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           width: isSelected ? 24 : 8,
                                           decoration: BoxDecoration(
                                             borderRadius: BorderRadius.circular(4),
-                                            color: isSelected
-                                                ? const Color(0xFFF97316)
-                                                : Colors.white.withOpacity(0.3),
+                                            color: isSelected ? const Color(0xFFF97316) : Colors.white.withOpacity(0.3),
                                           ),
                                         );
                                       }),
                                     ),
                                     const SizedBox(height: 24),
 
-                                    // Text Section
                                     SizedBox(
                                       height: 120,
                                       child: AnimatedSwitcher(
@@ -197,21 +181,18 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                       ),
                                     ),
 
-                                    // Get Started button on the last page only
                                     if (currentPage == OnboardingCubit.pages.length - 1) ...[
                                       const SizedBox(height: 12),
                                       SizedBox(
                                         width: double.infinity,
                                         child: ElevatedButton(
                                           onPressed: () {
-                                            Navigator.pushReplacementNamed(context, AppRoutes.login);
+                                            context.go(AppRoutes.login);
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: const Color(0xFFF97316),
                                             foregroundColor: Colors.white,
-                                            shape: RoundedRectangleBorder(
-                                              borderRadius: BorderRadius.circular(16),
-                                            ),
+                                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                                             padding: const EdgeInsets.symmetric(vertical: 18),
                                             elevation: 4,
                                           ),
@@ -224,7 +205,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           ),
                                         ),
                                       ),
-                                    ]
+                                    ],
                                   ],
                                 ),
                               ),

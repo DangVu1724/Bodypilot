@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/auth/signup_cubit.dart';
 import 'package:mobile/presentation/bloc/auth/signup_state.dart';
@@ -30,7 +31,7 @@ class SignUpView extends StatelessWidget {
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.pushReplacementNamed(context, AppRoutes.login);
+          context.go(AppRoutes.login);
         } else if (state.status == SignupStatus.failure) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -53,7 +54,6 @@ class SignUpView extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 20),
-                    // App Logo
                     Center(
                       child: Container(
                         width: 90,
@@ -78,7 +78,6 @@ class SignUpView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    // Title
                     Text(
                       "Tạo tài khoản",
                       style: GoogleFonts.plusJakartaSans(
@@ -90,7 +89,6 @@ class SignUpView extends StatelessWidget {
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
-                    // Subtitle
                     Text(
                       'Đăng ký để bắt đầu hành trình luyện tập của bạn',
                       style: GoogleFonts.plusJakartaSans(
@@ -101,7 +99,6 @@ class SignUpView extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
 
-                    // Full name field
                     TextField(
                       onChanged: cubit.fullNameChanged,
                       style: GoogleFonts.plusJakartaSans(fontSize: 15),
@@ -126,7 +123,6 @@ class SignUpView extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Email field
                     TextField(
                       onChanged: cubit.emailChanged,
                       keyboardType: TextInputType.emailAddress,
@@ -162,7 +158,6 @@ class SignUpView extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Password field
                     TextField(
                       onChanged: cubit.passwordChanged,
                       obscureText: !state.isPasswordVisible,
@@ -207,7 +202,6 @@ class SignUpView extends StatelessWidget {
                     ),
                     const SizedBox(height: 16),
 
-                    // Confirm password field
                     TextField(
                       onChanged: cubit.confirmPasswordChanged,
                       obscureText: !state.isConfirmPasswordVisible,
@@ -252,7 +246,6 @@ class SignUpView extends StatelessWidget {
                     ),
                     const SizedBox(height: 12),
 
-                    // Terms and conditions
                     Row(
                       children: [
                         Checkbox(
@@ -286,7 +279,6 @@ class SignUpView extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
 
-                    // Sign Up button
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -320,7 +312,6 @@ class SignUpView extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
 
-                    // Social Sign Up Divider
                     Row(
                       children: [
                         Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
@@ -339,7 +330,6 @@ class SignUpView extends StatelessWidget {
                     ),
                     const SizedBox(height: 24),
 
-                    // Social sign up buttons
                     Row(
                       children: [
                         Expanded(
@@ -390,7 +380,6 @@ class SignUpView extends StatelessWidget {
                     ),
                     const SizedBox(height: 32),
 
-                    // Sign in link
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -403,7 +392,7 @@ class SignUpView extends StatelessWidget {
                         ),
                         TextButton(
                           onPressed: () {
-                            Navigator.pushReplacementNamed(context, AppRoutes.login);
+                             context.go(AppRoutes.login);
                           },
                           style: TextButton.styleFrom(
                             padding: EdgeInsets.zero,

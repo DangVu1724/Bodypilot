@@ -111,6 +111,19 @@ class UserRepository {
       throw Exception(e.response?.data['message'] ?? 'Network error');
     }
   }
+
+  Future<String> getAiWorkoutSuggestion(String userId) async {
+    try {
+      final response = await apiClient.get('/users/$userId/ai-workout-suggestion');
+      if (response.data['success'] == true) {
+        return response.data['data'] as String;
+      } else {
+        throw Exception(response.data['message'] ?? 'Failed to load AI suggestion');
+      }
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Network error');
+    }
+  }
 }
 
 final userRepository = UserRepository();
