@@ -393,14 +393,14 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
   Widget _buildNutritionGrid(FoodModel food) {
     final factor = (_selectedServing?.grams ?? 100) / 100;
     final items = [
-      _NutrientItem('Calories', '${(food.caloriesPer100g * factor).toStringAsFixed(0)}', 'kcal', Icons.local_fire_department_outlined),
-      _NutrientItem('Protein', '${(food.proteinPer100g * factor).toStringAsFixed(1)}', 'g', Icons.egg_outlined),
-      _NutrientItem('Carbs', '${(food.carbsPer100g * factor).toStringAsFixed(1)}', 'g', Icons.grain),
-      _NutrientItem('Fats', '${(food.fatPer100g * factor).toStringAsFixed(1)}', 'g', Icons.pie_chart_outline),
-      if (food.fiberPer100g != null) _NutrientItem('Fiber', '${(food.fiberPer100g! * factor).toStringAsFixed(1)}', 'g', Icons.eco_outlined),
-      if (food.sugarPer100g != null) _NutrientItem('Sugar', '${(food.sugarPer100g! * factor).toStringAsFixed(1)}', 'g', Icons.opacity),
+      _NutrientItem('Calories', (food.caloriesPer100g * factor).toStringAsFixed(0), 'kcal', Icons.local_fire_department_outlined),
+      _NutrientItem('Protein', (food.proteinPer100g * factor).toStringAsFixed(1), 'g', Icons.egg_outlined),
+      _NutrientItem('Carbs', (food.carbsPer100g * factor).toStringAsFixed(1), 'g', Icons.grain),
+      _NutrientItem('Fats', (food.fatPer100g * factor).toStringAsFixed(1), 'g', Icons.pie_chart_outline),
+      if (food.fiberPer100g != null) _NutrientItem('Fiber', (food.fiberPer100g! * factor).toStringAsFixed(1), 'g', Icons.eco_outlined),
+      if (food.sugarPer100g != null) _NutrientItem('Sugar', (food.sugarPer100g! * factor).toStringAsFixed(1), 'g', Icons.opacity),
       if (food.sodiumMgPer100g != null)
-        _NutrientItem('Sodium', '${(food.sodiumMgPer100g! * factor).toStringAsFixed(0)}', 'mg', Icons.science_outlined),
+        _NutrientItem('Sodium', (food.sodiumMgPer100g! * factor).toStringAsFixed(0), 'mg', Icons.science_outlined),
     ];
 
     return GridView.builder(

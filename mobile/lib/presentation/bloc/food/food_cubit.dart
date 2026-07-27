@@ -1,6 +1,9 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/repositories/food_repository.dart';
 import 'food_state.dart';
+import 'package:logger/logger.dart';
+
+final _logger = Logger();
 
 class FoodCubit extends Cubit<FoodState> {
   final FoodRepository foodRepository;
@@ -78,8 +81,7 @@ class FoodCubit extends Cubit<FoodState> {
         ));
       }
     } catch (e) {
-      // Silently fail for prefetch
-      print('Prefetch error: $e');
+      _logger.e('Prefetch error: $e');
     }
   }
 

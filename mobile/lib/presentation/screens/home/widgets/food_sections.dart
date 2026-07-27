@@ -1,6 +1,7 @@
 import 'package:core_shared/models/food_model.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
@@ -42,7 +43,7 @@ class FoodCard extends StatelessWidget {
     return GestureDetector(
       onTap: () {
         final routeName = isIngredient ? AppRoutes.ingredientDetail : AppRoutes.foodDetail;
-        Navigator.of(context, rootNavigator: true).pushNamed(routeName, arguments: food.id);
+        context.push(routeName, extra: food.id);
       },
       child: Container(
         width: 280,

@@ -2,6 +2,7 @@ import 'package:core_shared/models/food_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
@@ -231,7 +232,7 @@ class _FoodListScreenState extends State<FoodListScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 24),
             itemCount: 5,
             itemBuilder: (context, index) => const Padding(
-              padding: const EdgeInsets.only(bottom: 16),
+              padding: EdgeInsets.only(bottom: 16),
               child: Skeleton(width: double.infinity, height: 180, borderRadius: 24),
             ),
           )
@@ -258,7 +259,7 @@ class _DishListItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, AppRoutes.foodDetail, arguments: food.id),
+      onTap: () => context.push(AppRoutes.foodDetail, extra: food.id),
       child: Container(
         height: 180,
         decoration: BoxDecoration(
@@ -341,7 +342,7 @@ class _IngredientGridItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: () => Navigator.pushNamed(context, AppRoutes.ingredientDetail, arguments: food.id),
+      onTap: () => context.push(AppRoutes.ingredientDetail, extra: food.id),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,

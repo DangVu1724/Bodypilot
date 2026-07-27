@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
@@ -78,7 +79,7 @@ class _CalenderMealState extends State<CalenderMeal> {
                       _selectedDay = selectedDay;
                       _focusedDay = focusedDay;
                     });
-                    Navigator.of(context).pushNamed(AppRoutes.mealPlan, arguments: selectedDay);
+                    context.push(AppRoutes.mealPlan, extra: selectedDay);
                   },
 
                   onPageChanged: (focusedDay) {

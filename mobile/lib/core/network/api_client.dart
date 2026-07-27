@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/data/services/token_service.dart';
-import 'package:mobile/main.dart';
+import 'package:mobile/core/routes/app_pages.dart';
 
 class ApiClient {
   late final Dio dio;
@@ -33,7 +33,7 @@ class ApiClient {
             TokenService.removeToken();
 
             // Redirect to welcome screen
-            navigatorKey.currentState?.pushNamedAndRemoveUntil(AppRoutes.welcome, (route) => false);
+            AppPages.router.go(AppRoutes.welcome);
           }
           return handler.next(e);
         },

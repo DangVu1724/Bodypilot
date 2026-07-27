@@ -2,6 +2,7 @@ import 'package:core_shared/models/food_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
@@ -17,7 +18,7 @@ class BrowseMealsList extends StatelessWidget {
       children: [
         SectionHeader(
           title: 'Browse Meals',
-          onSeeAll: () => Navigator.of(context, rootNavigator: true).pushNamed(AppRoutes.foodList, arguments: 'DISH'),
+          onSeeAll: () => context.push(AppRoutes.foodList, extra: 'DISH'),
         ),
         const SizedBox(height: 16),
         BlocBuilder<FoodCubit, FoodState>(
@@ -40,8 +41,7 @@ class BrowseMealsList extends StatelessWidget {
               itemBuilder: (context, index) {
                 final food = displayDishes[index];
                 return GestureDetector(
-                  onTap: () =>
-                      Navigator.of(context, rootNavigator: true).pushNamed(AppRoutes.foodDetail, arguments: food.id),
+                  onTap: () => context.push(AppRoutes.foodDetail, extra: food.id),
                   child: Container(
                     margin: const EdgeInsets.only(bottom: 12),
                     padding: const EdgeInsets.all(12),

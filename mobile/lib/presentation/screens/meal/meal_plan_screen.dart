@@ -303,7 +303,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
           if (slot != null && slot.id != null)
             GestureDetector(
               onTap: () {
-                context.read<MealCubit>().toggleMealSlotStatus(slot!.id!, !slot!.isEaten, state.selectedDate!);
+                context.read<MealCubit>().toggleMealSlotStatus(slot!.id!, !slot.isEaten, state.selectedDate!);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
