@@ -1,9 +1,11 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mobile/data/repositories/user_repository.dart';
 import 'package:mobile/data/services/token_service.dart';
 import 'assessment_state.dart';
+import 'package:logger/logger.dart';
+
+final _logger = Logger();
 
 class AssessmentCubit extends Cubit<AssessmentState> {
   final Box _box = Hive.box('assessment_box');
@@ -26,9 +28,7 @@ class AssessmentCubit extends Cubit<AssessmentState> {
         availableDietTags: dietTags,
       ));
     } catch (e) {
-      if (kDebugMode) {
-        print('Error fetching options: $e');
-      }
+      _logger.e('Error fetching options: $e');
     }
   }
 
@@ -39,9 +39,7 @@ class AssessmentCubit extends Cubit<AssessmentState> {
         final Map<String, dynamic> json = Map<String, dynamic>.from(cachedData);
         emit(AssessmentState.fromJson(json));
       } catch (e) {
-        if (kDebugMode) {
-          print('Error loading from Hive: $e');
-        }
+        _logger.e('Error loading from Hive: $e');
       }
     }
   }

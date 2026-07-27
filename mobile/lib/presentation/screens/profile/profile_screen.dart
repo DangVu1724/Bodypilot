@@ -7,6 +7,7 @@ import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 
 import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
@@ -72,27 +73,22 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 1. User Header with Avatar, Name, Email, and Streak Badge
                 _buildHeader(profile?.fullName ?? 'User', user.email, profile?.avatarUrl),
                 const SizedBox(height: 32),
 
-                // 2. Highlight Card for Weight, Height, Age
                 _buildHighlightMetricsCard(metrics),
                 const SizedBox(height: 32),
 
-                // 3. Goal Card with Progress Bar and CTA
                 _buildSectionTitle('Current Goal'),
                 const SizedBox(height: 16),
                 _buildGoalCard(goal, metrics?.weight),
                 const SizedBox(height: 32),
 
-                // 4. Grid of Advanced Metrics
                 _buildSectionTitle('Health Metrics'),
                 const SizedBox(height: 16),
                 _buildAdvancedMetricsGrid(metrics),
                 const SizedBox(height: 32),
 
-                // 5. Grouped Account Settings with Danger Zone
                 _buildSettingsGroup('Account', [
                   _buildSettingsTile(Icons.person_outline, 'Edit Profile', () {}),
                   _buildSettingsTile(Icons.notifications_none, 'Notifications', () {}),
@@ -135,7 +131,6 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 4),
               Text(email, style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 14)),
               const SizedBox(height: 12),
-              // Streak Badge
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
@@ -414,7 +409,7 @@ class ProfileScreen extends StatelessWidget {
 
                 await authRepository.logout();
                 if (context.mounted) {
-                  Navigator.of(context).pushNamedAndRemoveUntil(AppRoutes.welcome, (route) => false);
+                  context.go(AppRoutes.welcome);
                 }
               },
               style: ElevatedButton.styleFrom(

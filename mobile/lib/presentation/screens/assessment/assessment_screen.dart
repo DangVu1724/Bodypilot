@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_cubit.dart';
@@ -62,7 +63,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       child: BlocListener<AssessmentCubit, AssessmentState>(
         listener: (context, state) {
           if (state.status == AssessmentStatus.success) {
-            Navigator.pushReplacementNamed(context, '/home');
+            context.go('/home');
           } else if (state.status == AssessmentStatus.failure) {
             ScaffoldMessenger.of(
               context,
@@ -98,7 +99,6 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             ),
             body: Column(
               children: [
-                /// progress bar
                 AnimatedContainer(
                   duration: const Duration(milliseconds: 300),
                   child: LinearProgressIndicator(value: (currentIndex + 1) / steps.length),
