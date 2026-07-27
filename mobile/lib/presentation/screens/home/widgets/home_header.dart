@@ -91,53 +91,7 @@ class HomeHeader extends StatelessWidget {
     );
   }
 
-  static Widget buildDateSelector() {
-    final days = ['14\nMon', '15\nTue', '16\nWed', '17\nThu', '18\nFri', '19\nSat', '20\nSun'];
-    return SizedBox(
-      height: 70,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        itemCount: days.length,
-        itemBuilder: (context, index) {
-          bool isSelected = index == 3;
-          String date = days[index].split('\n')[0];
-          String day = days[index].split('\n')[1];
-          return Container(
-            width: 50,
-            margin: const EdgeInsets.only(right: 12),
-            decoration: BoxDecoration(
-              color: isSelected ? Colors.white : Colors.white.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(25),
-              border: isSelected ? Border.all(color: Colors.white, width: 2) : null,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  date,
-                  style: AppTheme.headlineStyle.copyWith(
-                    fontSize: 16,
-                    color: isSelected ? Colors.black : Colors.grey.shade700,
-                  ),
-                ),
-                Text(
-                  day,
-                  style: AppTheme.bodyStyle.copyWith(fontSize: 10, color: isSelected ? Colors.grey.shade600 : Colors.grey.shade500),
-                ),
-                if (isSelected)
-                  Container(
-                    margin: const EdgeInsets.only(top: 4),
-                    width: 12,
-                    height: 3,
-                    decoration: BoxDecoration(color: const Color(0xFF84CC16), borderRadius: BorderRadius.circular(2)),
-                  ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
+
 
   Widget _buildNotificationIcon() {
     return Stack(
