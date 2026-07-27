@@ -13,29 +13,29 @@ class OnboardingCubit extends Cubit<int> {
 
   static const List<OnboardingPage> pages = [
     OnboardingPage(
-      image: 'assets/images/man.png',
-      title: 'Personalized Workout Plans',
-      description: 'Get workout plans tailored to your fitness goals',
+      image: 'assets/images/gym_workout.png',
+      title: 'Kế hoạch Tập luyện Cá nhân',
+      description: 'Nhận các giáo án tập luyện được thiết kế riêng phù hợp hoàn toàn với thể trạng và mục tiêu của bạn.',
     ),
     OnboardingPage(
       image: 'assets/images/fruit.png',
-      title: 'Smart Nutrition Guide',
-      description: 'Track your meals and get personalized advice',
+      title: 'Chế độ Dinh dưỡng Thông minh',
+      description: 'Theo dõi bữa ăn hàng ngày dễ dàng và nhận các gợi ý thực đơn lành mạnh từ trợ lý dinh dưỡng AI.',
     ),
     OnboardingPage(
-      image: 'assets/images/ai.jpg',
-      title: 'AI Fitness Coach',
-      description: 'Real-time feedback using AI technology',
+      image: 'assets/images/ai_coach.png',
+      title: 'Huấn luyện viên AI 24/7',
+      description: 'Nhận phản hồi tức thì và các phân tích thể trạng thông minh dựa trên trí tuệ nhân tạo.',
     ),
     OnboardingPage(
       image: 'assets/images/heart.png',
-      title: 'Track Your Progress',
-      description: 'Monitor your improvements with analytics',
+      title: 'Theo dõi Tiến trình Trực quan',
+      description: 'Giám sát hành trình cải thiện vóc dáng và các chỉ số cơ thể của bạn qua biểu đồ chi tiết.',
     ),
     OnboardingPage(
       image: 'assets/images/equipments.png',
-      title: 'Join Our Community',
-      description: 'Connect with others and stay motivated',
+      title: 'Cộng đồng BodyPilot',
+      description: 'Kết nối với những người bạn có cùng mục tiêu luyện tập và cùng nhau duy trì động lực mỗi ngày.',
     ),
   ];
 

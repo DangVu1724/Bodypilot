@@ -1,7 +1,8 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
-import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/onboarding/onboarding_cubit.dart';
 
 class OnboardingScreen extends StatefulWidget {
@@ -26,112 +27,212 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       create: (context) => OnboardingCubit(),
       child: BlocListener<OnboardingCubit, int>(
         listener: (context, state) {
-          _pageController.animateToPage(state, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+          if (_pageController.hasClients) {
+            final currentPage = _pageController.page?.round() ?? 0;
+            if (currentPage != state) {
+              _pageController.animateToPage(
+                state,
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeInOut,
+              );
+            }
+          }
         },
         child: BlocBuilder<OnboardingCubit, int>(
           builder: (context, currentPage) {
+            final cubit = context.read<OnboardingCubit>();
             return Scaffold(
               body: Stack(
                 children: [
-                  // Background Image thay đổi theo currentPage
-                  AnimatedContainer(
-                    duration: const Duration(milliseconds: 500),
-                    decoration: BoxDecoration(
-                      image: DecorationImage(
-                        image: AssetImage(OnboardingCubit.pages[currentPage].image),
-                        fit: BoxFit.cover,
+                  // 1. Background full-screen PageView
+                  Positioned.fill(
+                    child: PageView.builder(
+                      controller: _pageController,
+                      itemCount: OnboardingCubit.pages.length,
+                      onPageChanged: (index) {
+                        cubit.goToPage(index);
+                      },
+                      itemBuilder: (context, index) {
+                        final page = OnboardingCubit.pages[index];
+                        return Container(
+                          width: double.infinity,
+                          height: double.infinity,
+                          color: const Color(0xFF0F172A),
+                          child: Image.asset(
+                            page.image,
+                            fit: BoxFit.cover,
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+
+                  // 2. Dark gradient overlay for readability
+                  Positioned.fill(
+                    child: IgnorePointer(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            colors: [
+                              Colors.black.withOpacity(0.2),
+                              const Color(0xFF0F172A).withOpacity(0.8),
+                              const Color(0xFF0F172A),
+                            ],
+                            stops: const [0.0, 0.55, 1.0],
+                          ),
+                        ),
                       ),
                     ),
                   ),
 
-                  // Dark Overlay
-                  Container(color: const Color(0x80000000)),
-
-                  // Content
-                  Column(
-                    children: [
-                      // Skip button
-                      Padding(
-                        padding: const EdgeInsets.only(top: 50, right: 20),
-                        child: Align(
-                          alignment: Alignment.topRight,
-                          child: TextButton(
-                            onPressed: () {
-                              Navigator.pushReplacementNamed(context, AppRoutes.welcome);
-                            },
-                            child: Text('Skip', style: AppTheme.bodyStyle.copyWith(fontSize: 16, color: Colors.white)),
+                  // 3. UI Content (Skip button and Bottom Card)
+                  SafeArea(
+                    child: Column(
+                      children: [
+                        // Skip Button at top right
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: TextButton(
+                              onPressed: () {
+                                Navigator.pushReplacementNamed(context, AppRoutes.welcome);
+                              },
+                              style: TextButton.styleFrom(
+                                backgroundColor: Colors.black.withOpacity(0.4),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(20),
+                                ),
+                                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              ),
+                              child: Text(
+                                'Bỏ qua',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
                           ),
                         ),
-                      ),
 
-                      // PageView với dữ liệu từng trang
-                      Expanded(
-                        child: PageView.builder(
-                          controller: _pageController,
-                          itemCount: OnboardingCubit.pages.length,
-                          onPageChanged: (index) {
-                            context.read<OnboardingCubit>().goToPage(index);
-                          },
-                          itemBuilder: (context, index) {
-                            final pageData = OnboardingCubit.pages[index];
-                            return _buildOnboardingPage(pageData);
-                          },
-                        ),
-                      ),
+                        const Spacer(),
 
-                      // Dots indicator + buttons
-                      Padding(
-                        padding: const EdgeInsets.all(30),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            if (currentPage > 0)
-                              IconButton(
-                                onPressed: () {
-                                  context.read<OnboardingCubit>().previousPage();
-                                },
-                                icon: const Icon(Icons.arrow_back, color: Colors.white),
-                              )
-                            else
-                              const SizedBox(width: 80),
-
-                            // Dots indicator
-                            Row(
-                              children: List.generate(OnboardingCubit.pages.length, (index) {
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(horizontal: 5),
-                                  width: 8,
-                                  height: 8,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: currentPage == index ? Colors.white : const Color(0x80FFFFFF),
+                        // Bottom Info Card
+                        Padding(
+                          padding: const EdgeInsets.only(left: 20, right: 20, bottom: 30),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(32),
+                            child: BackdropFilter(
+                              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
+                              child: Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(24),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(32),
+                                  border: Border.all(
+                                    color: Colors.white.withOpacity(0.15),
+                                    width: 1.5,
                                   ),
-                                );
-                              }),
-                            ),
-
-                            if (currentPage < OnboardingCubit.pages.length - 1)
-                              IconButton(
-                                onPressed: () {
-                                  context.read<OnboardingCubit>().nextPage();
-                                },
-                                icon: const Icon(Icons.arrow_forward, color: Colors.white),
-                              )
-                            else
-                              ElevatedButton(
-                                onPressed: () {
-                                  Navigator.pushReplacementNamed(context, AppRoutes.login);
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.white,
-                                  foregroundColor: Colors.blue,
                                 ),
-                                child: const Text('Get Started'),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Dots Indicator
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: List.generate(OnboardingCubit.pages.length, (index) {
+                                        final isSelected = currentPage == index;
+                                        return AnimatedContainer(
+                                          duration: const Duration(milliseconds: 250),
+                                          margin: const EdgeInsets.symmetric(horizontal: 4),
+                                          height: 8,
+                                          width: isSelected ? 24 : 8,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(4),
+                                            color: isSelected
+                                                ? const Color(0xFFF97316)
+                                                : Colors.white.withOpacity(0.3),
+                                          ),
+                                        );
+                                      }),
+                                    ),
+                                    const SizedBox(height: 24),
+
+                                    // Text Section
+                                    SizedBox(
+                                      height: 120,
+                                      child: AnimatedSwitcher(
+                                        duration: const Duration(milliseconds: 300),
+                                        child: Column(
+                                          key: ValueKey<int>(currentPage),
+                                          mainAxisAlignment: MainAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              OnboardingCubit.pages[currentPage].title,
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 22,
+                                                fontWeight: FontWeight.bold,
+                                                color: Colors.white,
+                                                letterSpacing: -0.5,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                            const SizedBox(height: 12),
+                                            Text(
+                                              OnboardingCubit.pages[currentPage].description,
+                                              style: GoogleFonts.plusJakartaSans(
+                                                fontSize: 14.5,
+                                                color: Colors.white.withOpacity(0.85),
+                                                height: 1.4,
+                                              ),
+                                              textAlign: TextAlign.center,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+
+                                    // Get Started button on the last page only
+                                    if (currentPage == OnboardingCubit.pages.length - 1) ...[
+                                      const SizedBox(height: 12),
+                                      SizedBox(
+                                        width: double.infinity,
+                                        child: ElevatedButton(
+                                          onPressed: () {
+                                            Navigator.pushReplacementNamed(context, AppRoutes.login);
+                                          },
+                                          style: ElevatedButton.styleFrom(
+                                            backgroundColor: const Color(0xFFF97316),
+                                            foregroundColor: Colors.white,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(16),
+                                            ),
+                                            padding: const EdgeInsets.symmetric(vertical: 18),
+                                            elevation: 4,
+                                          ),
+                                          child: Text(
+                                            'Bắt đầu ngay',
+                                            style: GoogleFonts.plusJakartaSans(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 16,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ]
+                                  ],
+                                ),
                               ),
-                          ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -141,28 +242,4 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       ),
     );
   }
-}
-
-Widget _buildOnboardingPage(OnboardingPage data) {
-  return Padding(
-    padding: const EdgeInsets.all(20),
-    child: Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        const Spacer(),
-        Text(
-          data.title, // Title sẽ thay đổi theo từng trang
-          style: AppTheme.headlineStyle.copyWith(fontSize: 28, color: Colors.white),
-          textAlign: TextAlign.center,
-        ),
-        const SizedBox(height: 20),
-
-        Text(
-          data.description, // Description sẽ thay đổi theo từng trang
-          style: AppTheme.bodyStyle.copyWith(fontSize: 16, color: Colors.white),
-          textAlign: TextAlign.center,
-        ),
-      ],
-    ),
-  );
 }
