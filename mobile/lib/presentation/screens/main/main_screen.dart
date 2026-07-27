@@ -46,6 +46,38 @@ class _MainScreenState extends State<MainScreen> {
     );
   }
 
+  Widget _buildNavItem(int index, IconData selectedIcon, IconData unselectedIcon, String label) {
+    final isSelected = _selectedIndex == index;
+    final color = isSelected ? AppTheme.primary : const Color(0xFF5A606A);
+    
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _onItemTapped(index),
+        behavior: HitTestBehavior.opaque,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              isSelected ? selectedIcon : unselectedIcon,
+              color: color,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                color: color,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,44 +89,36 @@ class _MainScreenState extends State<MainScreen> {
         ),
       ),
       bottomNavigationBar: Container(
+        height: 72,
         decoration: BoxDecoration(
+          color: const Color(0xFFD6CCC2).withOpacity(0.95), // Blends with screen's warm beige bottom
+          border: Border(
+            top: BorderSide(
+              color: Colors.black.withOpacity(0.06),
+              width: 0.5,
+            ),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withOpacity(0.03),
               blurRadius: 10,
-              offset: const Offset(0, -5),
+              offset: const Offset(0, -4),
             ),
           ],
         ),
-        child: NavigationBar(
-          selectedIndex: _selectedIndex,
-          onDestinationSelected: _onItemTapped,
-          backgroundColor: Colors.white,
-          indicatorColor: AppTheme.primary.withOpacity(0.1),
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home, color: AppTheme.primary),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.restaurant_outlined),
-              selectedIcon: Icon(Icons.restaurant, color: AppTheme.primary),
-              label: 'Meal',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.fitness_center_outlined),
-              selectedIcon: Icon(Icons.fitness_center, color: AppTheme.primary),
-              label: 'Workout',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.person_outline),
-              selectedIcon: Icon(Icons.person, color: AppTheme.primary),
-              label: 'Profile',
-            ),
-          ],
+        child: SafeArea(
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(0, Icons.home_rounded, Icons.home_outlined, 'Home'),
+              _buildNavItem(1, Icons.restaurant_rounded, Icons.restaurant_outlined, 'Meal'),
+              _buildNavItem(2, Icons.fitness_center_rounded, Icons.fitness_center_outlined, 'Workout'),
+              _buildNavItem(3, Icons.person_rounded, Icons.person_outline, 'Profile'),
+            ],
+          ),
         ),
       ),
     );
   }
 }
+

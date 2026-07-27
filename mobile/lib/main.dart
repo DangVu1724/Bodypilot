@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:mobile/core/routes/app_pages.dart';
-import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/services/token_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -15,14 +14,26 @@ import 'package:mobile/presentation/bloc/workout/exercise_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_category_cubit.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
+import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
+import 'package:mobile/data/repositories/workout_diary_repository.dart';
 
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:mobile/data/services/push_notification_service.dart';
+import 'package:logger/logger.dart';
 
-final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+final _logger = Logger();
+
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp();
+    await PushNotificationService.init();
+  } catch (e) {
+    _logger.e("Firebase initialization failed: $e");
+  }
   await Hive.initFlutter();
   await Hive.openBox('assessment_box');
   await TokenService.init();
@@ -42,17 +53,15 @@ class BodyPilotApp extends StatelessWidget {
         BlocProvider(create: (context) => ExerciseCubit(exerciseRepository)..fetchStrengthExercises()),
         BlocProvider(create: (context) => WorkoutCategoryCubit(exerciseRepository)..fetchCategories()),
         BlocProvider(create: (context) => MealCubit(nutritionDiaryRepository)),
-
+        BlocProvider(create: (context) => WorkoutDiaryCubit(workoutDiaryRepository)),
       ],
-      child: MaterialApp(
+      child: MaterialApp.router(
         title: 'BodyPilot',
-        navigatorKey: navigatorKey,
+        routerConfig: AppPages.router,
         debugShowCheckedModeBanner: false,
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.light,
-        initialRoute: AppRoutes.splash,
-        onGenerateRoute: AppPages.onGenerateRoute,
       ),
     );
   }

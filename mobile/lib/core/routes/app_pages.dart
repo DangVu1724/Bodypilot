@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/presentation/screens/assessment/assessment_screen.dart';
 import 'package:mobile/presentation/screens/auth/login_screen.dart';
@@ -15,50 +16,68 @@ import 'package:mobile/presentation/screens/welcome/welcome_screen.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/presentation/bloc/food_list/food_list_cubit.dart';
 import 'package:mobile/data/repositories/food_repository.dart';
+import 'package:mobile/presentation/screens/workout/workout_diary_screen.dart';
+import 'package:mobile/presentation/screens/metrics/calorie_balance_detail_screen.dart';
+import 'package:mobile/presentation/screens/metrics/protein_detail_screen.dart';
+import 'package:mobile/presentation/screens/metrics/active_minutes_detail_screen.dart';
 
 class AppPages {
   AppPages._();
 
-  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
-    switch (settings.name) {
-      case AppRoutes.splash:
-        return _buildRoute(const SplashScreen(), settings);
-      case AppRoutes.onboarding:
-        return _buildRoute(const OnboardingScreen(), settings);
-      case AppRoutes.welcome:
-        return _buildRoute(const WelcomeScreen(), settings);
-      case AppRoutes.login:
-        return _buildRoute(const LoginScreen(), settings);
-      case AppRoutes.signup:
-        return _buildRoute(const SignUpScreen(), settings);
-      case AppRoutes.assessment:
-        return _buildRoute(const AssessmentScreen(), settings);
-      case AppRoutes.home:
-        return _buildRoute(const MainScreen(), settings);
-      case AppRoutes.mealPlan:
-        final selectedDate = settings.arguments as DateTime?;
-        return _buildRoute(MealPlanScreen(initialDate: selectedDate), settings);
-      case AppRoutes.foodDetail:
-        final foodId = settings.arguments as String;
-        return _buildRoute(FoodDetailScreen(foodId: foodId), settings);
-      case AppRoutes.ingredientDetail:
-        final foodId = settings.arguments as String;
-        return _buildRoute(IngredientDetailScreen(foodId: foodId), settings);
-      case AppRoutes.foodList:
-        final type = settings.arguments as String;
-        return _buildRoute(
-          BlocProvider(
+  static final GlobalKey<NavigatorState> rootNavigatorKey = GlobalKey<NavigatorState>();
+
+  static final GoRouter router = GoRouter(
+    navigatorKey: rootNavigatorKey,
+    initialLocation: AppRoutes.splash,
+    routes: [
+      GoRoute(path: AppRoutes.splash, builder: (context, state) => const SplashScreen()),
+      GoRoute(path: AppRoutes.onboarding, builder: (context, state) => const OnboardingScreen()),
+      GoRoute(path: AppRoutes.welcome, builder: (context, state) => const WelcomeScreen()),
+      GoRoute(path: AppRoutes.login, builder: (context, state) => const LoginScreen()),
+      GoRoute(path: AppRoutes.signup, builder: (context, state) => const SignUpScreen()),
+      GoRoute(path: AppRoutes.assessment, builder: (context, state) => const AssessmentScreen()),
+      GoRoute(path: AppRoutes.home, builder: (context, state) => const MainScreen()),
+      GoRoute(
+        path: AppRoutes.mealPlan,
+        builder: (context, state) {
+          final selectedDate = state.extra as DateTime?;
+          return MealPlanScreen(initialDate: selectedDate);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.workoutDiary,
+        builder: (context, state) {
+          final selectedDate = state.extra as DateTime?;
+          return WorkoutDiaryScreen(initialDate: selectedDate);
+        },
+      ),
+      GoRoute(path: AppRoutes.calorieBalanceDetail, builder: (context, state) => const CalorieBalanceDetailScreen()),
+      GoRoute(path: AppRoutes.proteinDetail, builder: (context, state) => const ProteinDetailScreen()),
+      GoRoute(path: AppRoutes.activeMinutesDetail, builder: (context, state) => const ActiveMinutesDetailScreen()),
+      GoRoute(
+        path: AppRoutes.foodDetail,
+        builder: (context, state) {
+          final foodId = state.extra as String;
+          return FoodDetailScreen(foodId: foodId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.ingredientDetail,
+        builder: (context, state) {
+          final foodId = state.extra as String;
+          return IngredientDetailScreen(foodId: foodId);
+        },
+      ),
+      GoRoute(
+        path: AppRoutes.foodList,
+        builder: (context, state) {
+          final type = state.extra as String;
+          return BlocProvider(
             create: (context) => FoodListCubit(foodRepository),
             child: FoodListScreen(type: type),
-          ),
-          settings,
-        );
-      default:
-        return _buildRoute(const SplashScreen(), settings);
-    }
-  }
-
-  static PageRoute<dynamic> _buildRoute(Widget child, RouteSettings settings) {
-    return MaterialPageRoute<dynamic>(builder: (_) => child, settings: settings);
-  }
+          );
+        },
+      ),
+    ],
+  );
 }
