@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "517107633218",
+    "project_id": "bodypilot-27f55",
+    "storage_bucket": "bodypilot-27f55.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:517107633218:android:a94d147c2364d6de8e71db",
+        "android_client_info": {
+          "package_name": "com.company.bodypilot"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "517107633218-1bgsh2kjdihc8tg0e7acct503lo23sfa.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.company.bodypilot",
+            "certificate_hash": "436ebffe8629a27c0e2fc4f5dbc2a56cbff29b4c"
+          }
+        },
+        {
+          "client_id": "517107633218-u5u15mb0iuc8j6po8s6mblrc37c6vvd2.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBTsOBrPdvJhmFOFWti_o84UU6fbSTou9c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "517107633218-u5u15mb0iuc8j6po8s6mblrc37c6vvd2.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

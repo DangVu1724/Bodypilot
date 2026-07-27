@@ -32,6 +32,35 @@ class AuthRepository {
     }
   }
 
+
+  Future<bool> loginWithGoogle(String idToken) async {
+    try {
+      final response = await apiClient.post(
+        '/auth/google',
+        data: {'idToken': idToken},
+      );
+
+      if (response.data['success'] == true) {
+        final token = response.data['data']['token'];
+        final userData = response.data['data']['user'] as Map<String, dynamic>;
+        final userId = userData['id'] as String;
+        final profile = userData['profile'];
+        final isComplete = profile != null ? (profile['isAssessmentCompleted'] ?? profile['assessmentCompleted'] ?? false) : false;
+        await TokenService.saveToken(token, userId, isComplete);
+        try {
+          await TokenService.saveUserCache(UserModel.fromJson(userData));
+        } catch (e) {
+          // ignore cache error
+        }
+        return isComplete;
+      } else {
+        throw Exception(response.data['message'] ?? 'Google login failed');
+      }
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Network error');
+    }
+  }
+
   Future<bool> register(String email, String password, String fullName) async {
     try {
       final response = await apiClient.post(

@@ -1,11 +1,10 @@
-// signup_screen.dart - phần cần thay đổi
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/auth/signup_cubit.dart';
 import 'package:mobile/presentation/bloc/auth/signup_state.dart';
-import 'package:mobile/presentation/widgets/black_button.dart';
 
 class SignUpScreen extends StatelessWidget {
   const SignUpScreen({super.key});
@@ -26,63 +25,102 @@ class SignUpView extends StatelessWidget {
       listener: (context, state) {
         if (state.status == SignupStatus.success) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Đăng ký thành công! Vui lòng đăng nhập.')),
+            const SnackBar(
+              content: Text('Đăng ký thành công! Vui lòng đăng nhập.'),
+              backgroundColor: Colors.green,
+            ),
           );
           Navigator.pushReplacementNamed(context, AppRoutes.login);
         } else if (state.status == SignupStatus.failure) {
-          // Show error message
-          ScaffoldMessenger.of(
-            context,
-          ).showSnackBar(SnackBar(content: Text(state.errorMessage ?? 'Signup failed'), backgroundColor: Colors.red));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.errorMessage ?? 'Đăng ký thất bại'),
+              backgroundColor: Colors.red,
+            ),
+          );
         }
       },
       child: Scaffold(
+        backgroundColor: Colors.white,
         body: SafeArea(
-          child: BlocBuilder<SignupCubit, SignupState>(
-            builder: (context, state) {
-              final cubit = context.read<SignupCubit>();
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10.0),
+            child: BlocBuilder<SignupCubit, SignupState>(
+              builder: (context, state) {
+                final cubit = context.read<SignupCubit>();
 
-              return SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
-                child: Column(
+                return Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     const SizedBox(height: 20),
-
-                    // Logo
-                    Container(
-                      width: 80,
-                      height: 80,
-                      decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle),
-                      child: Icon(Icons.fitness_center, size: 50, color: Colors.blue.shade700),
+                    // App Logo
+                    Center(
+                      child: Container(
+                        width: 90,
+                        height: 90,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: Colors.grey.shade100, width: 1.5),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.05),
+                              blurRadius: 15,
+                              offset: const Offset(0, 5),
+                            ),
+                          ],
+                        ),
+                        padding: const EdgeInsets.all(16),
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          fit: BoxFit.contain,
+                        ),
+                      ),
                     ),
-                    const SizedBox(height: 40),
-
+                    const SizedBox(height: 24),
                     // Title
                     Text(
-                      "Create Account",
-                      style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
+                      "Tạo tài khoản",
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: AppTheme.textPrimary,
+                        letterSpacing: -0.5,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 8),
-
                     // Subtitle
                     Text(
-                      'Sign up to get started with your fitness journey',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.grey.shade600),
+                      'Đăng ký để bắt đầu hành trình luyện tập của bạn',
+                      style: GoogleFonts.plusJakartaSans(
+                        fontSize: 14.5,
+                        color: AppTheme.textSecondary,
+                      ),
+                      textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 40),
+                    const SizedBox(height: 32),
 
                     // Full name field
                     TextField(
                       onChanged: cubit.fullNameChanged,
+                      style: GoogleFonts.plusJakartaSans(fontSize: 15),
                       decoration: InputDecoration(
-                        labelText: 'Full Name',
-                        hintText: 'John Doe',
-                        prefixIcon: const Icon(Icons.person_outline),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        labelText: 'Họ và tên',
+                        labelStyle: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary, fontSize: 14),
+                        hintText: 'Nguyễn Văn A',
+                        hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 14),
+                        prefixIcon: const Icon(Icons.person_outline, color: AppTheme.textSecondary),
+                        filled: true,
+                        fillColor: AppTheme.surface,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+                          borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
                         ),
                       ),
                     ),
@@ -92,15 +130,33 @@ class SignUpView extends StatelessWidget {
                     TextField(
                       onChanged: cubit.emailChanged,
                       keyboardType: TextInputType.emailAddress,
+                      style: GoogleFonts.plusJakartaSans(fontSize: 15),
                       decoration: InputDecoration(
                         labelText: 'Email',
-                        hintText: 'you@example.com',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        errorText: state.email.isNotEmpty && !state.isValidEmail ? 'Enter a valid email' : null,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        labelStyle: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary, fontSize: 14),
+                        hintText: 'email@example.com',
+                        hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 14),
+                        prefixIcon: const Icon(Icons.email_outlined, color: AppTheme.textSecondary),
+                        errorText: state.email.isNotEmpty && !state.isValidEmail ? 'Vui lòng nhập Email hợp lệ' : null,
+                        errorStyle: GoogleFonts.plusJakartaSans(fontSize: 12),
+                        filled: true,
+                        fillColor: AppTheme.surface,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+                          borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red, width: 1.5),
                         ),
                       ),
                     ),
@@ -110,23 +166,42 @@ class SignUpView extends StatelessWidget {
                     TextField(
                       onChanged: cubit.passwordChanged,
                       obscureText: !state.isPasswordVisible,
+                      style: GoogleFonts.plusJakartaSans(fontSize: 15),
                       decoration: InputDecoration(
-                        labelText: 'Password',
-                        hintText: 'Create a password',
-                        prefixIcon: const Icon(Icons.lock_outline),
+                        labelText: 'Mật khẩu',
+                        labelStyle: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary, fontSize: 14),
+                        hintText: 'Nhập mật khẩu',
+                        hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 14),
+                        prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.textSecondary),
                         suffixIcon: IconButton(
                           icon: Icon(
                             state.isPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            color: AppTheme.textSecondary,
                           ),
                           onPressed: cubit.togglePasswordVisibility,
                         ),
                         errorText: state.password.isNotEmpty && !state.isValidPassword
-                            ? 'Password must be at least 6 characters'
+                            ? 'Mật khẩu phải chứa ít nhất 6 ký tự'
                             : null,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        errorStyle: GoogleFonts.plusJakartaSans(fontSize: 12),
+                        filled: true,
+                        fillColor: AppTheme.surface,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+                          borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red, width: 1.5),
                         ),
                       ),
                     ),
@@ -136,23 +211,42 @@ class SignUpView extends StatelessWidget {
                     TextField(
                       onChanged: cubit.confirmPasswordChanged,
                       obscureText: !state.isConfirmPasswordVisible,
+                      style: GoogleFonts.plusJakartaSans(fontSize: 15),
                       decoration: InputDecoration(
-                        labelText: 'Confirm Password',
-                        hintText: 'Confirm your password',
-                        prefixIcon: const Icon(Icons.lock_outline),
+                        labelText: 'Xác nhận mật khẩu',
+                        labelStyle: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary, fontSize: 14),
+                        hintText: 'Nhập lại mật khẩu',
+                        hintStyle: GoogleFonts.plusJakartaSans(color: Colors.grey.shade400, fontSize: 14),
+                        prefixIcon: const Icon(Icons.lock_outline, color: AppTheme.textSecondary),
                         suffixIcon: IconButton(
                           icon: Icon(
                             state.isConfirmPasswordVisible ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+                            color: AppTheme.textSecondary,
                           ),
                           onPressed: cubit.toggleConfirmPasswordVisibility,
                         ),
                         errorText: state.confirmPassword.isNotEmpty && !state.doPasswordsMatch
-                            ? 'Passwords do not match'
+                            ? 'Mật khẩu xác nhận không khớp'
                             : null,
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                        errorStyle: GoogleFonts.plusJakartaSans(fontSize: 12),
+                        filled: true,
+                        fillColor: AppTheme.surface,
+                        contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
                         focusedBorder: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide(color: AppTheme.primary, width: 2),
+                          borderSide: const BorderSide(color: AppTheme.primary, width: 1.5),
+                        ),
+                        errorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                        ),
+                        focusedErrorBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: const BorderSide(color: Colors.red, width: 1.5),
                         ),
                       ),
                     ),
@@ -169,20 +263,20 @@ class SignUpView extends StatelessWidget {
                         Expanded(
                           child: Text.rich(
                             TextSpan(
-                              text: 'I agree to the ',
-                              style: TextStyle(color: Colors.grey.shade600),
+                              text: 'Tôi đồng ý với ',
+                              style: GoogleFonts.plusJakartaSans(color: Colors.grey.shade600, fontSize: 13),
                               children: [
                                 TextSpan(
-                                  text: 'Terms of Service',
-                                  style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
+                                  text: 'Điều khoản dịch vụ',
+                                  style: GoogleFonts.plusJakartaSans(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 13),
                                 ),
                                 TextSpan(
-                                  text: ' and ',
-                                  style: TextStyle(color: Colors.grey.shade600),
+                                  text: ' và ',
+                                  style: GoogleFonts.plusJakartaSans(color: Colors.grey.shade600, fontSize: 13),
                                 ),
                                 TextSpan(
-                                  text: 'Privacy Policy',
-                                  style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
+                                  text: 'Chính sách bảo mật',
+                                  style: GoogleFonts.plusJakartaSans(color: AppTheme.primary, fontWeight: FontWeight.bold, fontSize: 13),
                                 ),
                               ],
                             ),
@@ -193,35 +287,81 @@ class SignUpView extends StatelessWidget {
                     const SizedBox(height: 24),
 
                     // Sign Up button
-                    BlackButton(
-                      label: state.status == SignupStatus.loading ? 'Creating account...' : 'Sign Up',
-                      onPressed: state.status == SignupStatus.loading ? null : cubit.submit,
-                      borderRadius: 12,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: state.status == SignupStatus.loading ? null : cubit.submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primary,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          elevation: 0,
+                        ),
+                        child: state.status == SignupStatus.loading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                            : Text(
+                                'Đăng ký',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                      ),
                     ),
+                    const SizedBox(height: 24),
 
+                    // Social Sign Up Divider
                     Row(
                       children: [
-                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                        Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
                         Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text('Or sign up with', style: TextStyle(color: Colors.grey.shade600)),
+                          child: Text(
+                            'Hoặc đăng ký bằng',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: AppTheme.textSecondary,
+                              fontSize: 13,
+                            ),
+                          ),
                         ),
-                        Expanded(child: Divider(color: Colors.grey.shade300)),
+                        Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
                       ],
                     ),
                     const SizedBox(height: 24),
 
-                    // Social sign up
+                    // Social sign up buttons
                     Row(
                       children: [
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {},
-                            icon: Icon(Icons.g_mobiledata, color: Colors.red.shade700),
-                            label: const Text('Google'),
+                            icon: Image.network(
+                              'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
+                              height: 18,
+                              width: 18,
+                              errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, color: Colors.red, size: 24),
+                            ),
+                            label: Text(
+                              'Google',
+                              style: GoogleFonts.plusJakartaSans(
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: BorderSide(color: Colors.grey.shade200),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                           ),
@@ -230,10 +370,18 @@ class SignUpView extends StatelessWidget {
                         Expanded(
                           child: OutlinedButton.icon(
                             onPressed: () {},
-                            icon: Icon(Icons.facebook, color: Colors.blue.shade800),
-                            label: const Text('Facebook'),
+                            icon: const Icon(Icons.facebook, color: Color(0xFF1877F2), size: 20),
+                            label: Text(
+                              'Facebook',
+                              style: GoogleFonts.plusJakartaSans(
+                                color: AppTheme.textPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
                             style: OutlinedButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              side: BorderSide(color: Colors.grey.shade200),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
                           ),
@@ -246,22 +394,37 @@ class SignUpView extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text("Already have an account? ", style: TextStyle(color: Colors.grey.shade600)),
+                        Text(
+                          "Đã có tài khoản? ",
+                          style: GoogleFonts.plusJakartaSans(
+                            color: AppTheme.textSecondary,
+                            fontSize: 14,
+                          ),
+                        ),
                         TextButton(
                           onPressed: () {
                             Navigator.pushReplacementNamed(context, AppRoutes.login);
                           },
+                          style: TextButton.styleFrom(
+                            padding: EdgeInsets.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                           child: Text(
-                            'Sign In',
-                            style: TextStyle(color: AppTheme.primary, fontWeight: FontWeight.bold),
+                            'Đăng nhập ngay',
+                            style: GoogleFonts.plusJakartaSans(
+                              color: AppTheme.primary,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
                       ],
                     ),
+                    const SizedBox(height: 20),
                   ],
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ),

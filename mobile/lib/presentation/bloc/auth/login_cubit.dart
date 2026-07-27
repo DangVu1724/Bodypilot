@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/presentation/bloc/auth/login_state.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 class LoginCubit extends Cubit<LoginState> {
   LoginCubit() : super(const LoginState());
@@ -41,6 +42,28 @@ class LoginCubit extends Cubit<LoginState> {
 
     try {
       final isComplete = await authRepository.login(state.email, state.password);
+      emit(state.copyWith(status: LoginStatus.success, isProfileComplete: isComplete));
+    } catch (e) {
+      emit(state.copyWith(status: LoginStatus.failure, errorMessage: e.toString().replaceAll('Exception: ', '')));
+    }
+  }
+
+  Future<void> loginWithGoogle() async {
+    emit(state.copyWith(status: LoginStatus.loading, errorMessage: null));
+
+    try {
+      await GoogleSignIn.instance.initialize();
+
+      final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
+
+      final GoogleSignInAuthentication googleAuth = googleUser.authentication;
+      final String? idToken = googleAuth.idToken;
+
+      if (idToken == null) {
+        throw Exception("Không thể lấy Google ID Token");
+      }
+
+      final isComplete = await authRepository.loginWithGoogle(idToken);
       emit(state.copyWith(status: LoginStatus.success, isProfileComplete: isComplete));
     } catch (e) {
       emit(state.copyWith(status: LoginStatus.failure, errorMessage: e.toString().replaceAll('Exception: ', '')));
