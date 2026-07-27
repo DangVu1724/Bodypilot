@@ -12,6 +12,8 @@ import 'widgets/ai_suggestion_banner.dart';
 import 'widgets/workout_plans_section.dart';
 import 'widgets/strength_section.dart';
 import 'widgets/ai_suggestion_card.dart';
+import 'widgets/workout_plan_section.dart';
+
 
 class WorkoutScreen extends StatelessWidget {
   const WorkoutScreen({super.key});
@@ -109,6 +111,8 @@ class WorkoutScreen extends StatelessWidget {
                         children: const [
                           CategoryChips(),
                           SizedBox(height: 16),
+                          WorkoutPlanSection(),
+                          SizedBox(height: 24),
                           AiSuggestionBanner(),
                           SizedBox(height: 24),
                           WorkoutPlansSection(),

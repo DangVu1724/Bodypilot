@@ -21,3 +21,4 @@ export 'models/workout_plan_model.dart';
 export 'models/workout_session_model.dart';
 export 'models/workout_session_exercise_model.dart';
 export 'models/allergy_model.dart';
+export 'models/daily_workout_model.dart';

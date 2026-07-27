@@ -2,12 +2,21 @@ import 'dart:async';
 import 'package:audioplayers/audioplayers.dart';
 import 'package:core_shared/models/exercise_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
 import '../../../../core/theme/app_theme.dart';
 
 class ExerciseTimerScreen extends StatefulWidget {
   final ExerciseModel exercise;
+  final String? dailyWorkoutItemId;
+  final DateTime? selectedDate;
 
-  const ExerciseTimerScreen({super.key, required this.exercise});
+  const ExerciseTimerScreen({
+    super.key,
+    required this.exercise,
+    this.dailyWorkoutItemId,
+    this.selectedDate,
+  });
 
   @override
   State<ExerciseTimerScreen> createState() => _ExerciseTimerScreenState();
@@ -88,6 +97,20 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
             _timer?.cancel();
             _audioPlayer.stop();
             // Handle completion if needed
+            if (widget.dailyWorkoutItemId != null && widget.selectedDate != null) {
+              context.read<WorkoutDiaryCubit>().toggleExerciseStatus(
+                    widget.dailyWorkoutItemId!,
+                    true,
+                    widget.selectedDate!,
+                  );
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Completed ${widget.exercise.name}!'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            }
+            Navigator.of(context).pop();
           }
         });
       }
