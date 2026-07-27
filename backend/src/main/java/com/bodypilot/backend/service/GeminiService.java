@@ -13,4 +13,14 @@ public interface GeminiService {
      * @return JSON-formatted response containing the weekly diet suggestion.
      */
     String generateMealSuggestion(UUID userId, LocalDate startDate);
+
+    /**
+     * Generates a personalized weekly workout plan suggestion using Gemini
+     * based on user profile metrics, active goals, and injuries.
+     *
+     * @param userId UUID of the user.
+     * @param startDate LocalDate of the starting date of the plan.
+     * @return JSON-formatted response containing the weekly workout suggestion.
+     */
+    String generateWorkoutSuggestion(UUID userId, LocalDate startDate);
 }

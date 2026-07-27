@@ -26,4 +26,15 @@ public class AiSuggestionController {
         String suggestion = geminiService.generateMealSuggestion(userId, startDate);
         return ApiResponse.ok("AI suggestion generated successfully", suggestion);
     }
+
+    @GetMapping("/{userId}/ai-workout-suggestion")
+    public ApiResponse<String> getAiWorkoutSuggestion(
+            @PathVariable UUID userId,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate) {
+        if (startDate == null) {
+            startDate = LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+        }
+        String suggestion = geminiService.generateWorkoutSuggestion(userId, startDate);
+        return ApiResponse.ok("AI suggestion generated successfully", suggestion);
+    }
 }
