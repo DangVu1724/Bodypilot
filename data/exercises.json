@@ -1,0 +1,485 @@
+[
+  {
+    "cursor": "cm7663vtk000041upb8wkeo19",
+    "id": "3-4_sit-up",
+    "name": "3-4_sit-up",
+    "displayName": "3/4 Sit-up",
+    "aliases": [
+      "Partial Sit-up",
+      "Half Sit-up",
+      "45 Degree Sit-up"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/3-4_sit-up/premium/3-4_sit-up-1.png",
+      "https://api.wrkout.xyz/images/3-4_sit-up/premium/3-4_sit-up-2.png",
+      "https://api.wrkout.xyz/images/3-4_sit-up/premium/3-4_sit-up_1-1.png",
+      "https://api.wrkout.xyz/images/3-4_sit-up/premium/3-4_sit-up_1-2.png",
+      "https://api.wrkout.xyz/images/3-4_sit-up/premium/3-4_sit-up_2-1.png",
+      "https://api.wrkout.xyz/images/3-4_sit-up/premium/3-4_sit-up_2-2.png",
+      "https://api.wrkout.xyz/images/3-4_sit-up/premium/3-4_sit-up_3-1.png",
+      "https://api.wrkout.xyz/images/3-4_sit-up/premium/3-4_sit-up_3-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/3-4_sit-up/premium/3-4_sit-up.mp4",
+      "https://api.wrkout.xyz/videos/3-4_sit-up/premium/3-4_sit-up_1.mp4",
+      "https://api.wrkout.xyz/videos/3-4_sit-up/premium/3-4_sit-up_2.mp4",
+      "https://api.wrkout.xyz/videos/3-4_sit-up/premium/3-4_sit-up_3.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtk000441upsuzi6vby",
+    "id": "3_leg_chatarunga_pose",
+    "name": "3_leg_chatarunga_pose",
+    "displayName": "3 Leg Chatarunga Pose",
+    "aliases": [
+      "Three-Legged Chaturanga",
+      "Three-Legged Plank Push-Up",
+      "Chaturanga with Leg Raise"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/3_leg_chatarunga_pose/premium/3_leg_chatarunga_pose-1.png",
+      "https://api.wrkout.xyz/images/3_leg_chatarunga_pose/premium/3_leg_chatarunga_pose-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/3_leg_chatarunga_pose/premium/3_leg_chatarunga_pose.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtk000841uppugaeyyq",
+    "id": "3_leg_dog_pose",
+    "name": "3_leg_dog_pose",
+    "displayName": "3 Leg Dog Pose",
+    "aliases": [
+      "Three-Legged Downward Dog",
+      "Extended Dog Pose",
+      "One-Legged Plank Pose"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/3_leg_dog_pose/premium/3_leg_dog_pose-1.png",
+      "https://api.wrkout.xyz/images/3_leg_dog_pose/premium/3_leg_dog_pose-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/3_leg_dog_pose/premium/3_leg_dog_pose.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtl000c41upd46i94qr",
+    "id": "90_degree_alternate_heel_touch",
+    "name": "90_degree_alternate_heel_touch",
+    "displayName": "90 Degree Alternate Heel Touch",
+    "aliases": [
+      "Heel Touch Crunch",
+      "Alternating Heel Touch",
+      "Floor Heel Touch"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/90_degree_alternate_heel_touch/premium/90_degree_alternate_heel_touch-1.png",
+      "https://api.wrkout.xyz/images/90_degree_alternate_heel_touch/premium/90_degree_alternate_heel_touch-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/90_degree_alternate_heel_touch/premium/90_degree_alternate_heel_touch.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtl000g41upqog6fkg8",
+    "id": "90_degree_heel_touch",
+    "name": "90_degree_heel_touch",
+    "displayName": "90 Degree Heel Touch",
+    "aliases": [
+      "Heel Touch Crunch",
+      "Heel Reach",
+      "90 Degree Crunch"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/90_degree_heel_touch/premium/90_degree_heel_touch-1.png",
+      "https://api.wrkout.xyz/images/90_degree_heel_touch/premium/90_degree_heel_touch-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/90_degree_heel_touch/premium/90_degree_heel_touch.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtl000k41upy29wc98u",
+    "id": "90_to_90_stretch",
+    "name": "90_to_90_stretch",
+    "displayName": "90 To 90 Stretch",
+    "aliases": [
+      "Hip 90/90 Stretch",
+      "90 Degree Hip Stretch",
+      "Seated 90/90 Stretch"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/90_to_90_stretch/premium/90_to_90_stretch-1.png",
+      "https://api.wrkout.xyz/images/90_to_90_stretch/premium/90_to_90_stretch-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/90_to_90_stretch/premium/90_to_90_stretch.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtl000o41upsdfqz1bl",
+    "id": "ab_mat_sit-up",
+    "name": "ab_mat_sit-up",
+    "displayName": "Ab Mat Sit-up",
+    "aliases": [
+      "Crunch",
+      "Sit-up",
+      "Torso Crunch"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/ab_mat_sit-up/premium/ab_mat_sit-up-1.png",
+      "https://api.wrkout.xyz/images/ab_mat_sit-up/premium/ab_mat_sit-up-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/ab_mat_sit-up/premium/ab_mat_sit-up.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtl000s41upuj0ravcg",
+    "id": "ab_roller_crunch",
+    "name": "ab_roller_crunch",
+    "displayName": "Ab Roller Crunch",
+    "aliases": [
+      "Ab Wheel Rollout",
+      "Ab Roller Exercise",
+      "Rollout Crunch"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/ab_roller_crunch/premium/ab_roller_crunch-1.png",
+      "https://api.wrkout.xyz/images/ab_roller_crunch/premium/ab_roller_crunch-2.png",
+      "https://api.wrkout.xyz/images/ab_roller_crunch/premium/ab_roller_crunch_1-1.png",
+      "https://api.wrkout.xyz/images/ab_roller_crunch/premium/ab_roller_crunch_1-2.png",
+      "https://api.wrkout.xyz/images/ab_roller_crunch/premium/ab_roller_crunch_2-1.png",
+      "https://api.wrkout.xyz/images/ab_roller_crunch/premium/ab_roller_crunch_2-2.png",
+      "https://api.wrkout.xyz/images/ab_roller_crunch/premium/ab_roller_crunch_3-1.png",
+      "https://api.wrkout.xyz/images/ab_roller_crunch/premium/ab_roller_crunch_3-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/ab_roller_crunch/premium/ab_roller_crunch.mp4",
+      "https://api.wrkout.xyz/videos/ab_roller_crunch/premium/ab_roller_crunch_1.mp4",
+      "https://api.wrkout.xyz/videos/ab_roller_crunch/premium/ab_roller_crunch_2.mp4",
+      "https://api.wrkout.xyz/videos/ab_roller_crunch/premium/ab_roller_crunch_3.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtl000w41up967ryqhb",
+    "id": "ab_tuck",
+    "name": "ab_tuck",
+    "displayName": "Ab Tuck",
+    "aliases": [
+      "Knee Tucks",
+      "Crunch Tucks",
+      "Leg Curl Ups"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/ab_tuck/premium/ab_tuck-1.png",
+      "https://api.wrkout.xyz/images/ab_tuck/premium/ab_tuck-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/ab_tuck/premium/ab_tuck.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtm001041up4bifi0gr",
+    "id": "abdominal_stretch",
+    "name": "abdominal_stretch",
+    "displayName": "Abdominal Stretch",
+    "aliases": [
+      "Side Bend Stretch",
+      "Lateral Abdominal Stretch",
+      "Oblique Stretch"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/abdominal_stretch/premium/abdominal_stretch-1.png",
+      "https://api.wrkout.xyz/images/abdominal_stretch/premium/abdominal_stretch-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/abdominal_stretch/premium/abdominal_stretch.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtm001441upi1u56i1u",
+    "id": "abduction_of_one_leg_flexion_stretch",
+    "name": "abduction_of_one_leg_flexion_stretch",
+    "displayName": "Abduction Of One Leg Flexion Stretch",
+    "aliases": [
+      "Hip Flexion Stretch",
+      "Single Leg Hip Stretch",
+      "Knee to Chest Stretch"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/abduction_of_one_leg_flexion_stretch/premium/abduction_of_one_leg_flexion_stretch-1.png",
+      "https://api.wrkout.xyz/images/abduction_of_one_leg_flexion_stretch/premium/abduction_of_one_leg_flexion_stretch-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/abduction_of_one_leg_flexion_stretch/premium/abduction_of_one_leg_flexion_stretch.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtm001841up8nzfxzbz",
+    "id": "above_head_chest_stretch",
+    "name": "above_head_chest_stretch",
+    "displayName": "Above Head Chest Stretch",
+    "aliases": [
+      "Overhead Shoulder Stretch",
+      "Chest Opener Stretch",
+      "Interlocked Arm Stretch"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/above_head_chest_stretch/premium/above_head_chest_stretch-1.png",
+      "https://api.wrkout.xyz/images/above_head_chest_stretch/premium/above_head_chest_stretch-2.png",
+      "https://api.wrkout.xyz/images/above_head_chest_stretch/premium/above_head_chest_stretch_1-1.png",
+      "https://api.wrkout.xyz/images/above_head_chest_stretch/premium/above_head_chest_stretch_1-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/above_head_chest_stretch/premium/above_head_chest_stretch.mp4",
+      "https://api.wrkout.xyz/videos/above_head_chest_stretch/premium/above_head_chest_stretch_1.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtm001c41upzh8gb27z",
+    "id": "across_chest_shoulder_stretch",
+    "name": "across_chest_shoulder_stretch",
+    "displayName": "Across Chest Shoulder Stretch",
+    "aliases": [
+      "Shoulder Across Stretch",
+      "Cross-Body Shoulder Stretch",
+      "Shoulder Stretch Across Chest"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/across_chest_shoulder_stretch/premium/across_chest_shoulder_stretch-1.png",
+      "https://api.wrkout.xyz/images/across_chest_shoulder_stretch/premium/across_chest_shoulder_stretch-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/across_chest_shoulder_stretch/premium/across_chest_shoulder_stretch.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtm001g41upnteku0l2",
+    "id": "adductor_stretch",
+    "name": "adductor_stretch",
+    "displayName": "Adductor Stretch",
+    "aliases": [
+      "Inner Thigh Stretch",
+      "Groin Stretch",
+      "Side Lunge Stretch"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/adductor_stretch/premium/adductor_stretch-1.png",
+      "https://api.wrkout.xyz/images/adductor_stretch/premium/adductor_stretch-2.png",
+      "https://api.wrkout.xyz/images/adductor_stretch/premium/adductor_stretch_1-1.png",
+      "https://api.wrkout.xyz/images/adductor_stretch/premium/adductor_stretch_1-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/adductor_stretch/premium/adductor_stretch.mp4",
+      "https://api.wrkout.xyz/videos/adductor_stretch/premium/adductor_stretch_1.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtm001k41upzx4dvgrl",
+    "id": "air_bike",
+    "name": "air_bike",
+    "displayName": "Air Bike",
+    "aliases": [
+      "Bicycle Crunch",
+      "Air Pedal",
+      "Floating Bicycle"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/air_bike/premium/air_bike-1.png",
+      "https://api.wrkout.xyz/images/air_bike/premium/air_bike-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/air_bike/premium/air_bike.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtm001o41upd5crx2fj",
+    "id": "air_bike_(version_2)",
+    "name": "air_bike_(version_2)",
+    "displayName": "Air Bike (VERSION 2)",
+    "aliases": [
+      "Bicycle Crunch",
+      "Air Pedal",
+      "Recumbent Bicycle"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/air_bike_(version_2)/premium/air_bike_(version_2)-1.png",
+      "https://api.wrkout.xyz/images/air_bike_(version_2)/premium/air_bike_(version_2)-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/air_bike_(version_2)/premium/air_bike_(version_2).mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtn001s41upf6a7h14e",
+    "id": "air_twisting_crunch",
+    "name": "air_twisting_crunch",
+    "displayName": "Air Twisting Crunch",
+    "aliases": [
+      "Twisting Crunch",
+      "Oblique Crunch",
+      "Side Crunch"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/air_twisting_crunch/premium/air_twisting_crunch-1.png",
+      "https://api.wrkout.xyz/images/air_twisting_crunch/premium/air_twisting_crunch-2.png",
+      "https://api.wrkout.xyz/images/air_twisting_crunch/premium/air_twisting_crunch_1-1.png",
+      "https://api.wrkout.xyz/images/air_twisting_crunch/premium/air_twisting_crunch_1-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/air_twisting_crunch/premium/air_twisting_crunch.mp4",
+      "https://api.wrkout.xyz/videos/air_twisting_crunch/premium/air_twisting_crunch_1.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtn001w41up994b6np4",
+    "id": "all_fours_squad_stretch",
+    "name": "all_fours_squad_stretch",
+    "displayName": "All Fours Squad Stretch",
+    "aliases": [
+      "Quadruped Squat Stretch",
+      "All Fours Hip Stretch",
+      "Kneeling Squat Stretch"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/all_fours_squad_stretch/premium/all_fours_squad_stretch-1.png",
+      "https://api.wrkout.xyz/images/all_fours_squad_stretch/premium/all_fours_squad_stretch-2.png",
+      "https://api.wrkout.xyz/images/all_fours_squad_stretch/premium/all_fours_squad_stretch_1-1.png",
+      "https://api.wrkout.xyz/images/all_fours_squad_stretch/premium/all_fours_squad_stretch_1-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/all_fours_squad_stretch/premium/all_fours_squad_stretch.mp4",
+      "https://api.wrkout.xyz/videos/all_fours_squad_stretch/premium/all_fours_squad_stretch_1.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtn002041up7rz66tc4",
+    "id": "alternate_heel_touch_side_kick_squat",
+    "name": "alternate_heel_touch_side_kick_squat",
+    "displayName": "Alternate Heel Touch Side Kick Squat",
+    "aliases": [
+      "Squat with Heel Touch",
+      "Heel Touch Side Kick Squat",
+      "Side Kick Squat"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/alternate_heel_touch_side_kick_squat/premium/alternate_heel_touch_side_kick_squat-1.png",
+      "https://api.wrkout.xyz/images/alternate_heel_touch_side_kick_squat/premium/alternate_heel_touch_side_kick_squat-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/alternate_heel_touch_side_kick_squat/premium/alternate_heel_touch_side_kick_squat.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtn002441upanloheyt",
+    "id": "alternate_heel_touchers",
+    "name": "alternate_heel_touchers",
+    "displayName": "Alternate Heel Touchers",
+    "aliases": [
+      "Heel Reach Crunch",
+      "Side Crunch",
+      "Lying Heel Touches"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/alternate_heel_touchers/premium/alternate_heel_touchers-1.png",
+      "https://api.wrkout.xyz/images/alternate_heel_touchers/premium/alternate_heel_touchers-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/alternate_heel_touchers/premium/alternate_heel_touchers.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vtn002841upqb9emrsv",
+    "id": "alternate_heel_touches",
+    "name": "alternate_heel_touches",
+    "displayName": "Alternate Heel Touches",
+    "aliases": [
+      "Heel Touch Crunch",
+      "Side Heel Touches",
+      "Oblique Heel Touches"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/alternate_heel_touches/premium/alternate_heel_touches-1.png",
+      "https://api.wrkout.xyz/images/alternate_heel_touches/premium/alternate_heel_touches-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/alternate_heel_touches/premium/alternate_heel_touches.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vto002c41upe8045b14",
+    "id": "alternate_leg_raise",
+    "name": "alternate_leg_raise",
+    "displayName": "Alternate Leg Raise",
+    "aliases": [
+      "Single Leg Raise",
+      "Leg Lifts",
+      "Alternating Leg Lift"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/alternate_leg_raise/premium/alternate_leg_raise-1.png",
+      "https://api.wrkout.xyz/images/alternate_leg_raise/premium/alternate_leg_raise-2.png",
+      "https://api.wrkout.xyz/images/alternate_leg_raise/premium/alternate_leg_raise_1-1.png",
+      "https://api.wrkout.xyz/images/alternate_leg_raise/premium/alternate_leg_raise_1-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/alternate_leg_raise/premium/alternate_leg_raise.mp4",
+      "https://api.wrkout.xyz/videos/alternate_leg_raise/premium/alternate_leg_raise_1.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vto002g41upf5v1jbl0",
+    "id": "alternate_leg_raises",
+    "name": "alternate_leg_raises",
+    "displayName": "Alternate Leg Raises",
+    "aliases": [
+      "Single Leg Raises",
+      "Leg Lifts",
+      "Alternating Leg Lifts"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/alternate_leg_raises/premium/alternate_leg_raises-1.png",
+      "https://api.wrkout.xyz/images/alternate_leg_raises/premium/alternate_leg_raises-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/alternate_leg_raises/premium/alternate_leg_raises.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vto002k41ups6a66vg6",
+    "id": "alternate_oblique_crunches",
+    "name": "alternate_oblique_crunches",
+    "displayName": "Alternate Oblique Crunches",
+    "aliases": [
+      "Side Crunches",
+      "Oblique Twists",
+      "Lying Oblique Crunches"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/alternate_oblique_crunches/premium/alternate_oblique_crunches-1.png",
+      "https://api.wrkout.xyz/images/alternate_oblique_crunches/premium/alternate_oblique_crunches-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/alternate_oblique_crunches/premium/alternate_oblique_crunches.mp4"
+    ]
+  },
+  {
+    "cursor": "cm7663vto002o41up141hgyr6",
+    "id": "alternate_punching",
+    "name": "alternate_punching",
+    "displayName": "Alternate Punching",
+    "aliases": [
+      "Alternating Punches",
+      "Punching Drills",
+      "Boxing Punches"
+    ],
+    "premiumImages": [
+      "https://api.wrkout.xyz/images/alternate_punching/premium/alternate_punching-1.png",
+      "https://api.wrkout.xyz/images/alternate_punching/premium/alternate_punching-2.png"
+    ],
+    "premiumVideos": [
+      "https://api.wrkout.xyz/videos/alternate_punching/premium/alternate_punching.mp4"
+    ]
+  }
+]

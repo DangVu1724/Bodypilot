@@ -1,0 +1,8 @@
+# Large data files (> 100MB)
+data/opennutrition_foods.tsv
+*.tsv
+
+# Python cache
+__pycache__/
+*.pyc
+data/__pycache__/
