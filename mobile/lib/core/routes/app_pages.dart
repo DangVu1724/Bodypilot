@@ -20,6 +20,7 @@ import 'package:mobile/presentation/screens/workout/workout_diary_screen.dart';
 import 'package:mobile/presentation/screens/metrics/calorie_balance_detail_screen.dart';
 import 'package:mobile/presentation/screens/metrics/protein_detail_screen.dart';
 import 'package:mobile/presentation/screens/metrics/active_minutes_detail_screen.dart';
+import 'package:mobile/presentation/screens/notification/notification_screen.dart';
 
 class AppPages {
   AppPages._();
@@ -54,6 +55,7 @@ class AppPages {
       GoRoute(path: AppRoutes.calorieBalanceDetail, builder: (context, state) => const CalorieBalanceDetailScreen()),
       GoRoute(path: AppRoutes.proteinDetail, builder: (context, state) => const ProteinDetailScreen()),
       GoRoute(path: AppRoutes.activeMinutesDetail, builder: (context, state) => const ActiveMinutesDetailScreen()),
+      GoRoute(path: AppRoutes.notifications, builder: (context, state) => const NotificationScreen()),
       GoRoute(
         path: AppRoutes.foodDetail,
         builder: (context, state) {

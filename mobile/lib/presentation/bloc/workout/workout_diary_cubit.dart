@@ -2,6 +2,7 @@ import 'package:core_shared/core_shared.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/repositories/workout_diary_repository.dart';
+import 'package:mobile/data/services/push_notification_service.dart';
 import 'package:mobile/presentation/bloc/workout/workout_diary_state.dart';
 
 class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
@@ -152,6 +153,16 @@ class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
       final updatedDailyWorkout = await _repository.updateExerciseStatus(itemId, isCompleted);
       final updatedDailyWorkouts = Map<String, DailyWorkoutModel>.from(state.dailyWorkouts);
       updatedDailyWorkouts[_formatDate(date)] = updatedDailyWorkout;
+
+      if (isCompleted) {
+        final items = updatedDailyWorkout.workoutItems;
+        if (items.isNotEmpty && items.every((item) => item.isCompleted)) {
+          PushNotificationService.showWorkoutCompletedNotification(
+            totalCaloriesBurned: updatedDailyWorkout.totalCaloriesBurned,
+          );
+        }
+      }
+
       emit(state.copyWith(status: WorkoutDiaryStatus.success, dailyWorkouts: updatedDailyWorkouts));
     } catch (e) {
       emit(state.copyWith(status: WorkoutDiaryStatus.failure, errorMessage: e.toString()));

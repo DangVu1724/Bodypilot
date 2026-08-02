@@ -12,8 +12,8 @@ class FoodListCubit extends Cubit<FoodListState> {
   FoodListCubit(this._foodRepository) : super(const FoodListState());
 
   void initializeWithCache({required List<FoodModel> initialFoods, required String type}) {
-    // Filter initial foods by type
-    final filtered = initialFoods.where((f) => f.type == type).toList();
+    // Filter initial foods by type (including BOTH)
+    final filtered = initialFoods.where((f) => f.type == type || f.type == 'BOTH').toList();
 
     if (filtered.isNotEmpty) {
       emit(state.copyWithCategory(status: FoodListStatus.success, foods: filtered, selectedCategoryId: ''));
@@ -58,7 +58,7 @@ class FoodListCubit extends Cubit<FoodListState> {
       );
 
       // Filter by type on the client side since the API might not support it
-      final filteredFoods = response.content.where((f) => f.type == type).toList();
+      final filteredFoods = response.content.where((f) => f.type == type || f.type == 'BOTH').toList();
 
       // Save to cache
       _cache[cacheKey] = filteredFoods;

@@ -10,6 +10,7 @@ import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:core_shared/models/food_model.dart';
 import 'package:mobile/presentation/screens/meal/widgets/calender_meal.dart';
 import 'widgets/add_meal_bottom_sheet.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 
 class MealPlanScreen extends StatefulWidget {
   const MealPlanScreen({super.key, this.initialDate});
@@ -25,7 +26,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
 
   MealType _selectedMealType = MealType.BREAKFAST;
 
-  final List<MealType> _mealTypes = [MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER, MealType.SNACK];
+  final List<MealType> _mealTypes = [MealType.BREAKFAST, MealType.LUNCH, MealType.DINNER];
 
   @override
   void initState() {
@@ -403,23 +404,19 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
           ),
         );
         final cookingTime = foodMatch.recipe?.cookingTimeMinutes ?? 15;
-
-        // Cover image fallback
-        final imageUrl = (item.imageUrlSnapshot ?? '').isNotEmpty
-            ? item.imageUrlSnapshot!
-            : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600';
-
-        // dynamic percentages for display rings
-        final double proteinRatio = item.proteinSnapshot / 50.0;
-        final double fatRatio = item.fatSnapshot / 30.0;
-        final double carbsRatio = item.carbsSnapshot / 100.0;
+        final totalMacros = item.proteinSnapshot + item.fatSnapshot + item.carbsSnapshot;
+        final proteinRatio = totalMacros > 0 ? item.proteinSnapshot / totalMacros : 0.0;
+        final fatRatio = totalMacros > 0 ? item.fatSnapshot / totalMacros : 0.0;
+        final carbsRatio = totalMacros > 0 ? item.carbsSnapshot / totalMacros : 0.0;
 
         return Container(
-          height: 195,
-          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
-            image: DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover),
+            image: DecorationImage(
+              image: getFoodImageProvider(item.imageUrlSnapshot, null, item.foodNameSnapshot),
+              fit: BoxFit.cover,
+            ),
           ),
           child: Container(
             padding: const EdgeInsets.all(20),

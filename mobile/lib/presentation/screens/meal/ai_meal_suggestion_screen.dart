@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -7,9 +8,11 @@ import 'package:mobile/data/services/token_service.dart';
 import 'package:mobile/data/repositories/user_repository.dart';
 import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
 import 'package:core_shared/models/daily_eating_model.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 
 class AiMealSuggestionScreen extends StatefulWidget {
-  const AiMealSuggestionScreen({super.key});
+  final int days;
+  const AiMealSuggestionScreen({super.key, this.days = 7});
 
   @override
   State<AiMealSuggestionScreen> createState() => _AiMealSuggestionScreenState();
@@ -21,6 +24,60 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
   bool _isLoading = true;
   String? _errorMessage;
   bool _isSaving = false;
+  bool _isRegenerating = false;
+  String? _lastUserFeedback;
+
+  final TextEditingController _feedbackController = TextEditingController();
+
+  Timer? _loadingTimer;
+  int _loadingStepIndex = 0;
+
+  final List<Map<String, String>> _mealSteps = [
+    {
+      'title': 'Phân tích chỉ số & mục tiêu calo',
+      'desc': 'Đang tổng hợp thông tin cân nặng, chiều cao & mục tiêu dinh dưỡng...',
+    },
+    {
+      'title': 'Kiểm tra dị ứng & kiêng kỵ',
+      'desc': 'Rà soát danh sách thực phẩm gây dị ứng & nhóm thực phẩm hạn chế...',
+    },
+    {
+      'title': 'Lọc danh sách thực phẩm',
+      'desc': 'Đang lựa chọn các loại thực phẩm dinh dưỡng phù hợp nhất từ cơ sở dữ liệu...',
+    },
+    {
+      'title': 'AI lên thực đơn chi tiết',
+      'desc': 'Gửi dữ liệu sang AI để tính toán khẩu phần ăn tối ưu...',
+    },
+  ];
+
+  void _startLoadingTimer() {
+    setState(() {
+      _loadingStepIndex = 0;
+    });
+    _loadingTimer?.cancel();
+    _loadingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_loadingStepIndex < _mealSteps.length - 1) {
+        setState(() {
+          _loadingStepIndex++;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  void _stopLoadingTimer() {
+    _loadingTimer?.cancel();
+    _loadingTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _stopLoadingTimer();
+    _feedbackController.dispose();
+    super.dispose();
+  }
 
   final Map<MealType, String> _mealTypeNames = {
     MealType.BREAKFAST: 'Bữa sáng',
@@ -43,6 +100,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
   }
 
   Future<void> _fetchAiSuggestion() async {
+    _startLoadingTimer();
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -52,18 +110,85 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
       if (userId == null) {
         throw Exception("Không tìm thấy thông tin tài khoản người dùng.");
       }
-      final jsonString = await userRepository.getAiDietSuggestion(userId);
+      final jsonString = await userRepository.getAiDietSuggestion(userId, days: widget.days);
       final List<dynamic> decoded = jsonDecode(jsonString) as List<dynamic>;
       final suggestions = decoded.map((e) => DailyEatingModel.fromJson(e as Map<String, dynamic>)).toList();
-      setState(() {
-        _suggestions = suggestions;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _suggestions = suggestions;
+        });
+      }
+    } catch (e, stackTrace) {
+      print("🚨 [AiMealSuggestionScreen Error]: $e");
+      print("   StackTrace: $stackTrace");
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll("Exception: ", "");
+        });
+      }
+    } finally {
+      _stopLoadingTimer();
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _sendFeedback() async {
+    final feedbackText = _feedbackController.text.trim();
+    if (feedbackText.isEmpty || _isRegenerating || _isLoading || _isSaving) return;
+
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _isRegenerating = true;
+      _lastUserFeedback = feedbackText;
+    });
+
+    _startLoadingTimer();
+
+    try {
+      final userId = TokenService.getUserId();
+      if (userId == null) {
+        throw Exception("Không tìm thấy thông tin tài khoản người dùng.");
+      }
+      final jsonString = await userRepository.getAiDietSuggestion(
+        userId,
+        days: widget.days,
+        userFeedback: feedbackText,
+      );
+      final List<dynamic> decoded = jsonDecode(jsonString) as List<dynamic>;
+      final suggestions = decoded.map((e) => DailyEatingModel.fromJson(e as Map<String, dynamic>)).toList();
+      if (mounted) {
+        setState(() {
+          _suggestions = suggestions;
+          _feedbackController.clear();
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('AI đã cập nhật thực đơn theo phản hồi của bạn!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
     } catch (e) {
-      setState(() {
-        _errorMessage = e.toString().replaceAll("Exception: ", "");
-        _isLoading = false;
-      });
+      print("🚨 [AiMealSuggestionScreen Feedback Error]: $e");
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Không thể điều chỉnh thực đơn: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      _stopLoadingTimer();
+      if (mounted) {
+        setState(() {
+          _isRegenerating = false;
+        });
+      }
     }
   }
 
@@ -103,44 +228,117 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      body: _isLoading
+      body: (_isLoading || _isRegenerating)
           ? _buildLoadingState()
           : _errorMessage != null
               ? _buildErrorState()
               : _buildContentState(),
-      bottomNavigationBar: !_isLoading && _errorMessage == null ? _buildBottomBar() : null,
+      bottomNavigationBar: (!_isLoading && !_isRegenerating && _errorMessage == null) ? _buildBottomBar() : null,
     );
   }
 
   Widget _buildLoadingState() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(
-              width: 60,
-              height: 60,
-              child: CircularProgressIndicator(
-                strokeWidth: 4.5,
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A30)),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF07025).withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+              child: const SizedBox(
+                width: 64,
+                height: 64,
+                child: CircularProgressIndicator(
+                  strokeWidth: 5,
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF07025)),
+                ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             Text(
-              'AI đang thiết lập thực đơn...',
+              'Đang Thiết Lập Thực Đơn AI',
               style: GoogleFonts.workSans(
-                fontSize: 18,
+                fontSize: 22,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF131517),
+                color: const Color(0xFF1E293B),
               ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Tính toán dinh dưỡng, phân bổ năng lượng phù hợp với cơ thể bạn.',
-              style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary),
+              'Vui lòng chờ trong giây lát. Hệ thống đang rà soát dữ liệu thể trạng và phân bổ năng lượng tối ưu.',
+              style: AppTheme.bodyStyle.copyWith(color: const Color(0xFF64748B), fontSize: 14),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 36),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: List.generate(_mealSteps.length, (index) {
+                  final step = _mealSteps[index];
+                  final isDone = index < _loadingStepIndex;
+                  final isCurrent = index == _loadingStepIndex;
+
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: index == _mealSteps.length - 1 ? 0 : 20.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (isDone)
+                          const Icon(Icons.check_circle, color: Colors.green, size: 22)
+                        else if (isCurrent)
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF07025)),
+                            ),
+                          )
+                        else
+                          const Icon(Icons.radio_button_unchecked, color: Color(0xFF94A3B8), size: 22),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                step['title']!,
+                                style: AppTheme.semiboldStyle.copyWith(
+                                  fontSize: 15,
+                                  color: isCurrent 
+                                      ? const Color(0xFFF07025)
+                                      : (isDone ? const Color(0xFF334155) : const Color(0xFF94A3B8)),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                step['desc']!,
+                                style: AppTheme.bodyStyle.copyWith(
+                                  fontSize: 12.5,
+                                  color: isCurrent 
+                                      ? const Color(0xFF475569) 
+                                      : (isDone ? const Color(0xFF64748B) : const Color(0xFFCBD5E1)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
             ),
           ],
         ),
@@ -209,6 +407,34 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (_lastUserFeedback != null && _lastUserFeedback!.isNotEmpty) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFF7ED),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFFFEDD5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.chat_bubble_outline, color: Color(0xFFFF7A30), size: 18),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Phản hồi của bạn: "$_lastUserFeedback"',
+                            style: GoogleFonts.workSans(
+                              fontSize: 13,
+                              color: const Color(0xFFC2410C),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+
                 // Day summary info
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -472,30 +698,19 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
   }
 
   Widget _buildMealItemRow(MealItemModel item) {
-    final displayImage = (item.imageUrlSnapshot ?? '').isNotEmpty
-        ? item.imageUrlSnapshot!
-        : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600';
-
     return Padding(
       padding: const EdgeInsets.all(16),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Food Image
-          ClipRRect(
+          CategoryFoodImage(
+            imageUrl: item.imageUrlSnapshot,
+            categoryName: item.foodNameSnapshot,
+            width: 50,
+            height: 50,
+            fit: BoxFit.cover,
             borderRadius: BorderRadius.circular(12),
-            child: Image.network(
-              displayImage,
-              width: 50,
-              height: 50,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => Container(
-                width: 50,
-                height: 50,
-                color: Colors.grey.shade100,
-                child: const Icon(Icons.restaurant, color: Colors.grey),
-              ),
-            ),
           ),
           const SizedBox(width: 14),
 
@@ -557,54 +772,115 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
 
   Widget _buildBottomBar() {
     return Container(
-      padding: EdgeInsets.fromLTRB(20, 12, 20, MediaQuery.of(context).padding.bottom + 12),
+      padding: EdgeInsets.fromLTRB(16, 10, 16, MediaQuery.of(context).padding.bottom + 10),
       decoration: BoxDecoration(
         color: Colors.white,
-        border: Border(top: BorderSide(color: Colors.grey.shade100)),
+        border: Border(top: BorderSide(color: Colors.grey.shade200)),
         boxShadow: [
           BoxShadow(
-            color: Colors.grey.shade100,
+            color: Colors.grey.shade200.withOpacity(0.5),
             blurRadius: 10,
             offset: const Offset(0, -4),
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Expanded(
-            flex: 2,
-            child: OutlinedButton(
-              onPressed: _isSaving ? null : () => Navigator.of(context).pop(),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: const Color(0xFF64748B),
-                side: BorderSide(color: Colors.grey.shade300),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-              child: const Text('Hủy'),
+          // Feedback Chat Input Field
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 2),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.auto_awesome, color: Color(0xFFFF7A30), size: 18),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextField(
+                    controller: _feedbackController,
+                    enabled: !_isRegenerating && !_isSaving,
+                    style: GoogleFonts.workSans(fontSize: 13.5, color: const Color(0xFF0F172A)),
+                    textInputAction: TextInputAction.send,
+                    onSubmitted: (_) => _sendFeedback(),
+                    decoration: const InputDecoration(
+                      hintText: 'Nhập phản hồi với AI (VD: Đổi món sáng...)',
+                      hintStyle: TextStyle(color: Color(0xFF94A3B8), fontSize: 13),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 6),
+                _isRegenerating
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A30)),
+                        ),
+                      )
+                    : InkWell(
+                        onTap: (_isSaving || _isLoading) ? null : _sendFeedback,
+                        borderRadius: BorderRadius.circular(20),
+                        child: Container(
+                          padding: const EdgeInsets.all(7),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFFF7A30),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.send_rounded, color: Colors.white, size: 15),
+                        ),
+                      ),
+              ],
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            flex: 3,
-            child: ElevatedButton(
-              onPressed: _isSaving ? null : _applyMealPlan,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF7A30),
-                padding: const EdgeInsets.symmetric(vertical: 16),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+
+          // Action Buttons (Hủy & Áp dụng thực đơn)
+          Row(
+            children: [
+              Expanded(
+                flex: 2,
+                child: OutlinedButton(
+                  onPressed: (_isSaving || _isRegenerating) ? null : () => Navigator.of(context).pop(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: const Color(0xFF64748B),
+                    side: BorderSide(color: Colors.grey.shade300),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: const Text('Hủy'),
+                ),
               ),
-              child: _isSaving
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text('Áp dụng thực đơn'),
-            ),
+              const SizedBox(width: 12),
+              Expanded(
+                flex: 3,
+                child: ElevatedButton(
+                  onPressed: (_isSaving || _isRegenerating) ? null : _applyMealPlan,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFF7A30),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                  child: _isSaving
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                          ),
+                        )
+                      : const Text('Áp dụng thực đơn'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

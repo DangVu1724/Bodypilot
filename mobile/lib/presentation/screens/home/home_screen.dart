@@ -6,8 +6,11 @@ import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
+import 'package:mobile/presentation/bloc/checkin/checkin_cubit.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_calendar_section.dart';
+import 'widgets/checkin_card.dart';
+
 import 'widgets/metric_section.dart';
 import 'widgets/food_sections.dart';
 import 'widgets/section_header.dart';
@@ -38,6 +41,7 @@ class HomeScreen extends StatelessWidget {
             final sunday = monday.add(const Duration(days: 6));
             await Future.wait([
               context.read<UserCubit>().fetchUserProfile(),
+              context.read<CheckInCubit>().fetchCheckInStatus(),
               context.read<WorkoutPlanCubit>().fetchPlansFull(forceRefresh: true),
               context.read<WorkoutDiaryCubit>().fetchWeeklyWorkouts(monday, sunday),
               context.read<MealCubit>().fetchWeeklyEating(monday, sunday),
@@ -52,8 +56,10 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      const CheckInCard(),
                       const HomeCalendarSection(),
                       const SizedBox(height: 32),
+
                       SectionHeader(title: 'Fitness Metrics', onSeeAll: () {}),
                       const SizedBox(height: 16),
                       const MetricSection(),

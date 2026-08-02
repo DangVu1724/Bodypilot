@@ -7,6 +7,7 @@ import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
 import 'package:logger/logger.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 import 'package:mobile/presentation/widgets/skeleton.dart';
 
 class NutrientTag extends StatelessWidget {
@@ -38,7 +39,7 @@ class FoodCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isIngredient = food.type == 'INGREDIENT';
+    final isIngredient = food.type == 'INGREDIENT' || (food.type == 'BOTH' && food.recipe == null);
 
     return GestureDetector(
       onTap: () {
@@ -51,9 +52,7 @@ class FoodCard extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(24),
           image: DecorationImage(
-            image: (food.imageUrl != null && food.imageUrl!.isNotEmpty)
-                ? NetworkImage(food.imageUrl!)
-                : const AssetImage('assets/images/fruit.png') as ImageProvider,
+            image: getFoodImageProvider(food.imageUrl, food.category?.code, food.category?.name),
             fit: BoxFit.cover,
           ),
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 5))],
@@ -127,7 +126,7 @@ class DishSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<FoodCubit, FoodState>(
       builder: (context, state) {
-        final dishes = state.foods.where((f) => f.type == 'DISH').take(5).toList();
+        final dishes = state.foods.where((f) => f.type == 'DISH' || f.type == 'BOTH').take(5).toList();
         Logger().d('Found ${dishes.length} dishes');
 
         if (state.status == FoodStatus.loading && dishes.isEmpty) {
@@ -168,7 +167,7 @@ class IngredientSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<FoodCubit, FoodState>(
       builder: (context, state) {
-        final ingredients = state.foods.where((f) => f.type == 'INGREDIENT').take(5).toList();
+        final ingredients = state.foods.where((f) => f.type == 'INGREDIENT' || f.type == 'BOTH').take(5).toList();
         Logger().d('Found ${ingredients.length} ingredients');
 
         if (state.status == FoodStatus.loading && ingredients.isEmpty) {

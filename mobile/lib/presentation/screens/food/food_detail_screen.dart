@@ -5,6 +5,7 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
 import 'package:mobile/presentation/widgets/skeleton.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 
 class FoodDetailScreen extends StatefulWidget {
   final String foodId;
@@ -120,12 +121,12 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
         ),
       ],
       flexibleSpace: FlexibleSpaceBar(
-        background: food.imageUrl != null
-            ? Image.network(food.imageUrl!, fit: BoxFit.cover)
-            : Container(
-                color: AppTheme.surface,
-                child: const Icon(Icons.fastfood, size: 100, color: AppTheme.textSecondary),
-              ),
+        background: CategoryFoodImage(
+          imageUrl: food.imageUrl,
+          categoryCode: food.category?.code,
+          categoryName: food.category?.name,
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }

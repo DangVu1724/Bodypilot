@@ -6,6 +6,7 @@ import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/presentation/bloc/meal/meal_state.dart';
 import 'package:core_shared/models/daily_eating_model.dart';
 import 'package:mobile/presentation/screens/meal/meal_plan_screen.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 
 class MealPlanSection extends StatefulWidget {
   const MealPlanSection({super.key});
@@ -103,10 +104,6 @@ class _MealPlanSectionState extends State<MealPlanSection> {
       return _buildEmptyMealCard();
     }
 
-    final imageUrl = (item.imageUrlSnapshot ?? '').isNotEmpty
-        ? item.imageUrlSnapshot!
-        : 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=600';
-
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -116,21 +113,13 @@ class _MealPlanSectionState extends State<MealPlanSection> {
       child: Column(
         children: [
           // Food Image
-          ClipRRect(
+          CategoryFoodImage(
+            imageUrl: item.imageUrlSnapshot,
+            categoryName: item.foodNameSnapshot,
+            height: 200,
+            width: double.infinity,
+            fit: BoxFit.cover,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-            child: Image.network(
-              imageUrl,
-              height: 200,
-              width: double.infinity,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  height: 200,
-                  color: Colors.grey[200],
-                  child: const Icon(Icons.fastfood, size: 50, color: Colors.grey),
-                );
-              },
-            ),
           ),
           Padding(
             padding: const EdgeInsets.all(20),

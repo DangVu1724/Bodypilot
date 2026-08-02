@@ -134,7 +134,7 @@ class PushNotificationService {
       body: body,
       scheduledDate: scheduledDate,
       notificationDetails: platformDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.time,
     );
     _logger.i('Daily notification scheduled (ID $id) at $hour:$minute');
@@ -187,7 +187,7 @@ class PushNotificationService {
       body: body,
       scheduledDate: scheduledDate,
       notificationDetails: platformDetails,
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
       matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
     );
     _logger.i('Weekly notification scheduled (ID $id) on Day $dayOfWeek at $hour:$minute');
@@ -270,6 +270,41 @@ class PushNotificationService {
       body: notification.body,
       notificationDetails: platformDetails,
       payload: message.data.toString(),
+    );
+  }
+
+  static Future<void> showWorkoutCompletedNotification({
+    String? title,
+    String? body,
+    double? totalCaloriesBurned,
+  }) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'bodypilot_workout_channel',
+      'BodyPilot Workout Completed',
+      channelDescription: 'Thông báo hoàn thành bài tập của ứng dụng BodyPilot',
+      importance: Importance.max,
+      priority: Priority.high,
+      playSound: true,
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
+
+    const NotificationDetails platformDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    final notificationTitle = title ?? 'Chúc mừng! Bạn đã hoàn thành buổi tập hôm nay! 🎉💪';
+    final caloText = (totalCaloriesBurned != null && totalCaloriesBurned > 0)
+        ? ' Bạn đã đốt cháy khoảng ${totalCaloriesBurned.toInt()} kcal.'
+        : '';
+    final notificationBody = body ?? 'Tất cả các bài tập trong ngày đã được hoàn thành.$caloText Tiếp tục phát huy nhé!';
+
+    await _localNotificationsPlugin.show(
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
+      title: notificationTitle,
+      body: notificationBody,
+      notificationDetails: platformDetails,
     );
   }
 }

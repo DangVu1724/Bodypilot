@@ -7,6 +7,7 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
 import 'package:mobile/presentation/screens/home/widgets/section_header.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 
 class BrowseMealsList extends StatelessWidget {
   const BrowseMealsList({super.key});
@@ -97,29 +98,14 @@ class BrowseMealsList extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        ClipRRect(
+                        CategoryFoodImage(
+                          imageUrl: food.imageUrl,
+                          categoryCode: food.category?.code,
+                          categoryName: food.category?.name,
+                          width: 70,
+                          height: 70,
+                          fit: BoxFit.cover,
                           borderRadius: BorderRadius.circular(16),
-                          child: (food.imageUrl != null && food.imageUrl!.isNotEmpty)
-                              ? Image.network(
-                                  food.imageUrl!,
-                                  width: 70,
-                                  height: 70,
-                                  fit: BoxFit.cover,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      width: 70,
-                                      height: 70,
-                                      color: Colors.grey.shade100,
-                                      child: Icon(Icons.restaurant, color: Colors.grey.shade400, size: 32),
-                                    );
-                                  },
-                                )
-                              : Container(
-                                  width: 70,
-                                  height: 70,
-                                  color: Colors.grey.shade100,
-                                  child: Icon(Icons.restaurant, color: Colors.grey.shade400, size: 32),
-                                ),
                         ),
                       ],
                     ),

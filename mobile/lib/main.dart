@@ -4,6 +4,8 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/services/token_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
+import 'package:mobile/presentation/bloc/checkin/checkin_cubit.dart';
+
 import 'package:mobile/data/repositories/user_repository.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/data/repositories/food_repository.dart';
@@ -23,6 +25,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:mobile/data/services/push_notification_service.dart';
 import 'package:logger/logger.dart';
 
+import 'package:mobile/presentation/bloc/notification/notification_cubit.dart';
+
 final _logger = Logger();
 
 
@@ -36,6 +40,7 @@ void main() async {
   }
   await Hive.initFlutter();
   await Hive.openBox('assessment_box');
+  await Hive.openBox('notification_box');
   await TokenService.init();
   runApp(const BodyPilotApp());
 }
@@ -48,12 +53,15 @@ class BodyPilotApp extends StatelessWidget {
     return MultiBlocProvider(
       providers: [
         BlocProvider(create: (context) => UserCubit(userRepository)..fetchUserProfile()),
+        BlocProvider(create: (context) => CheckInCubit(userRepository)..fetchCheckInStatus()),
         BlocProvider(create: (context) => FoodCubit(foodRepository)..init()),
+
         BlocProvider(create: (context) => WorkoutPlanCubit(workoutRepository)..fetchPlansFull()),
         BlocProvider(create: (context) => ExerciseCubit(exerciseRepository)..fetchStrengthExercises()),
         BlocProvider(create: (context) => WorkoutCategoryCubit(exerciseRepository)..fetchCategories()),
         BlocProvider(create: (context) => MealCubit(nutritionDiaryRepository)),
         BlocProvider(create: (context) => WorkoutDiaryCubit(workoutDiaryRepository)),
+        BlocProvider(create: (context) => NotificationCubit()),
       ],
       child: MaterialApp.router(
         title: 'BodyPilot',

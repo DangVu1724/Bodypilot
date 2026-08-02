@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
@@ -9,7 +10,8 @@ import 'package:mobile/data/repositories/workout_diary_repository.dart';
 import 'package:core_shared/models/daily_workout_model.dart';
 
 class AiWorkoutSuggestionScreen extends StatefulWidget {
-  const AiWorkoutSuggestionScreen({super.key});
+  final int days;
+  const AiWorkoutSuggestionScreen({super.key, this.days = 7});
 
   @override
   State<AiWorkoutSuggestionScreen> createState() => _AiWorkoutSuggestionScreenState();
@@ -22,6 +24,55 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
   String? _errorMessage;
   bool _isSaving = false;
 
+  Timer? _loadingTimer;
+  int _loadingStepIndex = 0;
+
+  final List<Map<String, String>> _workoutSteps = [
+    {
+      'title': 'Phân tích chỉ số cơ thể',
+      'desc': 'Đang phân tích thông tin cân nặng, chiều cao & mục tiêu tập luyện...',
+    },
+    {
+      'title': 'Kiểm tra tiền sử chấn thương',
+      'desc': 'Rà soát danh sách chấn thương & hạn chế vận động của bạn...',
+    },
+    {
+      'title': 'Lọc danh sách bài tập',
+      'desc': 'Đang truy vấn danh sách bài tập phù hợp nhất từ cơ sở dữ liệu...',
+    },
+    {
+      'title': 'AI thiết lập lịch tập',
+      'desc': 'Gửi dữ liệu sang AI để tạo lịch trình tối ưu theo yêu cầu...',
+    },
+  ];
+
+  void _startLoadingTimer() {
+    setState(() {
+      _loadingStepIndex = 0;
+    });
+    _loadingTimer?.cancel();
+    _loadingTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      if (_loadingStepIndex < _workoutSteps.length - 1) {
+        setState(() {
+          _loadingStepIndex++;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  void _stopLoadingTimer() {
+    _loadingTimer?.cancel();
+    _loadingTimer = null;
+  }
+
+  @override
+  void dispose() {
+    _stopLoadingTimer();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -29,6 +80,7 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
   }
 
   Future<void> _fetchAiSuggestion() async {
+    _startLoadingTimer();
     setState(() {
       _isLoading = true;
       _errorMessage = null;
@@ -38,18 +90,29 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
       if (userId == null) {
         throw Exception("Không tìm thấy thông tin tài khoản người dùng.");
       }
-      final jsonString = await userRepository.getAiWorkoutSuggestion(userId);
+      final jsonString = await userRepository.getAiWorkoutSuggestion(userId, days: widget.days);
       final List<dynamic> decoded = jsonDecode(jsonString) as List<dynamic>;
       final suggestions = decoded.map((e) => DailyWorkoutModel.fromJson(e as Map<String, dynamic>)).toList();
-      setState(() {
-        _suggestions = suggestions;
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _errorMessage = e.toString().replaceAll("Exception: ", "");
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _suggestions = suggestions;
+        });
+      }
+    } catch (e, stackTrace) {
+      print("🚨 [AiWorkoutSuggestionScreen Error]: $e");
+      print("   StackTrace: $stackTrace");
+      if (mounted) {
+        setState(() {
+          _errorMessage = e.toString().replaceAll("Exception: ", "");
+        });
+      }
+    } finally {
+      _stopLoadingTimer();
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -94,29 +157,106 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
 
   Widget _buildLoadingState() {
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const SizedBox(
-              width: 60,
-              height: 60,
-              child: CircularProgressIndicator(
-                strokeWidth: 4.5,
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFFF7A30)),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withOpacity(0.05),
+                shape: BoxShape.circle,
+              ),
+              child: const SizedBox(
+                width: 64,
+                height: 64,
+                child: CircularProgressIndicator(
+                  strokeWidth: 5,
+                  valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             Text(
-              'AI đang thiết kế lịch tập...',
-              style: GoogleFonts.workSans(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF131517)),
+              'Đang Thiết Lập Lịch Tập AI',
+              style: GoogleFonts.workSans(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: const Color(0xFF1E293B),
+              ),
+              textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Phân tích chấn thương, thể trạng và mục tiêu của bạn để xây dựng bài tập phù hợp.',
-              style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary),
+              'Vui lòng chờ trong giây lát. Hệ thống đang rà soát dữ liệu thể trạng và phân bổ lịch trình tối ưu.',
+              style: AppTheme.bodyStyle.copyWith(color: const Color(0xFF64748B), fontSize: 14),
               textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 36),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: const Color(0xFFE2E8F0)),
+              ),
+              child: Column(
+                children: List.generate(_workoutSteps.length, (index) {
+                  final step = _workoutSteps[index];
+                  final isDone = index < _loadingStepIndex;
+                  final isCurrent = index == _loadingStepIndex;
+
+                  return Padding(
+                    padding: EdgeInsets.only(bottom: index == _workoutSteps.length - 1 ? 0 : 20.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        if (isDone)
+                          const Icon(Icons.check_circle, color: Colors.green, size: 22)
+                        else if (isCurrent)
+                          const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                            ),
+                          )
+                        else
+                          const Icon(Icons.radio_button_unchecked, color: Color(0xFF94A3B8), size: 22),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                step['title']!,
+                                style: AppTheme.semiboldStyle.copyWith(
+                                  fontSize: 15,
+                                  color: isCurrent 
+                                      ? AppTheme.primary 
+                                      : (isDone ? const Color(0xFF334155) : const Color(0xFF94A3B8)),
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                step['desc']!,
+                                style: AppTheme.bodyStyle.copyWith(
+                                  fontSize: 12.5,
+                                  color: isCurrent 
+                                      ? const Color(0xFF475569) 
+                                      : (isDone ? const Color(0xFF64748B) : const Color(0xFFCBD5E1)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+              ),
             ),
           ],
         ),

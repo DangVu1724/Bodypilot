@@ -5,6 +5,7 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
 import 'package:mobile/presentation/widgets/skeleton.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 
 class IngredientDetailScreen extends StatefulWidget {
   final String foodId;
@@ -93,12 +94,12 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
         onPressed: () => Navigator.pop(context),
       ),
       flexibleSpace: FlexibleSpaceBar(
-        background: (food.imageUrl != null && food.imageUrl!.isNotEmpty)
-            ? Image.network(food.imageUrl!, fit: BoxFit.cover)
-            : Container(
-                color: Colors.grey[200],
-                child: const Icon(Icons.restaurant, size: 100, color: Colors.grey),
-              ),
+        background: CategoryFoodImage(
+          imageUrl: food.imageUrl,
+          categoryCode: food.category?.code,
+          categoryName: food.category?.name,
+          fit: BoxFit.cover,
+        ),
       ),
     );
   }

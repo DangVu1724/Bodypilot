@@ -17,4 +17,5 @@ class AppRoutes {
   static const String calorieBalanceDetail = '/calorie-balance-detail';
   static const String proteinDetail = '/protein-detail';
   static const String activeMinutesDetail = '/active-minutes-detail';
+  static const String notifications = '/notifications';
 }

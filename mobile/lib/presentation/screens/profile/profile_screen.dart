@@ -91,7 +91,7 @@ class ProfileScreen extends StatelessWidget {
 
                 _buildSettingsGroup('Account', [
                   _buildSettingsTile(Icons.person_outline, 'Edit Profile', () {}),
-                  _buildSettingsTile(Icons.notifications_none, 'Notifications', () {}),
+                  _buildSettingsTile(Icons.notifications_none, 'Notifications', () => context.push(AppRoutes.notifications)),
                   _buildSettingsTile(Icons.security, 'Privacy & Security', () {}),
                 ]),
                 const SizedBox(height: 24),

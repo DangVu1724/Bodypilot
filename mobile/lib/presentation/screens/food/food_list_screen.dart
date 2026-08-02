@@ -9,6 +9,7 @@ import 'package:mobile/presentation/bloc/food/food_state.dart';
 import 'package:mobile/presentation/bloc/food_list/food_list_cubit.dart';
 import 'package:mobile/presentation/bloc/food_list/food_list_state.dart';
 import 'package:mobile/presentation/widgets/skeleton.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 
 class FoodListScreen extends StatefulWidget {
   final String type; // 'DISH' or 'INGREDIENT'
@@ -274,19 +275,14 @@ class _DishListItem extends StatelessWidget {
               child: SizedBox(
                 width: double.infinity,
                 height: double.infinity,
-                child: (food.imageUrl != null && food.imageUrl!.isNotEmpty)
-                    ? Image.network(
-                        food.imageUrl!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Center(
-                            child: Icon(Icons.restaurant, color: Colors.grey.shade300, size: 60),
-                          );
-                        },
-                      )
-                    : Center(
-                        child: Icon(Icons.restaurant, color: Colors.grey.shade300, size: 60),
-                      ),
+                child: CategoryFoodImage(
+                  imageUrl: food.imageUrl,
+                  categoryCode: food.category?.code,
+                  categoryName: food.category?.name,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
               ),
             ),
             // Gradient Overlay
@@ -353,30 +349,13 @@ class _IngredientGridItem extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              child: ClipRRect(
+              child: CategoryFoodImage(
+                imageUrl: food.imageUrl,
+                categoryCode: food.category?.code,
+                categoryName: food.category?.name,
+                fit: BoxFit.cover,
+                width: double.infinity,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                child: (food.imageUrl != null && food.imageUrl!.isNotEmpty)
-                    ? Image.network(
-                        food.imageUrl!,
-                        fit: BoxFit.cover,
-                        width: double.infinity,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: double.infinity,
-                            color: Colors.grey.shade100,
-                            child: Center(
-                              child: Icon(Icons.restaurant, color: Colors.grey.shade300, size: 40),
-                            ),
-                          );
-                        },
-                      )
-                    : Container(
-                        width: double.infinity,
-                        color: Colors.grey.shade100,
-                        child: Center(
-                          child: Icon(Icons.restaurant, color: Colors.grey.shade300, size: 40),
-                        ),
-                      ),
               ),
             ),
             Padding(

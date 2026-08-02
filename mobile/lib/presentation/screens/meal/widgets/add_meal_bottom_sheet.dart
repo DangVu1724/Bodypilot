@@ -7,6 +7,7 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 
 class AddMealBottomSheet extends StatefulWidget {
   final DateTime selectedDate;
@@ -85,12 +86,16 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
 
   bool _canAddToMeal(FoodModel food, List<FoodCategoryModel> categories) {
     final appliesTo = _categoryAppliesTo(food, categories);
+    final foodType = food.type.toUpperCase();
+    final isDishOrBoth = foodType == 'DISH' || foodType == 'BOTH';
+
     if (appliesTo != null) {
       return appliesTo == 'DISH' ||
-          (appliesTo == 'BOTH' && food.type.toUpperCase() == 'DISH');
+          (appliesTo == 'BOTH' && isDishOrBoth) ||
+          appliesTo == 'INGREDIENT';
     }
 
-    return food.type.toUpperCase() == 'DISH';
+    return isDishOrBoth;
   }
 
   Widget _buildCategoryFilters() {
@@ -305,7 +310,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
           itemCount: filteredFoods.length,
           itemBuilder: (context, index) {
             final food = filteredFoods[index];
-            final isDish = food.type == 'DISH';
+            final isDish = food.type == 'DISH' || food.type == 'BOTH';
 
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
@@ -319,30 +324,14 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                   horizontal: 16,
                   vertical: 8,
                 ),
-                leading: ClipRRect(
+                leading: CategoryFoodImage(
+                  imageUrl: food.imageUrl,
+                  categoryCode: food.category?.code,
+                  categoryName: food.category?.name,
+                  width: 50,
+                  height: 50,
+                  fit: BoxFit.cover,
                   borderRadius: BorderRadius.circular(12),
-                  child: food.imageUrl != null && food.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          food.imageUrl!,
-                          width: 50,
-                          height: 50,
-                          fit: BoxFit.cover,
-                          errorBuilder: (c, e, s) => Container(
-                            width: 50,
-                            height: 50,
-                            color: Colors.grey[200],
-                            child: const Icon(
-                              Icons.fastfood,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        )
-                      : Container(
-                          width: 50,
-                          height: 50,
-                          color: Colors.grey[200],
-                          child: const Icon(Icons.fastfood, color: Colors.grey),
-                        ),
                 ),
                 title: Text(
                   food.name,

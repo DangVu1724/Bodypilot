@@ -11,7 +11,7 @@ class ApiClient {
       BaseOptions(
         baseUrl: 'http://10.0.2.2:8080/api/v1', // Android Emulator IP
         connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 120),
+        receiveTimeout: const Duration(seconds: 300),
         headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
       ),
     );
@@ -28,7 +28,18 @@ class ApiClient {
           return handler.next(options);
         },
         onError: (DioException e, handler) {
+          print("🚨 [ApiClient Error] Request to ${e.requestOptions.uri} failed!");
+          print("   Method: ${e.requestOptions.method}");
+          print("   Type: ${e.type}");
+          print("   Message: ${e.message}");
+          if (e.response != null) {
+            print("   Status Code: ${e.response?.statusCode}");
+            print("   Response Data: ${e.response?.data}");
+          } else {
+            print("   No response received from server.");
+          }
           if (e.response?.statusCode == 401) {
+            print("🚨 [ApiClient] 401 Unauthorized received. Logging out and redirecting to welcome screen...");
             // Handle token expiration - Logout and redirect to login
             TokenService.removeToken();
 

@@ -3,6 +3,8 @@ import 'package:core_shared/models/injury_model.dart';
 import 'package:core_shared/models/allergy_model.dart';
 import 'package:core_shared/models/diet_tag_model.dart';
 import 'package:core_shared/models/user_model.dart';
+import 'package:core_shared/models/check_in_model.dart';
+
 import 'package:dio/dio.dart';
 import 'package:mobile/core/network/api_client.dart';
 import 'package:mobile/data/services/token_service.dart';
@@ -99,26 +101,94 @@ class UserRepository {
     }
   }
 
-  Future<String> getAiDietSuggestion(String userId) async {
+  Future<String> getAiDietSuggestion(String userId, {int? days, String? userFeedback}) async {
     try {
-      final response = await apiClient.get('/users/$userId/ai-diet-suggestion');
+      final Map<String, dynamic> queryParams = {};
+      if (days != null) queryParams['days'] = days;
+      if (userFeedback != null && userFeedback.trim().isNotEmpty) {
+        queryParams['userFeedback'] = userFeedback.trim();
+      }
+      final response = await apiClient.get(
+        '/users/$userId/ai-diet-suggestion',
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
+      );
       if (response.data['success'] == true) {
         return response.data['data'] as String;
       } else {
         throw Exception(response.data['message'] ?? 'Failed to load AI suggestion');
       }
     } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? 'Network error');
+      String errMsg = 'Network error';
+      if (e.response?.data != null) {
+        if (e.response!.data is Map) {
+          errMsg = e.response!.data['message'] ?? e.response!.data['error'] ?? 'Server error';
+        } else {
+          errMsg = e.response!.data.toString();
+        }
+      } else if (e.message != null) {
+        errMsg = e.message!;
+      }
+      print("🚨 [UserRepository.getAiDietSuggestion Error]: $errMsg");
+      throw Exception(errMsg);
+    } catch (e) {
+      print("🚨 [UserRepository.getAiDietSuggestion Generic Error]: $e");
+      rethrow;
     }
   }
 
-  Future<String> getAiWorkoutSuggestion(String userId) async {
+  Future<String> getAiWorkoutSuggestion(String userId, {int? days}) async {
     try {
-      final response = await apiClient.get('/users/$userId/ai-workout-suggestion');
+      final response = await apiClient.get(
+        '/users/$userId/ai-workout-suggestion',
+        queryParameters: days != null ? {'days': days} : null,
+      );
       if (response.data['success'] == true) {
         return response.data['data'] as String;
       } else {
         throw Exception(response.data['message'] ?? 'Failed to load AI suggestion');
+      }
+    } on DioException catch (e) {
+      String errMsg = 'Network error';
+      if (e.response?.data != null) {
+        if (e.response!.data is Map) {
+          errMsg = e.response!.data['message'] ?? e.response!.data['error'] ?? 'Server error';
+        } else {
+          errMsg = e.response!.data.toString();
+        }
+      } else if (e.message != null) {
+        errMsg = e.message!;
+      }
+      print("🚨 [UserRepository.getAiWorkoutSuggestion Error]: $errMsg");
+      throw Exception(errMsg);
+    } catch (e) {
+      print("🚨 [UserRepository.getAiWorkoutSuggestion Generic Error]: $e");
+      rethrow;
+    }
+  }
+
+  Future<CheckInStatusModel> getCheckInStatus(String userId) async {
+    try {
+      final response = await apiClient.get('/users/$userId/check-in/status');
+      if (response.data['success'] == true) {
+        return CheckInStatusModel.fromJson(response.data['data']);
+      } else {
+        throw Exception(response.data['message'] ?? 'Failed to load check-in status');
+      }
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Network error');
+    }
+  }
+
+  Future<CheckInResultModel> submitCheckIn(String userId, CheckInRequestModel request) async {
+    try {
+      final response = await apiClient.post(
+        '/users/$userId/check-in/submit',
+        data: request.toJson(),
+      );
+      if (response.data['success'] == true) {
+        return CheckInResultModel.fromJson(response.data['data']);
+      } else {
+        throw Exception(response.data['message'] ?? 'Failed to submit check-in');
       }
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? 'Network error');
@@ -127,3 +197,4 @@ class UserRepository {
 }
 
 final userRepository = UserRepository();
+
