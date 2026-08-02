@@ -14,9 +14,9 @@ import java.util.UUID;
 @Repository
 public interface DailyEatingRepository extends JpaRepository<DailyEating, UUID> {
     
-    @EntityGraph(attributePaths = {"mealSlots", "mealSlots.items"})
+    @EntityGraph(attributePaths = {"mealSlots"})
     Optional<DailyEating> findByUserAndDate(User user, LocalDate date);
 
-    @EntityGraph(attributePaths = {"mealSlots", "mealSlots.items"})
+    @EntityGraph(attributePaths = {"mealSlots"})
     List<DailyEating> findByUserAndDateBetweenOrderByDateAsc(User user, LocalDate startDate, LocalDate endDate);
 }

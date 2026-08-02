@@ -19,4 +19,5 @@ public interface WorkoutDiaryService {
     void addMultipleDailyWorkouts(User user, List<DailyWorkoutDTO> dailyWorkoutDTOs);
     void updateDailyNote(User user, LocalDate date, String note);
     void clearDay(User user, LocalDate date);
+    DailyWorkoutDTO copyDailyWorkout(User user, LocalDate fromDate, LocalDate toDate);
 }

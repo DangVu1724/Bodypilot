@@ -70,6 +70,10 @@ public class Food extends BaseEntity {
     @Column(name = "health_score")
     private Integer healthScore;
 
+    @Column(name = "is_recommended", nullable = false)
+    @Builder.Default
+    private Boolean isRecommended = true;
+
     @OneToMany(mappedBy = "food", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     @Builder.Default
     private List<FoodServing> servings = new ArrayList<>();

@@ -19,5 +19,12 @@ public interface FoodRepository extends JpaRepository<Food, UUID> {
     Page<Food> searchFoods(@Param("query") String query, @Param("categoryId") UUID categoryId, Pageable pageable);
 
     @EntityGraph(attributePaths = {"category"})
+    @Query("SELECT f FROM Food f WHERE f.type = :type OR f.type = com.bodypilot.backend.model.enums.FoodType.BOTH")
+    Page<Food> findByTypeOrBoth(@Param("type") FoodType type, Pageable pageable);
+
+    @EntityGraph(attributePaths = {"category"})
     Page<Food> findByType(FoodType type, Pageable pageable);
+
+    @Query("SELECT f FROM Food f LEFT JOIN FETCH f.category LEFT JOIN FETCH f.recipe")
+    java.util.List<Food> findAllWithRelations();
 }

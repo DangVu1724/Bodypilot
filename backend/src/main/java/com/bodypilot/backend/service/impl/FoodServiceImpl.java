@@ -54,7 +54,7 @@ public class FoodServiceImpl implements FoodService {
     @Transactional(readOnly = true)
     public PageResponse<FoodSummaryResponse> getFoodsByType(String type, Pageable pageable) {
         com.bodypilot.backend.model.enums.FoodType foodType = com.bodypilot.backend.model.enums.FoodType.valueOf(type.toUpperCase());
-        Page<Food> foodPage = foodRepository.findByType(foodType, pageable);
+        Page<Food> foodPage = foodRepository.findByTypeOrBoth(foodType, pageable);
         List<FoodSummaryResponse> content = foodPage.getContent().stream()
                 .map(this::mapToSummary)
                 .collect(Collectors.toList());
@@ -233,7 +233,7 @@ public class FoodServiceImpl implements FoodService {
             food.setCategory(null);
         }
 
-        if (food.getType() == com.bodypilot.backend.model.enums.FoodType.DISH && request.getRecipe() != null) {
+        if ((food.getType() == com.bodypilot.backend.model.enums.FoodType.DISH || food.getType() == com.bodypilot.backend.model.enums.FoodType.BOTH) && request.getRecipe() != null) {
             Recipe recipe = food.getRecipe();
             if (recipe == null) {
                 recipe = new Recipe();
@@ -262,7 +262,7 @@ public class FoodServiceImpl implements FoodService {
                 }
             }
         } else if (food.getType() == com.bodypilot.backend.model.enums.FoodType.INGREDIENT) {
-            // Remove recipe if it's an ingredient
+            // Remove recipe if it's strictly an ingredient
             if (food.getRecipe() != null) {
                 food.setRecipe(null);
             }

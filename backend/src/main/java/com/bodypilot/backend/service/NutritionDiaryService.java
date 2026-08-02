@@ -25,4 +25,5 @@ public interface NutritionDiaryService {
     void addMultipleDailyEatings(User user, List<DailyEatingDTO> dailyEatingDTOs);
     DailyEatingDTO updateMealItemStatus(UUID mealItemId, Boolean isEaten);
     DailyEatingDTO updateMealSlotStatus(UUID mealSlotId, Boolean isEaten);
+    DailyEatingDTO copyDailyEating(User user, LocalDate fromDate, LocalDate toDate);
 }

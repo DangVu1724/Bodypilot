@@ -131,4 +131,14 @@ public class NutritionDiaryController {
         DailyEatingDTO response = nutritionDiaryService.updateMealSlotStatus(id, isEaten);
         return ResponseEntity.ok(ApiResponse.ok("Meal slot status updated successfully", response));
     }
+
+    @PostMapping("/copy-day")
+    public ResponseEntity<ApiResponse<DailyEatingDTO>> copyDay(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        User user = userService.getUserByEmail(userDetails.getUsername());
+        DailyEatingDTO response = nutritionDiaryService.copyDailyEating(user, fromDate, toDate);
+        return ResponseEntity.ok(ApiResponse.ok("Meal plan copied successfully", response));
+    }
 }

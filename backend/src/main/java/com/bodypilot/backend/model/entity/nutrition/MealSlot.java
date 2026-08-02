@@ -5,6 +5,8 @@ import com.bodypilot.backend.model.enums.MealType;
 import jakarta.persistence.*;
 import lombok.*;
 
+import org.hibernate.annotations.BatchSize;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,6 +40,7 @@ public class MealSlot extends BaseEntity {
 
     @OneToMany(mappedBy = "mealSlot", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
+    @BatchSize(size = 20)
     @Builder.Default
     private List<MealItem> items = new ArrayList<>();
 }

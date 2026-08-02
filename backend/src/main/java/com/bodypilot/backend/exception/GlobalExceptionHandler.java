@@ -6,6 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,8 +15,8 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleException(Exception e) {
-        log.error("Unhandled exception occurred: ", e);
+    public ResponseEntity<Map<String, Object>> handleException(Exception e, HttpServletRequest request) {
+        log.error("🚨 Unhandled Exception occurred at [{} {}] - Message: {}", request.getMethod(), request.getRequestURI(), e.getMessage(), e);
         Map<String, Object> body = new HashMap<>();
         body.put("message", "An unexpected error occurred");
         body.put("error", e.getMessage());
@@ -24,8 +25,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(RuntimeException.class)
-    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException e) {
-        log.error("Runtime exception occurred: ", e);
+    public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException e, HttpServletRequest request) {
+        log.error("🚨 Runtime Exception occurred at [{} {}] - Message: {}", request.getMethod(), request.getRequestURI(), e.getMessage(), e);
         Map<String, Object> body = new HashMap<>();
         body.put("message", e.getMessage());
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());

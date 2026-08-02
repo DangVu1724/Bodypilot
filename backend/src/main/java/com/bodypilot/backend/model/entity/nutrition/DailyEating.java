@@ -5,6 +5,8 @@ import com.bodypilot.backend.model.entity.user.User;
 import jakarta.persistence.*;
 import lombok.*;
 
+import org.hibernate.annotations.BatchSize;
+
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ public class DailyEating extends BaseEntity {
 
     @OneToMany(mappedBy = "dailyEating", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("orderIndex ASC")
+    @BatchSize(size = 20)
     @Builder.Default
     private List<MealSlot> mealSlots = new ArrayList<>();
 }

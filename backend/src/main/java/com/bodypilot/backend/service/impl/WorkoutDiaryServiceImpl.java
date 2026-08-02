@@ -213,14 +213,20 @@ public class WorkoutDiaryServiceImpl implements WorkoutDiaryService {
 
                     if (itemDto.getExerciseId() != null) {
                         final double finalUserWeight = userWeight;
-                        exerciseRepository.findById(itemDto.getExerciseId())
-                                .ifPresent(exercise -> {
-                                    item.setExercise(exercise);
-                                    item.setExerciseNameSnapshot(exercise.getName());
-                                    double met = exercise.getMetValue() != null ? exercise.getMetValue() : 3.0;
-                                    double duration = itemDto.getDurationMinutes() != null ? itemDto.getDurationMinutes().doubleValue() : (exercise.getDefaultDuration() != null ? exercise.getDefaultDuration() : 10.0);
-                                    item.setCaloriesBurnedSnapshot(met * finalUserWeight * (duration / 60.0));
-                                });
+                        java.util.Optional<Exercise> exerciseOpt = exerciseRepository.findById(itemDto.getExerciseId());
+                        if (exerciseOpt.isPresent()) {
+                            Exercise exercise = exerciseOpt.get();
+                            item.setExercise(exercise);
+                            item.setExerciseNameSnapshot(exercise.getName());
+                            double met = exercise.getMetValue() != null ? exercise.getMetValue() : 3.0;
+                            double duration = itemDto.getDurationMinutes() != null ? itemDto.getDurationMinutes().doubleValue() : (exercise.getDefaultDuration() != null ? exercise.getDefaultDuration() : 10.0);
+                            item.setCaloriesBurnedSnapshot(met * finalUserWeight * (duration / 60.0));
+                        } else {
+                            item.setExercise(null);
+                            item.setExerciseNameSnapshot(itemDto.getExerciseName() != null ? itemDto.getExerciseName() : "Custom Exercise");
+                            item.setCaloriesBurnedSnapshot(itemDto.getCaloriesBurned() != null ? itemDto.getCaloriesBurned() : 0.0);
+                            item.setIsCustom(true);
+                        }
                     } else {
                         item.setExerciseNameSnapshot(itemDto.getExerciseName() != null ? itemDto.getExerciseName() : "Custom Exercise");
                         item.setCaloriesBurnedSnapshot(itemDto.getCaloriesBurned() != null ? itemDto.getCaloriesBurned() : 0.0);
@@ -305,5 +311,44 @@ public class WorkoutDiaryServiceImpl implements WorkoutDiaryService {
                 .isCustom(item.getIsCustom())
                 .notes(item.getNotes())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public DailyWorkoutDTO copyDailyWorkout(User user, LocalDate fromDate, LocalDate toDate) {
+        DailyWorkout sourceWorkout = dailyWorkoutRepository.findByUserAndDate(user, fromDate)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dữ liệu tập luyện ngày: " + fromDate));
+
+        clearDay(user, toDate);
+
+        DailyWorkout targetWorkout = dailyWorkoutRepository.save(DailyWorkout.builder()
+                .user(user)
+                .date(toDate)
+                .note(sourceWorkout.getNote())
+                .isAiGenerated(false)
+                .build());
+
+        for (DailyWorkoutItem sourceItem : sourceWorkout.getWorkoutItems()) {
+            DailyWorkoutItem newItem = new DailyWorkoutItem();
+            newItem.setDailyWorkout(targetWorkout);
+            newItem.setExercise(sourceItem.getExercise());
+            newItem.setOrderIndex(sourceItem.getOrderIndex());
+            newItem.setIsCompleted(false);
+            newItem.setExerciseNameSnapshot(sourceItem.getExerciseNameSnapshot());
+            newItem.setSetsSnapshot(sourceItem.getSetsSnapshot());
+            newItem.setRepsSnapshot(sourceItem.getRepsSnapshot());
+            newItem.setWeightKgSnapshot(sourceItem.getWeightKgSnapshot());
+            newItem.setRestSecondsSnapshot(sourceItem.getRestSecondsSnapshot());
+            newItem.setDurationMinutesSnapshot(sourceItem.getDurationMinutesSnapshot());
+            newItem.setDistanceKmSnapshot(sourceItem.getDistanceKmSnapshot());
+            newItem.setCaloriesBurnedSnapshot(sourceItem.getCaloriesBurnedSnapshot());
+            newItem.setIsCustom(sourceItem.getIsCustom());
+            newItem.setNotes(sourceItem.getNotes());
+            dailyWorkoutItemRepository.save(newItem);
+            targetWorkout.getWorkoutItems().add(newItem);
+        }
+
+        recalculateDailyWorkoutCalories(targetWorkout);
+        return mapToDailyWorkoutDTO(targetWorkout);
     }
 }

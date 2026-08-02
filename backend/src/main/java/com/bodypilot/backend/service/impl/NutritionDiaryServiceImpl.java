@@ -223,23 +223,35 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
                             item.setOrderIndex(itemDto.getOrderIndex());
                             item.setIsCustom(itemDto.getIsCustom());
 
-                            if (itemDto.getFoodId() != null) {
-                                foodRepository.findById(itemDto.getFoodId())
-                                        .ifPresent(food -> {
-                                            item.setFood(food);
-                                            snapshotFoodData(item, food, itemDto.getServingQuantity());
-                                        });
-                            } else {
-                                item.setFoodNameSnapshot(itemDto.getFoodName());
-                                item.setCaloriesSnapshot(itemDto.getCalories());
-                                item.setProteinSnapshot(itemDto.getProtein());
-                                item.setFatSnapshot(itemDto.getFat());
-                                item.setCarbsSnapshot(itemDto.getCarbs());
-                                item.setFiberSnapshot(itemDto.getFiber());
-                                item.setServingUnitSnapshot(itemDto.getServingUnit());
-                                item.setImageUrlSnapshot(itemDto.getImageUrl());
-                            }
-                            mealItemRepository.save(item);
+                             if (itemDto.getFoodId() != null) {
+                                 java.util.Optional<Food> foodOpt = foodRepository.findById(itemDto.getFoodId());
+                                 if (foodOpt.isPresent()) {
+                                     Food food = foodOpt.get();
+                                     item.setFood(food);
+                                     snapshotFoodData(item, food, itemDto.getServingQuantity());
+                                 } else {
+                                     item.setFood(null);
+                                     item.setIsCustom(true);
+                                     item.setFoodNameSnapshot(itemDto.getFoodName() != null ? itemDto.getFoodName() : "Custom Food");
+                                     item.setCaloriesSnapshot(itemDto.getCalories() != null ? itemDto.getCalories() : BigDecimal.ZERO);
+                                     item.setProteinSnapshot(itemDto.getProtein() != null ? itemDto.getProtein() : BigDecimal.ZERO);
+                                     item.setFatSnapshot(itemDto.getFat() != null ? itemDto.getFat() : BigDecimal.ZERO);
+                                     item.setCarbsSnapshot(itemDto.getCarbs() != null ? itemDto.getCarbs() : BigDecimal.ZERO);
+                                     item.setFiberSnapshot(itemDto.getFiber() != null ? itemDto.getFiber() : BigDecimal.ZERO);
+                                     item.setServingUnitSnapshot(itemDto.getServingUnit());
+                                     item.setImageUrlSnapshot(itemDto.getImageUrl());
+                                 }
+                             } else {
+                                 item.setFoodNameSnapshot(itemDto.getFoodName() != null ? itemDto.getFoodName() : "Custom Food");
+                                 item.setCaloriesSnapshot(itemDto.getCalories() != null ? itemDto.getCalories() : BigDecimal.ZERO);
+                                 item.setProteinSnapshot(itemDto.getProtein() != null ? itemDto.getProtein() : BigDecimal.ZERO);
+                                 item.setFatSnapshot(itemDto.getFat() != null ? itemDto.getFat() : BigDecimal.ZERO);
+                                 item.setCarbsSnapshot(itemDto.getCarbs() != null ? itemDto.getCarbs() : BigDecimal.ZERO);
+                                 item.setFiberSnapshot(itemDto.getFiber() != null ? itemDto.getFiber() : BigDecimal.ZERO);
+                                 item.setServingUnitSnapshot(itemDto.getServingUnit());
+                                 item.setImageUrlSnapshot(itemDto.getImageUrl());
+                             }
+                             mealItemRepository.save(item);
                             savedSlot.getItems().add(item);
                         }
                     }
@@ -316,11 +328,7 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
         mealItem.setFiberSnapshot(food.getFiberPer100g().multiply(ratio));
         mealItem.setImageUrlSnapshot(food.getImageUrl());
 
-        if (food.getDefaultServing() != null) {
-            mealItem.setServingUnitSnapshot(food.getDefaultServing().getName());
-        } else {
-            mealItem.setServingUnitSnapshot("grams");
-        }
+        mealItem.setServingUnitSnapshot("g");
     }
 
     private DailyEatingDTO mapToDailyEatingDTO(DailyEating dailyEating) {
@@ -367,5 +375,55 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
                 .isCustom(mealItem.getIsCustom())
                 .isEaten(mealItem.getIsEaten())
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public DailyEatingDTO copyDailyEating(User user, LocalDate fromDate, LocalDate toDate) {
+        DailyEating sourceEating = dailyEatingRepository.findByUserAndDate(user, fromDate)
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy dữ liệu bữa ăn ngày: " + fromDate));
+
+        clearDay(user, toDate);
+
+        DailyEating targetEating = dailyEatingRepository.save(DailyEating.builder()
+                .user(user)
+                .date(toDate)
+                .note(sourceEating.getNote())
+                .isAiGenerated(false)
+                .build());
+
+        for (MealSlot sourceSlot : sourceEating.getMealSlots()) {
+            MealSlot targetSlot = mealSlotRepository.save(MealSlot.builder()
+                    .dailyEating(targetEating)
+                    .mealType(sourceSlot.getMealType())
+                    .customName(sourceSlot.getCustomName())
+                    .orderIndex(sourceSlot.getOrderIndex())
+                    .isEaten(false)
+                    .build());
+
+            for (MealItem sourceItem : sourceSlot.getItems()) {
+                MealItem newItem = new MealItem();
+                newItem.setMealSlot(targetSlot);
+                newItem.setFood(sourceItem.getFood());
+                newItem.setServingQuantity(sourceItem.getServingQuantity());
+                newItem.setOrderIndex(sourceItem.getOrderIndex());
+                newItem.setFoodNameSnapshot(sourceItem.getFoodNameSnapshot());
+                newItem.setCaloriesSnapshot(sourceItem.getCaloriesSnapshot());
+                newItem.setProteinSnapshot(sourceItem.getProteinSnapshot());
+                newItem.setFatSnapshot(sourceItem.getFatSnapshot());
+                newItem.setCarbsSnapshot(sourceItem.getCarbsSnapshot());
+                newItem.setFiberSnapshot(sourceItem.getFiberSnapshot());
+                newItem.setServingUnitSnapshot(sourceItem.getServingUnitSnapshot());
+                newItem.setImageUrlSnapshot(sourceItem.getImageUrlSnapshot());
+                newItem.setIsCustom(sourceItem.getIsCustom());
+                newItem.setIsEaten(false);
+                mealItemRepository.save(newItem);
+                targetSlot.getItems().add(newItem);
+            }
+            targetEating.getMealSlots().add(targetSlot);
+        }
+
+        recalculateDailyCalories(targetEating);
+        return mapToDailyEatingDTO(targetEating);
     }
 }

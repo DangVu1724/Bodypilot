@@ -111,4 +111,14 @@ public class WorkoutDiaryController {
         workoutDiaryService.clearDay(user, date);
         return ResponseEntity.ok(ApiResponse.ok("Day cleared successfully", null));
     }
+
+    @PostMapping("/copy-day")
+    public ResponseEntity<ApiResponse<DailyWorkoutDTO>> copyDay(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        User user = userService.getUserByEmail(userDetails.getUsername());
+        DailyWorkoutDTO response = workoutDiaryService.copyDailyWorkout(user, fromDate, toDate);
+        return ResponseEntity.ok(ApiResponse.ok("Workout schedule copied successfully", response));
+    }
 }
