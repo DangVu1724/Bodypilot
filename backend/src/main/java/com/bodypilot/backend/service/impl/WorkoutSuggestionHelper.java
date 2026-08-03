@@ -288,19 +288,17 @@ public class WorkoutSuggestionHelper {
         Map<UUID, List<Exercise>> categoryGroups = new HashMap<>();
         UUID nullCategoryUuid = UUID.randomUUID();
 
+        Random random = new Random();
+        Map<Exercise, Double> exerciseScores = new HashMap<>();
         for (Exercise ex : exercises) {
             UUID catId = (ex.getBodyPart() != null) ? ex.getBodyPart().getId() : nullCategoryUuid;
             categoryGroups.computeIfAbsent(catId, k -> new ArrayList<>()).add(ex);
+            double score = calculateExerciseScore(ex, goalType) + (random.nextDouble() * 20.0);
+            exerciseScores.put(ex, score);
         }
 
-        Random random = new Random();
-
         for (List<Exercise> groupExs : categoryGroups.values()) {
-            groupExs.sort((e1, e2) -> {
-                double score1 = calculateExerciseScore(e1, goalType) + (random.nextDouble() * 20.0);
-                double score2 = calculateExerciseScore(e2, goalType) + (random.nextDouble() * 20.0);
-                return Double.compare(score2, score1);
-            });
+            groupExs.sort((e1, e2) -> Double.compare(exerciseScores.get(e2), exerciseScores.get(e1)));
         }
 
         List<Exercise> selectedExercises = new ArrayList<>();
