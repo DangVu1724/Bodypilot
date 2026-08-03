@@ -26,7 +26,7 @@ class ExerciseCubit extends Cubit<ExerciseState> {
     try {
       final response = await _repository.searchExercises(
         categoryId: categoryId,
-        size: 20,
+        size: 1000,
       );
       if (!isClosed) emit(ExerciseLoaded(response.content));
     } catch (e) {

@@ -14,7 +14,7 @@ class ExerciseRepository {
     String? bodyPartCode,
     String? muscleCode,
     int page = 0,
-    int size = 10,
+    int size = 1000,
   }) async {
     try {
       final queryParams = <String, dynamic>{'page': page, 'size': size};

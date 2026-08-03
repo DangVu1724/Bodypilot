@@ -65,7 +65,7 @@ class _AddExerciseBottomSheetState extends State<AddExerciseBottomSheet> {
       final response = await exerciseRepository.searchExercises(
         name: _searchQuery.isNotEmpty ? _searchQuery : null,
         categoryId: _selectedCategoryId,
-        size: 20,
+        size: 1000,
       );
       setState(() {
         _searchResults = response.content;
