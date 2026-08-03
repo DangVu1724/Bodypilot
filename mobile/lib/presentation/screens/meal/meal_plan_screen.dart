@@ -314,9 +314,20 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
                 ),
                 child: Row(
                   children: [
-                    Icon(slot.isEaten ? Icons.check_circle : Icons.radio_button_unchecked, color: slot.isEaten ? Colors.green : Colors.grey, size: 16),
+                    Icon(
+                      slot.isEaten ? Icons.check_circle : Icons.radio_button_unchecked,
+                      color: slot.isEaten ? Colors.green : Colors.grey,
+                      size: 16,
+                    ),
                     const SizedBox(width: 4),
-                    Text(slot.isEaten ? 'Eaten' : 'Mark as eaten', style: TextStyle(color: slot.isEaten ? Colors.green : Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+                    Text(
+                      slot.isEaten ? 'Eaten' : 'Mark as eaten',
+                      style: TextStyle(
+                        color: slot.isEaten ? Colors.green : Colors.grey,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -384,7 +395,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
     return ListView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: 100),
+      padding: const EdgeInsets.fromLTRB(20, 0, 20, 100),
       itemCount: slot.items.length,
       itemBuilder: (context, index) {
         final item = slot.items[index];
@@ -410,6 +421,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
         final carbsRatio = totalMacros > 0 ? item.carbsSnapshot / totalMacros : 0.0;
 
         return Container(
+          height: 190,
           margin: const EdgeInsets.only(bottom: 16),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(24),
@@ -447,7 +459,11 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
                           color: item.isEaten ? Colors.green : Colors.black.withOpacity(0.35),
                           shape: BoxShape.circle,
                         ),
-                        child: Icon(item.isEaten ? Icons.check : Icons.check_circle_outline, color: Colors.white, size: 24),
+                        child: Icon(
+                          item.isEaten ? Icons.check : Icons.check_circle_outline,
+                          color: Colors.white,
+                          size: 24,
+                        ),
                       ),
                     ),
                     const Spacer(),

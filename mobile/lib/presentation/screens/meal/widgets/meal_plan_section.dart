@@ -98,65 +98,99 @@ class _MealPlanSectionState extends State<MealPlanSection> {
       (item) => item.mealType == selectedType,
       orElse: () => MealSlotModel(mealType: selectedType, items: const []),
     );
-    final item = slot?.items.isNotEmpty == true ? slot!.items.first : null;
+    final items = slot?.items ?? [];
 
-    if (item == null) {
+    if (items.isEmpty) {
       return _buildEmptyMealCard();
     }
 
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))],
-      ),
-      child: Column(
-        children: [
-          // Food Image
-          CategoryFoodImage(
-            imageUrl: item.imageUrlSnapshot,
-            categoryName: item.foodNameSnapshot,
-            height: 200,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(20),
+    return SizedBox(
+      height: 245,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: items.length,
+        itemBuilder: (context, index) {
+          final item = items[index];
+          return Container(
+            width: 215,
+            margin: EdgeInsets.only(
+              right: index == items.length - 1 ? 0 : 12,
+              top: 4,
+              bottom: 6,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 12,
+                  offset: const Offset(0, 4),
+                )
+              ],
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      item.foodNameSnapshot,
-                      style: AppTheme.semiboldStyle.copyWith(fontSize: 18, color: AppTheme.textPrimary),
-                    ),
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEDF2F7),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: const Color(0xFFBEE3F8), width: 1),
-                      ),
-                      child: const Icon(Icons.add, color: Color(0xFF48BB78), size: 28),
-                    ),
-                  ],
+                // Food Image
+                CategoryFoodImage(
+                  imageUrl: item.imageUrlSnapshot,
+                  categoryName: item.foodNameSnapshot,
+                  height: 110,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    _buildMacroItem('Calories', '${item.caloriesSnapshot.toStringAsFixed(0)} kcal', Colors.orange),
-                    _buildMacroItem('Protein', '${item.proteinSnapshot.toStringAsFixed(1)}g', Colors.blue),
-                    _buildMacroItem('Fat', '${item.fatSnapshot.toStringAsFixed(1)}g', Colors.red),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              item.foodNameSnapshot,
+                              style: AppTheme.semiboldStyle.copyWith(
+                                fontSize: 14,
+                                color: AppTheme.textPrimary,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Container(
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFEDF2F7),
+                              shape: BoxShape.circle,
+                              border: Border.all(color: const Color(0xFFBEE3F8), width: 1),
+                            ),
+                            child: const Icon(Icons.add, color: Color(0xFF48BB78), size: 18),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 10),
+                      // Stack macro parameters vertically
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildMacroItem('Calories', '${item.caloriesSnapshot.toStringAsFixed(0)} kcal', Colors.orange),
+                          const SizedBox(height: 4),
+                          _buildMacroItem('Protein', '${item.proteinSnapshot.toStringAsFixed(1)}g', Colors.blue),
+                          const SizedBox(height: 4),
+                          _buildMacroItem('Fat', '${item.fatSnapshot.toStringAsFixed(1)}g', Colors.red),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+          );
+        },
       ),
     );
   }
@@ -178,10 +212,10 @@ class _MealPlanSectionState extends State<MealPlanSection> {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 10))],
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 15, offset: const Offset(0, 6))],
       ),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       child: Center(
         child: Text('No meals added for today yet.', style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary)),
       ),
@@ -190,19 +224,21 @@ class _MealPlanSectionState extends State<MealPlanSection> {
 
   Widget _buildMacroItem(String label, String value, Color color) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 4,
-          height: 35,
+          width: 3,
+          height: 12,
           decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
         ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(label, style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: AppTheme.textSecondary)),
-            Text(value, style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: AppTheme.textPrimary)),
-          ],
+        const SizedBox(width: 6),
+        Text(
+          '$label: ',
+          style: AppTheme.bodyStyle.copyWith(fontSize: 11, color: AppTheme.textSecondary),
+        ),
+        Text(
+          value,
+          style: AppTheme.semiboldStyle.copyWith(fontSize: 11, color: AppTheme.textPrimary, fontWeight: FontWeight.bold),
         ),
       ],
     );
