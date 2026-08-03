@@ -49,8 +49,8 @@ public class DietSuggestionHelper {
         List<Food> filteredFoods = getFilteredFoods(allergies, diets, dislikedFoods);
         log.info("[Candidates Log] Filtered foods size: {}", filteredFoods.size());
 
-        log.info("[Candidates Log] Selecting balanced foods (limit 100)...");
-        List<Food> limitedFoods = selectBalancedFoods(filteredFoods, 100, goalType, diets);
+        log.info("[Candidates Log] Selecting balanced foods (limit 300)...");
+        List<Food> limitedFoods = selectBalancedFoods(filteredFoods, 300, goalType, diets);
         log.info("[Candidates Log] Selected balanced foods size: {}", limitedFoods.size());
 
         log.info("[Candidates Log] Mapping to FoodCandidate list...");
@@ -123,74 +123,66 @@ public class DietSuggestionHelper {
             sb.append("(HÃY ĐẶC BIỆT LƯU Ý VÀ ĐIỀU CHỈNH THỰC ĐƠN ĐÁP ỨNG CHÍNH XÁC YÊU CẦU NÀY CỦA NGƯỜI DÙNG)\n");
         }
 
-        sb.append("\nDANH SÁCH THỰC PHẨM ĐƯỢC PHÉP SỬ DỤNG (ĐÃ PHÂN NHÓM THEO THỂ LOẠI):\n");
-        List<FoodCandidate> proteinFoods = new ArrayList<>();
-        List<FoodCandidate> carbFoods = new ArrayList<>();
-        List<FoodCandidate> vegFoods = new ArrayList<>();
-        List<FoodCandidate> fruitFoods = new ArrayList<>();
-        List<FoodCandidate> completeDishes = new ArrayList<>();
-
+        sb.append("\nDANH SÁCH THỰC PHẨM ĐƯỢC PHÉP SỬ DỤNG (PHÂN LOẠI THEO NGUYÊN BẢN DANH MỤC CỦA ỨNG DỤNG - TỐI ĐA 30 MÓN MỖI DANH MỤC):\n");
+        Map<String, List<FoodCandidate>> groupedByCat = new LinkedHashMap<>();
         for (FoodCandidate c : candidates) {
-            String code = c.getCategoryCode() != null ? c.getCategoryCode().toUpperCase() : "";
-            switch (code) {
-                case "MEAT", "SEAFOOD", "DAIRY" -> proteinFoods.add(c);
-                case "GRAIN" -> carbFoods.add(c);
-                case "VEG" -> vegFoods.add(c);
-                case "FRUIT", "DESSERT" -> fruitFoods.add(c);
-                case "NOODLE_SOUP", "DRY_DISH", "FAST_FOOD" -> completeDishes.add(c);
-                default -> {}
-            }
+            String catCode = (c.getCategoryCode() != null && !c.getCategoryCode().trim().isEmpty()) ? c.getCategoryCode().toUpperCase() : "OTHERS";
+            groupedByCat.computeIfAbsent(catCode, k -> new ArrayList<>()).add(c);
         }
 
-        try {
-            sb.append("\n1. 🥩 [MÓN CHÍNH GIÀU ĐẠM]:\n").append(objectMapper.writeValueAsString(proteinFoods)).append("\n");
-            sb.append("\n2. 🍚 [TINH BỘT & CƠM (CARBS)]:\n").append(objectMapper.writeValueAsString(carbFoods)).append("\n");
-            sb.append("\n3. 🥦 [RAU CỦ & CANH (VEGETABLES)]:\n").append(objectMapper.writeValueAsString(vegFoods)).append("\n");
-            sb.append("\n4. 🍎 [HOA QUẢ & BỮA PHỤ (FRUITS & SNACKS)]:\n").append(objectMapper.writeValueAsString(fruitFoods)).append("\n");
-            sb.append("\n5. 🍲 [MÓN ĐƠN TRỌN BỮA (COMPLETE DISHES)]:\n").append(objectMapper.writeValueAsString(completeDishes)).append("\n");
-        } catch (Exception e) {
-            sb.append("[]\n");
+        for (Map.Entry<String, List<FoodCandidate>> entry : groupedByCat.entrySet()) {
+            try {
+                sb.append("\n📌 Danh mục [").append(entry.getKey()).append("] (").append(entry.getValue().size()).append(" món):\n")
+                  .append(objectMapper.writeValueAsString(entry.getValue())).append("\n");
+            } catch (Exception ignored) {}
         }
 
         String goalCode = goal != null && goal.getType() != null ? goal.getType().toUpperCase() : "";
 
-        sb.append("\nQUY TẮC CỐT LÕI VĂN HÓA ẨM THỰC VÀ DINH DƯỠNG (BẮT BUỘC TUÂN THỦ STRICTLY):\n");
+        sb.append("\nQUY TẮC CỐT LÕI VĂN HÓA ẨM THỰC VIỆT NAM VÀ DINH DƯỠNG (BẮT BUỘC TUÂN THỦ NGHIÊM NGẶT):\n");
         sb.append("1. RÀNG BUỘC SỐ BỮA: Mỗi ngày BẮT BUỘC CHỈ TẠO ĐÚNG 3 BỮA CHÍNH: BREAKFAST (Bữa sáng), LUNCH (Bữa trưa), DINNER (Bữa tối). TUYỆT ĐỐI KHÔNG TẠO THÊM BẤT KỲ MEAL SLOT NÀO KHÁC.\n");
-        sb.append("   - Nếu có các món bữa phụ, trước/sau tập (như Chuối, Sữa chua, Hạt, Whey, Táo, Sữa...): BẮT BUỘC gộp trực tiếp làm món ăn kèm / tráng miệng vào danh sách `items` của BREAKFAST hoặc DINNER.\n");
+        sb.append("2. CẤU TRÚC BỮA SÁNG (BREAKFAST) - BẮT BUỘC FROM 2 ĐẾN 3 MÓN PHỐI HỢP PHÙ HỢP VÀ CHUẨN THỰC TẾ:\n");
+        sb.append("   - Bữa sáng BẮT BUỘC gồm từ 2 đến 3 món ăn được phối hợp tự nhiên, đa dạng và thực tế (như các combo điểm tâm chuẩn):\n");
+        sb.append("     + COMBO MÓN NƯỚC: 1 Món nước (`NOODLE_SOUP` như Phở, Bún bò, Cháo...) + 1 Đồ uống (`BEVERAGE`/`DAIRY` như Sữa tươi, Sữa chua, Cà phê) HOẶC 1 phần Trái cây.\n");
+        sb.append("     + COMBO BÁNH MÌ & SANDWICH: Bánh mì nguyên cám / Bánh mì cám yến mạch / Sandwich / French Toast (`GRAIN`/`DRY_DISH`) + 1 Món đạm nhẹ (Trứng gà ốp la/luộc, Ức gà) + 1 Đồ uống/Sinh tố (Sinh tố bơ, Sữa tươi, Cà phê) HOẶC 1 quả Trái cây (Chuối, Táo).\n");
+        sb.append("     + COMBO MÓN KHÔ TRUYỀN THỐNG: Xôi, Nui xào, Bánh cuốn (`DRY_DISH`) + 1 Đồ uống (Sữa, Nước ép) HOẶC 1 Trái cây.\n");
+        sb.append("     + COMBO YẾN MẠCH & SỮA CHUA: Yến mạch / Sữa chua Hy Lạp + Hạt / Trái cây + Trứng luộc / Sữa.\n");
+        sb.append("   - TUYỆT ĐỐI CẤM ĐƯA CÁC MÓN MẶN ĂN CƠM TRƯA/TỐI VÀO BỮA SÁNG: Cấm đưa các món mặn mâm cơm như Đậu phụ chiên, Rau củ xào, Thịt kho, Cá nướng, Thịt xào... vào Bữa sáng!\n");
+        sb.append("3. CẤU TRÚC BỮA TỐI (DINNER):\n");
+        sb.append("   - BẮT BUỘC trong danh sách `items` của Bữa tối phải chứa 1 món CƠM ĐÃ NẤU (Cơm trắng hoặc Cơm gạo lứt) làm tinh bột chính, ăn kèm 1 món mặn quen thuộc và rau củ/canh.\n");
+        sb.append("4. CẤU TRÚC MÂM CƠM VÀ PHÂN BỔ MÓN ĂN HỢP LÝ (VĂN HÓA VIỆT NAM):\n");
+        sb.append("   - Bữa trưa và Bữa tối phải được phối hợp chuẩn mâm cơm Việt Nam: 1 Tinh bột chính (Cơm/Gạo lứt) + 1 Món mặn giàu đạm chính (như Thịt kho, Ức gà áp chảo, Cá kho/sốt cà, Thịt bò xào, Trứng rán...) + 1 Món Rau/Canh (Rau muống luộc, Canh cải, Canh bí, Salad).\n");
+        sb.append("   - TUYỆT ĐỐI KHÔNG xếp 2 món mặn nướng / khó tiêu trong cùng 1 bữa (Ví dụ: KHÔNG ĐƯỢC kết hợp Cá nướng + Dê nướng trong cùng 1 bữa trưa).\n");
+        sb.append("   - Ưu tiên chọn các món ăn dân dã, quen thuộc với người Việt. Tránh kết hợp các món xa lạ hoặc kỳ lạ.\n");
+        sb.append("5. QUY TẮC TRÁI CÂY TRÁNG MIỆNG (FRUITS):\n");
+        sb.append("   - BẮT BUỘC NGÀY NÀO CŨNG PHẢI CÓ TRÁI CÂY (thuộc danh mục `FRUIT` như Táo, Chuối, Cam, Dưa hấu, Kiwi, Dâu tây, Thanh long, Lựu, Dứa...).\n");
+        sb.append("   - Mỗi ngày có thể có từ 1 đến 2 bữa chứa trái cây (ví dụ: Bữa sáng & Bữa trưa, hoặc Bữa trưa & Bữa tối).\n");
+        sb.append("   - NẾU MỘT NGÀY CÓ 2 BỮA CÓ TRÁI CÂY: Hai loại trái cây ở 2 bữa đó BẮT BUỘC PHẢI KHÁC NHAU (Ví dụ: Bữa trưa ăn Táo thì Bữa tối ăn Dưa hấu hoặc Chuối; TUYỆT ĐỐI KHÔNG chọn cùng 1 loại trái cây cho 2 bữa trong cùng một ngày).\n");
+        sb.append("   - Trong mỗi bữa ăn, CHỈ ĐƯỢC chọn tối đa 1 phần / 1 loại trái cây duy nhất làm món tráng miệng hoặc ăn kèm.\n");
 
         if (goalCode.contains("LOSE") || goalCode.contains("CUTTING")) {
-            sb.append("2. QUY TẮC PHỐI BỮA CHO GIẢM CÂN / SIẾT CƠ (CUTTING):\n");
-            sb.append("   - BREAKFAST (Bữa sáng): Yến mạch / Trứng / Sữa chua Hy Lạp / Salad / Sandwich nguyên cám + Trái cây ít đường (Táo / Cam / Kiwi / Dâu) hoặc Hạt (Hạnh nhân / Óc chó).\n");
-            sb.append("   - LUNCH (Bữa trưa): Đạm nạc (Ức gà / Cá hồi / Cá trắng / Bò nạc / Đậu phụ) + Carb chỉ số GI thấp (Gạo lứt / Khoai lang / Quinoa) + Bắt buộc có Rau xanh (Salad / Rau luộc).\n");
-            sb.append("   - DINNER (Bữa tối): Ưu tiên Cá / Hải sản / Gà + Salad / Rau xanh (LƯU Ý: Bắt buộc cắt giảm 50% tinh bột so với bữa trưa).\n");
+            sb.append("6. QUY TẮC PHỐI BỮA CHO GIẢM CÂN / SIẾT CƠ / ĂN KIÊNG (LOSE / CUTTING):\n");
+            sb.append("   - BỮA SÁNG (BREAKFAST): Linh hoạt chọn các combo ăn kiêng thanh đạm, ít calo nhưng đủ đạm: Trứng luộc / Trứng ốp la không dầu + Bánh mì cám yến mạch / Bánh mì nguyên cám / Yến mạch + Sữa không đường / Cà phê đen / Trái cây ít đường (Táo, Dâu). Tránh Phở bún nhiều mỡ hay xôi chiên.\n");
+            sb.append("   - BỮA TRƯA & TỐI (LUNCH & DINNER): Ưu tiên đạm nạc (Ức gà / Bò nạc / Cá / Đậu phụ) + Cơm gạo lứt + Nhiều rau xanh/Canh. Bữa tối lượng cơm giảm 50% so với bữa trưa.\n");
         } else if (goalCode.contains("GAIN_0") || goalCode.contains("GAIN_1") || goalCode.contains("BULKING")) {
-            sb.append("2. QUY TẮC PHỐI BỮA CHO TĂNG CÂN / TĂNG CƠ (BULKING):\n");
-            sb.append("   - BREAKFAST (Bữa sáng): Bánh mì + protein / Yến mạch / Cơm / Bún phở / Sandwich / Pancake + Nguồn đạm (Ức gà / Trứng / Cá hồi / Bò / Cá ngừ / Sữa chua Hy Lạp) + Món năng lượng (Chuối / Sinh tố / Sữa / Hạt / Whey).\n");
-            sb.append("   - LUNCH (Bữa trưa): Protein dồi dào (Gà / Bò / Cá / Hải sản / Heo nạc) + Carb năng lượng (Cơm / Khoai / Mì / Nui) + Rau (Rau luộc / Salad / Rau xào ít dầu).\n");
-            sb.append("   - DINNER (Bữa tối): Protein (Cá / Gà / Bò / Hải sản) + Carb năng lượng + Rau + (Sữa / Sữa chua Hy Lạp / Hạt trước ngủ).\n");
+            sb.append("6. QUY TẮC PHỐI BỮA CHO TĂNG CÂN / TĂNG CƠ (BULKING / GAIN):\n");
+            sb.append("   - BỮA SÁNG (BREAKFAST): Linh hoạt chọn các combo giàu năng lượng & đạm cao: Phở / Bún bò / Hủ tiếu + Trứng luộc / Sữa tươi; HOẶC Sandwich / Bánh mì + Trứng gà + Sinh tố bơ / Sinh tố Protein / Chuối.\n");
+            sb.append("   - BỮA TRƯA & TỐI (LUNCH & DINNER): Đạm dồi dào (Gà, Bò, Cá, Heo nạc) + Cơm đầy đủ + Món xào / Canh / Trái cây bổ sung năng lượng.\n");
         } else if (goalCode.contains("MUSCLE")) {
-            sb.append("2. QUY TẮC PHỐI BỮA CHO TĂNG CƠ GIẢM MỠ (MUSCLE RECOMPOSITION):\n");
-            sb.append("   - BREAKFAST (Bữa sáng): Nguồn đạm cao (Trứng toàn phần / Lòng trắng trứng / Ức gà / Sữa chua Hy Lạp / Whey) + Carb sạch (Yến mạch / Bánh mì nguyên cám / Chuối).\n");
-            sb.append("   - LUNCH (Bữa trưa): Đạm nạc dồi dào (Thịt bò nạc / Ức gà / Cá hồi / Hải sản) + Carb vừa đủ (Gạo lứt / Khoai lang) + Nhiều Rau xanh.\n");
-            sb.append("   - DINNER (Bữa tối): Ưu tiên Đạm nạc (Cá / Hải sản / Ức gà / Đậu phụ) + Bắt buộc có Rau xanh/Salad + Carb nhẹ vừa phải.\n");
+            sb.append("6. QUY TẮC PHỐI BỮA CHO TĂNG CƠ GIẢM MỠ (MUSCLE RECOMPOSITION):\n");
+            sb.append("   - BỮA SÁNG (BREAKFAST): Đạm cao & Carb sạch: Trứng luộc / Lòng trắng trứng / Ức gà + Bánh mì cám yến mạch / Yến mạch + Sinh tố đạm / Sữa chua Hy Lạp + Táo / Chuối.\n");
+            sb.append("   - BỮA TRƯA & TỐI (LUNCH & DINNER): Đạm nạc dồi dào + Cơm gạo lứt vừa đủ + Nhiều rau xanh.\n");
         } else if (goalCode.contains("HEALTHY") || goalCode.contains("EAT_CLEAN")) {
-            sb.append("2. QUY TẮC PHỐI BỮA CHO LỐI SỐNG LÀNH MẠNH / EAT CLEAN (HEALTHY LIFESTYLE):\n");
-            sb.append("   - BREAKFAST (Bữa sáng): Yến mạch nguyên cám / Bánh mì nguyên cám / Sữa chua Hy Lạp + Trái cây tươi (Táo / Kiwi / Cam) & Hạt sấy.\n");
-            sb.append("   - LUNCH (Bữa trưa): Đạm nguyên bản hấp/nướng (Ức gà / Cá hồi / Đậu phụ / Trứng) + Tinh bột nguyên hạt (Gạo lứt / Khoai lang / Quinoa) + Rau củ tươi đa dạng.\n");
-            sb.append("   - DINNER (Bữa tối): Cá nạc / Hải sản / Đậu phụ + Salad rau củ tươi + Trái cây mọng nước tráng miệng.\n");
-        } else if (goalCode.contains("ENDURANCE")) {
-            sb.append("2. QUY TẮC PHỐI BỮA CHO THỂ LỰC & SỨC BỀN (ENDURANCE):\n");
-            sb.append("   - BREAKFAST (Bữa sáng): Carb năng lượng bền bỉ (Yến mạch / Bánh mì / Phở / Cơm) + Trứng/Gà + Chuối / Sinh tố.\n");
-            sb.append("   - LUNCH (Bữa trưa): Nguồn Carb năng lượng lớn (Cơm / Mì / Khoai lang / Nui) + Protein (Gà / Bò / Cá) + Rau củ.\n");
-            sb.append("   - DINNER (Bữa tối): Carb vừa phải + Protein nạc + Rau củ + Trái cây mọng nước.\n");
+            sb.append("6. QUY TẮC PHỐI BỮA CHO ĂN CLEAN / SỨC KHỎE (HEALTHY LIFESTYLE):\n");
+            sb.append("   - BỮA SÁNG (BREAKFAST): Yến mạch nguyên cám / Bánh mì cám yến mạch + Trứng luộc / Sữa chua Hy Lạp + Trái cây tươi (Táo, Kiwi, Cam) & Sữa hạt.\n");
+            sb.append("   - BỮA TRƯA & TỐI (LUNCH & DINNER): Thực phẩm nguyên bản (hấp, nướng, luộc) + Cơm gạo lứt + Rau củ tươi đa dạng.\n");
         } else {
-            sb.append("2. QUY TẮC PHỐI BỮA KHI DUY TRÌ CÂN NẶNG (MAINTAIN):\n");
-            sb.append("   - BREAKFAST (Bữa sáng): Yến mạch / Bánh mì / Phở / Trứng + Trái cây / Sữa.\n");
-            sb.append("   - LUNCH (Bữa trưa): Đạm (Gà / Bò / Cá / Hải sản) + Carb (Cơm / Khoai) + Rau xanh.\n");
-            sb.append("   - DINNER (Bữa tối): Đạm nạc + Carb vừa đủ + Rau xanh.\n");
+            sb.append("6. QUY TẮC PHỐI BỮA KHI DUY TRÌ CÂN NẶNG (MAINTAIN):\n");
+            sb.append("   - BỮA SÁNG (BREAKFAST): Linh hoạt lựa chọn combo phù hợp (Phở / Bún / Bánh mì cám / Sandwich / Yến mạch + Trứng / Sữa tươi / Sinh tố / Trái cây).\n");
+            sb.append("   - BỮA TRƯA & TỐI (LUNCH & DINNER): Cân bằng đạm, tinh bột cơm và rau củ.\n");
         }
 
-        sb.append("3. ĐA DẠNG MÓN ĂN: Tuyệt đối không lặp lại cùng một món quá 2 lần trong tuần. Hãy xoay vòng đa dạng giữa các ngày.\n");
+        sb.append("7. ĐA DẠNG MÓN ĂN: Tuyệt đối không lặp lại cùng một món quá 2 lần trong tuần. Hãy xoay vòng đa dạng giữa các ngày.\n");
 
         sb.append("\nYêu cầu định dạng đầu ra:\n");
         sb.append("Bạn PHẢI trả về một JSON array duy nhất đại diện cho thực đơn gợi ý của ").append(days).append(" ngày liên tiếp bắt đầu từ ngày ").append(startDate).append(".\n");
@@ -744,71 +736,13 @@ public class DietSuggestionHelper {
     }
 
     private int getMaxCategoryLimit(String categoryCode, String goalType) {
-        if (categoryCode == null) return 5;
+        if (categoryCode == null) return 10;
         categoryCode = categoryCode.toUpperCase().trim();
-
-        if (goalType == null) {
-            return switch (categoryCode) {
-                case "VEG" -> 20;
-                case "MEAT", "SEAFOOD", "FRUIT", "GRAIN", "DAIRY" -> 15;
-                case "DRY_DISH", "NOODLE_SOUP" -> 10;
-                case "OILS", "SEASONING", "BEVERAGE" -> 5;
-                case "DESSERT", "FAST_FOOD" -> 3;
-                default -> 8;
-            };
-        }
-
-        return switch (goalType) {
-            case "LOSE_0_5KG", "LOSE_1KG" -> switch (categoryCode) {
-                case "VEG" -> 25;
-                case "FRUIT", "SEAFOOD" -> 20;
-                case "MEAT", "DAIRY" -> 15;
-                case "GRAIN" -> 10;
-                case "DRY_DISH", "NOODLE_SOUP" -> 8;
-                case "SEASONING", "BEVERAGE" -> 5;
-                case "OILS" -> 3;
-                case "DESSERT", "FAST_FOOD" -> 1;
-                default -> 5;
-            };
-            case "GAIN_MUSCLE" -> switch (categoryCode) {
-                case "MEAT" -> 25;
-                case "SEAFOOD", "DAIRY" -> 20;
-                case "GRAIN", "VEG" -> 15;
-                case "FRUIT" -> 12;
-                case "DRY_DISH", "NOODLE_SOUP" -> 10;
-                case "OILS", "SEASONING" -> 6;
-                case "BEVERAGE" -> 5;
-                case "DESSERT", "FAST_FOOD" -> 2;
-                default -> 8;
-            };
-            case "GAIN_0_5KG", "GAIN_1KG" -> switch (categoryCode) {
-                case "MEAT", "GRAIN" -> 20;
-                case "DAIRY" -> 18;
-                case "SEAFOOD", "DRY_DISH" -> 15;
-                case "VEG", "FRUIT" -> 12;
-                case "NOODLE_SOUP", "OILS" -> 10;
-                case "SEASONING", "BEVERAGE" -> 8;
-                case "DESSERT", "FAST_FOOD" -> 5;
-                default -> 10;
-            };
-            case "ENDURANCE" -> switch (categoryCode) {
-                case "GRAIN" -> 25;
-                case "DRY_DISH", "NOODLE_SOUP" -> 15;
-                case "MEAT", "SEAFOOD", "DAIRY" -> 12;
-                case "VEG", "FRUIT" -> 15;
-                case "OILS", "SEASONING" -> 6;
-                case "BEVERAGE" -> 8;
-                case "DESSERT", "FAST_FOOD" -> 3;
-                default -> 8;
-            };
-            default -> switch (categoryCode) {
-                case "VEG" -> 20;
-                case "FRUIT", "MEAT", "SEAFOOD", "GRAIN", "DAIRY" -> 15;
-                case "DRY_DISH", "NOODLE_SOUP" -> 10;
-                case "OILS", "SEASONING", "BEVERAGE" -> 5;
-                case "DESSERT", "FAST_FOOD" -> 2;
-                default -> 8;
-            };
+        return switch (categoryCode) {
+            case "VEG", "FRUIT", "MEAT", "SEAFOOD", "GRAIN", "DAIRY", "DRY_DISH", "NOODLE_SOUP" -> 30;
+            case "BEVERAGE", "OILS", "SEASONING" -> 15;
+            case "DESSERT", "FAST_FOOD" -> 10;
+            default -> 20;
         };
     }
 

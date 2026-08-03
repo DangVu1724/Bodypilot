@@ -211,6 +211,7 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
                             .mealType(slotDto.getMealType())
                             .customName(slotDto.getCustomName())
                             .orderIndex(slotDto.getOrderIndex())
+                            .isEaten(false)
                             .build();
 
                     MealSlot savedSlot = mealSlotRepository.save(mealSlot);
@@ -222,6 +223,7 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
                             item.setServingQuantity(itemDto.getServingQuantity());
                             item.setOrderIndex(itemDto.getOrderIndex());
                             item.setIsCustom(itemDto.getIsCustom());
+                            item.setIsEaten(false);
 
                              if (itemDto.getFoodId() != null) {
                                  java.util.Optional<Food> foodOpt = foodRepository.findById(itemDto.getFoodId());
