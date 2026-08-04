@@ -25,7 +25,7 @@ public class AiSuggestionController {
             @RequestParam(required = false, defaultValue = "7") Integer days,
             @RequestParam(required = false) String userFeedback) {
         if (startDate == null) {
-            startDate = LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+            startDate = LocalDate.now();
         }
         log.info("AI diet suggestion request received: userId={}, startDate={}, days={}, userFeedback={}", userId, startDate, days, userFeedback);
         String suggestion = geminiService.generateMealSuggestion(userId, startDate, days, userFeedback);
@@ -36,12 +36,14 @@ public class AiSuggestionController {
     public ApiResponse<String> getAiWorkoutSuggestion(
             @PathVariable UUID userId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam(required = false, defaultValue = "7") Integer days) {
+            @RequestParam(required = false, defaultValue = "7") Integer days,
+            @RequestParam(required = false) String focusBodyPart) {
         if (startDate == null) {
-            startDate = LocalDate.now().with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.MONDAY));
+            startDate = LocalDate.now();
         }
-        log.info("AI workout suggestion request received: userId={}, startDate={}, days={}", userId, startDate, days);
-        String suggestion = geminiService.generateWorkoutSuggestion(userId, startDate, days);
+        log.info("AI workout suggestion request received: userId={}, startDate={}, days={}, focusBodyPart={}", userId, startDate, days, focusBodyPart);
+        String suggestion = geminiService.generateWorkoutSuggestion(userId, startDate, days, focusBodyPart);
         return ApiResponse.ok("AI suggestion generated successfully", suggestion);
     }
 }
+

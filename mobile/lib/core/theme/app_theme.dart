@@ -13,23 +13,23 @@ class AppTheme {
   static const Color darkBackground = Color(0xFF0F172A);
   static const Color darkSurface = Color(0xFF111827);
 
-  static TextStyle get headlineStyle => GoogleFonts.plusJakartaSans(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: -0.5);
-  static TextStyle get semiboldStyle => GoogleFonts.plusJakartaSans(fontSize: 15, fontWeight: FontWeight.w600, height: 1.3);
-  static TextStyle get bodyStyle => GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.w400, height: 1.4);
+  static TextStyle get headlineStyle => GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: -0.5);
+  static TextStyle get semiboldStyle => GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, height: 1.3);
+  static TextStyle get bodyStyle => GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400, height: 1.4);
 
   static ThemeData get lightTheme {
-    final textTheme = GoogleFonts.workSansTextTheme(
+    final textTheme = GoogleFonts.interTextTheme(
       Typography.material2018().black,
     ).copyWith(
-      displayLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      displayMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      displaySmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      headlineLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      headlineMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      headlineSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      titleLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
-      titleMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
-      titleSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+      displayLarge: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      displayMedium: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      displaySmall: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      headlineLarge: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      headlineMedium: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      headlineSmall: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      titleLarge: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+      titleMedium: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+      titleSmall: GoogleFonts.outfit(fontWeight: FontWeight.w600),
     ).apply(bodyColor: textPrimary, displayColor: textPrimary);
 
     final colorScheme =
@@ -53,7 +53,7 @@ class AppTheme {
       scaffoldBackgroundColor: const Color(0xFFE5E5E5),
       canvasColor: const Color(0xFFE5E5E5),
       cardColor: Colors.white,
-      fontFamily: GoogleFonts.workSans().fontFamily,
+      fontFamily: GoogleFonts.inter().fontFamily,
       textTheme: textTheme,
       primaryTextTheme: textTheme,
       appBarTheme: const AppBarTheme(
@@ -68,7 +68,7 @@ class AppTheme {
           backgroundColor: primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           elevation: 0,
         ),
@@ -76,7 +76,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primary,
-          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         ),
       ),
@@ -93,18 +93,18 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    final textTheme = GoogleFonts.workSansTextTheme(
+    final textTheme = GoogleFonts.interTextTheme(
       Typography.material2018().white,
     ).copyWith(
-      displayLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      displayMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      displaySmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      headlineLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      headlineMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      headlineSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold),
-      titleLarge: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
-      titleMedium: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
-      titleSmall: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600),
+      displayLarge: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      displayMedium: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      displaySmall: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      headlineLarge: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      headlineMedium: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      headlineSmall: GoogleFonts.outfit(fontWeight: FontWeight.bold),
+      titleLarge: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+      titleMedium: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+      titleSmall: GoogleFonts.outfit(fontWeight: FontWeight.w600),
     ).apply(bodyColor: Colors.white, displayColor: Colors.white);
 
     final colorScheme =
@@ -128,7 +128,7 @@ class AppTheme {
       scaffoldBackgroundColor: darkBackground,
       canvasColor: darkBackground,
       cardColor: darkSurface,
-      fontFamily: GoogleFonts.workSans().fontFamily,
+      fontFamily: GoogleFonts.inter().fontFamily,
       textTheme: textTheme,
       primaryTextTheme: textTheme,
       appBarTheme: const AppBarTheme(
@@ -143,7 +143,7 @@ class AppTheme {
           backgroundColor: primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           elevation: 0,
         ),
@@ -151,7 +151,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primary,
-          textStyle: const TextStyle(fontWeight: FontWeight.w600, fontSize: 16),
+          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         ),
       ),

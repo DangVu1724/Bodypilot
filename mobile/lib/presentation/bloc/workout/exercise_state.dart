@@ -14,11 +14,33 @@ class ExerciseLoading extends ExerciseState {}
 
 class ExerciseLoaded extends ExerciseState {
   final List<ExerciseModel> exercises;
+  final bool hasMore;
+  final bool isLoadingMore;
+  final int currentPage;
 
-  const ExerciseLoaded(this.exercises);
+  const ExerciseLoaded({
+    required this.exercises,
+    this.hasMore = true,
+    this.isLoadingMore = false,
+    this.currentPage = 0,
+  });
+
+  ExerciseLoaded copyWith({
+    List<ExerciseModel>? exercises,
+    bool? hasMore,
+    bool? isLoadingMore,
+    int? currentPage,
+  }) {
+    return ExerciseLoaded(
+      exercises: exercises ?? this.exercises,
+      hasMore: hasMore ?? this.hasMore,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+      currentPage: currentPage ?? this.currentPage,
+    );
+  }
 
   @override
-  List<Object?> get props => [exercises];
+  List<Object?> get props => [exercises, hasMore, isLoadingMore, currentPage];
 }
 
 class ExerciseError extends ExerciseState {

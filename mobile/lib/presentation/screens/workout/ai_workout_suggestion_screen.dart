@@ -73,11 +73,148 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
     super.dispose();
   }
 
+  String _selectedFocusBodyPart = 'NONE';
+  final List<Map<String, String>> _focusOptions = [
+    {'label': 'Không có', 'value': 'NONE'},
+    {'label': 'Ngực', 'value': 'CHEST'},
+    {'label': 'Lưng', 'value': 'BACK'},
+    {'label': 'Chân', 'value': 'LEGS'},
+    {'label': 'Vai', 'value': 'SHOULDERS'},
+    {'label': 'Tay', 'value': 'ARMS'},
+    {'label': 'Bụng / Core', 'value': 'CORE'},
+    {'label': 'Toàn thân', 'value': 'FULL_BODY'},
+  ];
+
+  String get _focusLabel {
+    final match = _focusOptions.firstWhere(
+      (opt) => opt['value'] == _selectedFocusBodyPart,
+      orElse: () => {'label': 'Không có', 'value': 'NONE'},
+    );
+    return match['label']!;
+  }
+
   @override
   void initState() {
     super.initState();
-    _fetchAiSuggestion();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showFocusSurveyBottomSheet();
+    });
   }
+
+  void _showFocusSurveyBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isDismissible: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        String tempSelected = _selectedFocusBodyPart;
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      const Icon(Icons.fitness_center, color: AppTheme.primary),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          'Khảo sát nhu cầu tập luyện',
+                          style: GoogleFonts.workSans(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: const Color(0xFF1E293B),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Bạn muốn tập trung tập luyện vào bộ phận nào nhất?',
+                    style: AppTheme.bodyStyle.copyWith(color: const Color(0xFF64748B), fontSize: 14),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _focusOptions.map((opt) {
+                      final isSelected = tempSelected == opt['value'];
+                      return ChoiceChip(
+                        label: Text(
+                          opt['label']!,
+                          style: TextStyle(
+                            color: isSelected ? Colors.white : const Color(0xFF334155),
+                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          ),
+                        ),
+                        selected: isSelected,
+                        selectedColor: AppTheme.primary,
+                        backgroundColor: const Color(0xFFF1F5F9),
+                        onSelected: (selected) {
+                          if (selected) {
+                            setModalState(() {
+                              tempSelected = opt['value']!;
+                            });
+                          }
+                        },
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppTheme.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        setState(() {
+                          _selectedFocusBodyPart = tempSelected;
+                        });
+                        _fetchAiSuggestion();
+                      },
+                      child: Text(
+                        'Tạo lịch tập AI',
+                        style: GoogleFonts.workSans(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  bool _startTomorrow = false;
 
   Future<void> _fetchAiSuggestion() async {
     _startLoadingTimer();
@@ -90,7 +227,15 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
       if (userId == null) {
         throw Exception("Không tìm thấy thông tin tài khoản người dùng.");
       }
-      final jsonString = await userRepository.getAiWorkoutSuggestion(userId, days: widget.days);
+      final startDateStr = DateFormat('yyyy-MM-dd').format(
+        _startTomorrow ? DateTime.now().add(const Duration(days: 1)) : DateTime.now(),
+      );
+      final jsonString = await userRepository.getAiWorkoutSuggestion(
+        userId,
+        days: widget.days,
+        focusBodyPart: _selectedFocusBodyPart,
+        startDate: startDateStr,
+      );
       final List<dynamic> decoded = jsonDecode(jsonString) as List<dynamic>;
       final suggestions = decoded.map((e) => DailyWorkoutModel.fromJson(e as Map<String, dynamic>)).toList();
       if (mounted) {
@@ -116,8 +261,71 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
     }
   }
 
+
   Future<void> _applyWorkoutPlan() async {
     if (_suggestions.isEmpty) return;
+
+    try {
+      final startDate = _suggestions.first.date;
+      final endDate = _suggestions.last.date;
+
+      final rangeList = await workoutDiaryRepository.getDailyWorkoutRange(startDate, endDate);
+      final daysWithWorkout = rangeList.where((day) => day.workoutItems.isNotEmpty).toList();
+
+      if (daysWithWorkout.isNotEmpty && mounted) {
+        final dateStr = "${DateFormat('dd/MM/yyyy').format(startDate)} - ${DateFormat('dd/MM/yyyy').format(endDate)}";
+        final bool? confirmed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEE2E2),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.warning_rounded, color: Color(0xFFDC2626), size: 24),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Xác Nhận Ghi Đè',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'Hệ thống phát hiện bạn đang có lịch tập trong ${daysWithWorkout.length} ngày (khoảng $dateStr).\n\nViệc áp dụng lịch tập AI mới sẽ XÓA TOÀN BỘ lịch tập cũ trong các ngày này và GHI ĐÈ bằng lịch tập mới.\n\nBạn có chắc chắn muốn ghi đè không?',
+              style: const TextStyle(fontSize: 14, color: Color(0xFF475569), height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFDC2626),
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text('Đồng ý ghi đè', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+
+        if (confirmed != true) return;
+      }
+    } catch (e) {
+      print("🚨 [AiWorkoutSuggestionScreen] Error checking existing workouts before apply: $e");
+    }
+
     setState(() {
       _isSaving = true;
     });
@@ -144,14 +352,15 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final hasValidSuggestions = !_isLoading && _errorMessage == null && _suggestions.isNotEmpty;
     return Scaffold(
       backgroundColor: Colors.white,
       body: _isLoading
           ? _buildLoadingState()
-          : _errorMessage != null
+          : (_errorMessage != null || _suggestions.isEmpty)
           ? _buildErrorState()
           : _buildContentState(),
-      bottomNavigationBar: !_isLoading && _errorMessage == null ? _buildBottomBar() : null,
+      bottomNavigationBar: hasValidSuggestions ? _buildBottomBar() : null,
     );
   }
 
@@ -301,7 +510,11 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
   }
 
   Widget _buildContentState() {
-    final currentDay = _suggestions[_selectedDayIndex];
+    if (_suggestions.isEmpty) {
+      return _buildErrorState();
+    }
+    final safeIndex = _selectedDayIndex.clamp(0, _suggestions.length - 1);
+    final currentDay = _suggestions[safeIndex];
     final dateString = DateFormat('dd/MM/yyyy').format(currentDay.date);
 
     return Column(
@@ -315,6 +528,74 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFFCD34D)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline_rounded, color: Color(0xFFD97706), size: 20),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Khuyến cáo: Lịch tập từ AI chỉ mang tính chất tham khảo cá nhân, không đảm bảo chính xác tuyệt đối và không thay thế tư vấn huấn luyện viên/bác sĩ.',
+                          style: GoogleFonts.workSans(
+                            fontSize: 12,
+                            color: const Color(0xFF92400E),
+                            fontWeight: FontWeight.w500,
+                            height: 1.35,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Container(
+                  margin: const EdgeInsets.only(bottom: 14),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8FAFC),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: const Color(0xFFE2E8F0)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.calendar_today_rounded, size: 18, color: Color(0xFF64748B)),
+                      const SizedBox(width: 10),
+                      Text('Bắt đầu:', style: GoogleFonts.workSans(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF334155))),
+                      const Spacer(),
+                      ChoiceChip(
+                        label: const Text('Hôm nay'),
+                        selected: !_startTomorrow,
+                        onSelected: (selected) {
+                          if (selected && _startTomorrow) {
+                            setState(() { _startTomorrow = false; });
+                            _fetchAiSuggestion();
+                          }
+                        },
+                        selectedColor: AppTheme.primary,
+                        labelStyle: TextStyle(color: !_startTomorrow ? Colors.white : const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 8),
+                      ChoiceChip(
+                        label: const Text('Ngày mai'),
+                        selected: _startTomorrow,
+                        onSelected: (selected) {
+                          if (selected && !_startTomorrow) {
+                            setState(() { _startTomorrow = true; });
+                            _fetchAiSuggestion();
+                          }
+                        },
+                        selectedColor: AppTheme.primary,
+                        labelStyle: TextStyle(color: _startTomorrow ? Colors.white : const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.bold),
+                      ),
+                    ],
+                  ),
+                ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -405,7 +686,27 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
                   'Gợi ý Lịch tập AI',
                   style: GoogleFonts.workSans(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-                const SizedBox(width: 44),
+                GestureDetector(
+                  onTap: _showFocusSurveyBottomSheet,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFF7A30).withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: const Color(0xFFFF7A30).withOpacity(0.5)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.tune, color: Color(0xFFFF7A30), size: 16),
+                        const SizedBox(width: 4),
+                        Text(
+                          _focusLabel,
+                          style: GoogleFonts.workSans(color: Colors.white, fontSize: 12, fontWeight: FontWeight.bold),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -523,7 +824,9 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.exerciseNameSnapshot,
+                    item.exerciseNameSnapshot.isNotEmpty
+                        ? item.exerciseNameSnapshot
+                        : (item.notes != null && item.notes!.isNotEmpty ? item.notes! : 'Bài tập tự do'),
                     style: GoogleFonts.workSans(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

@@ -10,18 +10,61 @@ import '../../bloc/workout/exercise_state.dart';
 import 'widgets/workout_skeleton.dart';
 import 'exercise_detail_screen.dart';
 
-class CategoryExercisesScreen extends StatelessWidget {
+class CategoryExercisesScreen extends StatefulWidget {
   final WorkoutCategoryModel category;
 
   const CategoryExercisesScreen({super.key, required this.category});
 
   @override
+  State<CategoryExercisesScreen> createState() => _CategoryExercisesScreenState();
+}
+
+class _CategoryExercisesScreenState extends State<CategoryExercisesScreen> {
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 300) {
+      final cubit = context.read<ExerciseCubit>();
+      cubit.loadMoreExercises(widget.category.id);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => ExerciseCubit(ExerciseRepository())..fetchExercisesByCategory(category.id),
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: CustomScrollView(slivers: [_buildHeader(context), _buildExerciseList()]),
+      create: (context) => ExerciseCubit(ExerciseRepository())..fetchExercisesByCategory(widget.category.id),
+      child: Builder(
+        builder: (context) {
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: NotificationListener<ScrollNotification>(
+              onNotification: (scrollInfo) {
+                if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
+                  context.read<ExerciseCubit>().loadMoreExercises(widget.category.id);
+                }
+                return false;
+              },
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const BouncingScrollPhysics(),
+                slivers: [_buildHeader(context), _buildExerciseList()],
+              ),
+            ),
+          );
+        },
       ),
     );
   }
@@ -46,7 +89,7 @@ class CategoryExercisesScreen extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Image.network(
-              'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop', // Placeholder for strength
+              'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=2070&auto=format&fit=crop',
               fit: BoxFit.cover,
             ),
             Container(
@@ -68,13 +111,13 @@ class CategoryExercisesScreen extends StatelessWidget {
                     children: [
                       const Icon(Icons.fitness_center, color: Colors.white, size: 28),
                       const SizedBox(width: 8),
-                      Text(category.code, style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 32)),
+                      Text(widget.category.code, style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 32)),
                       const Spacer(),
                       BlocBuilder<ExerciseCubit, ExerciseState>(
                         builder: (context, state) {
                           int total = 0;
                           if (state is ExerciseLoaded) {
-                            total = state.exercises.length; // Simplified for now
+                            total = state.exercises.length;
                           }
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -83,7 +126,7 @@ class CategoryExercisesScreen extends StatelessWidget {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              '$total Total',
+                              '$total Discovered',
                               style: AppTheme.bodyStyle.copyWith(color: Colors.white, fontSize: 12),
                             ),
                           );
@@ -93,7 +136,7 @@ class CategoryExercisesScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    category.description ??
+                    widget.category.description ??
                         'Build your muscles bigger & stronger with this exercise. Train everyday to get bulk!',
                     style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14),
                   ),
@@ -125,9 +168,9 @@ class CategoryExercisesScreen extends StatelessWidget {
                   Text('All Workouts', style: AppTheme.headlineStyle.copyWith(fontSize: 18)),
                   Row(
                     children: [
-                      Text('Newest First', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                      Text('Infinite Scroll Active', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
                       const SizedBox(width: 4),
-                      Icon(Icons.wifi_tethering, color: Colors.orange[300], size: 16),
+                      Icon(Icons.bolt, color: Colors.orange[400], size: 16),
                     ],
                   ),
                 ],
@@ -139,15 +182,30 @@ class CategoryExercisesScreen extends StatelessWidget {
                     return const ExerciseVerticalSkeleton();
                   }
                   if (state is ExerciseLoaded) {
-                    return ListView.separated(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      itemCount: state.exercises.length,
-                      separatorBuilder: (context, index) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final exercise = state.exercises[index];
-                        return _buildExerciseCard(context, exercise);
-                      },
+                    return Column(
+                      children: [
+                        ListView.separated(
+                          shrinkWrap: true,
+                          physics: const NeverScrollableScrollPhysics(),
+                          itemCount: state.exercises.length,
+                          separatorBuilder: (context, index) => const SizedBox(height: 12),
+                          itemBuilder: (context, index) {
+                            final exercise = state.exercises[index];
+                            return _buildExerciseCard(context, exercise);
+                          },
+                        ),
+                        if (state.isLoadingMore) ...[
+                          const SizedBox(height: 20),
+                          const Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary)),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                        ],
+                      ],
                     );
                   }
                   if (state is ExerciseError) {
@@ -178,76 +236,43 @@ class CategoryExercisesScreen extends StatelessWidget {
         child: Row(
           children: [
             ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: Stack(
-                children: [
-                  _buildExerciseImage(exercise.thumbnailUrl),
-                  Positioned(
-                    bottom: 5,
-                    left: 5,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                      decoration: BoxDecoration(color: Colors.blue, borderRadius: BorderRadius.circular(5)),
-                      child: Text('New', style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 10)),
-                    ),
-                  ),
-                ],
+              borderRadius: BorderRadius.circular(16),
+              child: Image.network(
+                exercise.mediaUrl ?? exercise.thumbnailUrl ?? 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500',
+                width: 70,
+                height: 70,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  width: 70,
+                  height: 70,
+                  color: Colors.grey[200],
+                  child: const Icon(Icons.fitness_center, color: Colors.grey),
+                ),
               ),
             ),
-            const SizedBox(width: 12),
+            const SizedBox(width: 14),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(exercise.name, style: AppTheme.headlineStyle.copyWith(fontSize: 16)),
-                  const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.access_time, size: 14, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
-                      Text(
-                        exercise.difficulty ?? 'Intermediate',
-                        style: TextStyle(color: Colors.grey[600], fontSize: 12),
-                      ),
-                    ],
+                  Text(
+                    exercise.name,
+                    style: AppTheme.semiboldStyle.copyWith(fontSize: 15),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 4),
-                  Row(
-                    children: [
-                      Icon(Icons.explore, size: 14, color: Colors.grey[600]),
-                      const SizedBox(width: 4),
-                      Text('${exercise.metValue ?? 5.0} METs', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                    ],
+                  Text(
+                    '${exercise.bodyPart?.name ?? exercise.code} • ${exercise.equipment?.join(", ") ?? "Bodyweight"}',
+                    style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 12),
                   ),
                 ],
               ),
             ),
-            Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[400]),
+            const Icon(Icons.chevron_right, color: Colors.grey),
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildExerciseImage(String? thumbnailUrl) {
-    if (thumbnailUrl == null || thumbnailUrl.isEmpty) {
-      return _buildPlaceholder();
-    }
-    return Image.network(
-      thumbnailUrl,
-      width: 80,
-      height: 80,
-      fit: BoxFit.cover,
-      errorBuilder: (context, error, stackTrace) => _buildPlaceholder(),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      width: 80,
-      height: 80,
-      color: Colors.grey[200],
-      child: Icon(Icons.fitness_center, color: Colors.grey[400], size: 30),
     );
   }
 }

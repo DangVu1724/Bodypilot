@@ -101,10 +101,11 @@ class UserRepository {
     }
   }
 
-  Future<String> getAiDietSuggestion(String userId, {int? days, String? userFeedback}) async {
+  Future<String> getAiDietSuggestion(String userId, {int? days, String? userFeedback, String? startDate}) async {
     try {
       final Map<String, dynamic> queryParams = {};
       if (days != null) queryParams['days'] = days;
+      if (startDate != null && startDate.isNotEmpty) queryParams['startDate'] = startDate;
       if (userFeedback != null && userFeedback.trim().isNotEmpty) {
         queryParams['userFeedback'] = userFeedback.trim();
       }
@@ -136,11 +137,16 @@ class UserRepository {
     }
   }
 
-  Future<String> getAiWorkoutSuggestion(String userId, {int? days}) async {
+  Future<String> getAiWorkoutSuggestion(String userId, {int? days, String? focusBodyPart, String? startDate}) async {
     try {
+      final Map<String, dynamic> queryParams = {};
+      if (days != null) queryParams['days'] = days;
+      if (startDate != null && startDate.isNotEmpty) queryParams['startDate'] = startDate;
+      if (focusBodyPart != null && focusBodyPart.isNotEmpty) queryParams['focusBodyPart'] = focusBodyPart;
+
       final response = await apiClient.get(
         '/users/$userId/ai-workout-suggestion',
-        queryParameters: days != null ? {'days': days} : null,
+        queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       if (response.data['success'] == true) {
         return response.data['data'] as String;
@@ -189,6 +195,25 @@ class UserRepository {
         return CheckInResultModel.fromJson(response.data['data']);
       } else {
         throw Exception(response.data['message'] ?? 'Failed to submit check-in');
+      }
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Network error');
+    }
+  }
+
+  Future<Map<String, dynamic>> sendChatMessage(String userId, String userQuery, List<Map<String, String>> history) async {
+    try {
+      final response = await apiClient.post(
+        '/users/$userId/chat',
+        data: {
+          'userQuery': userQuery,
+          'history': history,
+        },
+      );
+      if (response.data['success'] == true) {
+        return response.data['data'] as Map<String, dynamic>;
+      } else {
+        throw Exception(response.data['message'] ?? 'Failed to send message');
       }
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? 'Network error');

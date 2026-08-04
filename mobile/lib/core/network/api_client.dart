@@ -6,10 +6,14 @@ import 'package:mobile/core/routes/app_pages.dart';
 class ApiClient {
   late final Dio dio;
 
+  // IP Wi-Fi máy tính để chạy máy thật: '192.168.100.20'
+  // IP cho Android Emulator: '10.0.2.2'
+  static const String serverIp = '192.168.100.20';
+
   ApiClient() {
     dio = Dio(
       BaseOptions(
-        baseUrl: 'http://10.0.2.2:8080/api/v1', // Android Emulator IP
+        baseUrl: 'http://$serverIp:8080/api/v1',
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 300),
         headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},

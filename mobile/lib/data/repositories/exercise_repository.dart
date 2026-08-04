@@ -7,6 +7,8 @@ import 'package:logger/logger.dart';
 final _logger = Logger();
 
 class ExerciseRepository {
+  List<WorkoutCategoryModel>? _cachedCategories;
+
   Future<PaginatedResponse<ExerciseModel>> searchExercises({
     String? name,
     String? categoryId,
@@ -14,7 +16,7 @@ class ExerciseRepository {
     String? bodyPartCode,
     String? muscleCode,
     int page = 0,
-    int size = 1000,
+    int size = 50,
   }) async {
     try {
       final queryParams = <String, dynamic>{'page': page, 'size': size};
@@ -37,10 +39,14 @@ class ExerciseRepository {
   }
 
   Future<List<WorkoutCategoryModel>> getWorkoutCategories() async {
+    if (_cachedCategories != null && _cachedCategories!.isNotEmpty) {
+      return _cachedCategories!;
+    }
     try {
       final response = await apiClient.get('/exercises/categories');
       final List<dynamic> data = response.data as List<dynamic>;
-      return data.map((e) => WorkoutCategoryModel.fromJson(e as Map<String, dynamic>)).toList();
+      _cachedCategories = data.map((e) => WorkoutCategoryModel.fromJson(e as Map<String, dynamic>)).toList();
+      return _cachedCategories!;
     } catch (e) {
       _logger.e('Error fetching workout categories: $e');
       throw Exception('Failed to load workout categories: $e');

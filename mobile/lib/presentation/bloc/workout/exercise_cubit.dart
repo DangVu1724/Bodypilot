@@ -15,7 +15,7 @@ class ExerciseCubit extends Cubit<ExerciseState> {
       final response = await _repository.searchExercises(
         size: 10,
       );
-      if (!isClosed) emit(ExerciseLoaded(response.content));
+      if (!isClosed) emit(ExerciseLoaded(exercises: response.content, hasMore: !response.last));
     } catch (e) {
       if (!isClosed) emit(ExerciseError(e.toString()));
     }
@@ -26,11 +26,52 @@ class ExerciseCubit extends Cubit<ExerciseState> {
     try {
       final response = await _repository.searchExercises(
         categoryId: categoryId,
-        size: 1000,
+        page: 0,
+        size: 20,
       );
-      if (!isClosed) emit(ExerciseLoaded(response.content));
+      if (!isClosed) {
+        emit(ExerciseLoaded(
+          exercises: response.content,
+          hasMore: !response.last && response.content.length >= 20,
+          currentPage: 0,
+        ));
+      }
     } catch (e) {
       if (!isClosed) emit(ExerciseError(e.toString()));
+    }
+  }
+
+  Future<void> loadMoreExercises(String categoryId) async {
+    final currentState = state;
+    if (currentState is! ExerciseLoaded || !currentState.hasMore || currentState.isLoadingMore) {
+      return;
+    }
+
+    emit(currentState.copyWith(isLoadingMore: true));
+
+    try {
+      final nextPage = currentState.currentPage + 1;
+      final response = await _repository.searchExercises(
+        categoryId: categoryId,
+        page: nextPage,
+        size: 20,
+      );
+
+      final newExercises = List.of(currentState.exercises)..addAll(response.content);
+      final isLast = response.last || response.content.isEmpty || response.content.length < 20;
+
+      if (!isClosed) {
+        emit(currentState.copyWith(
+          exercises: newExercises,
+          hasMore: !isLast,
+          isLoadingMore: false,
+          currentPage: nextPage,
+        ));
+      }
+    } catch (e) {
+      if (!isClosed) {
+        emit(currentState.copyWith(isLoadingMore: false));
+      }
     }
   }
 

@@ -92,7 +92,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             alignment: Alignment.topRight,
                             child: TextButton(
                               onPressed: () {
-                                context.go(AppRoutes.welcome);
+                                context.go(AppRoutes.login);
                               },
                               style: TextButton.styleFrom(
                                 backgroundColor: Colors.black.withOpacity(0.4),

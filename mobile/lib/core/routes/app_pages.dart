@@ -21,6 +21,8 @@ import 'package:mobile/presentation/screens/metrics/calorie_balance_detail_scree
 import 'package:mobile/presentation/screens/metrics/protein_detail_screen.dart';
 import 'package:mobile/presentation/screens/metrics/active_minutes_detail_screen.dart';
 import 'package:mobile/presentation/screens/notification/notification_screen.dart';
+import 'package:mobile/presentation/screens/chat/ai_chat_screen.dart';
+import 'package:mobile/presentation/bloc/chat/chatbot_cubit.dart';
 
 class AppPages {
   AppPages._();
@@ -79,6 +81,13 @@ class AppPages {
             child: FoodListScreen(type: type),
           );
         },
+      ),
+      GoRoute(
+        path: AppRoutes.aiChat,
+        builder: (context, state) => BlocProvider(
+          create: (context) => ChatbotCubit(),
+          child: const AiChatScreen(),
+        ),
       ),
     ],
   );

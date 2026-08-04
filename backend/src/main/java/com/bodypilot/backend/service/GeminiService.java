@@ -24,5 +24,7 @@ public interface GeminiService {
      * @param days Integer number of days for the workout plan.
      * @return JSON-formatted response containing the weekly workout suggestion.
      */
+    String generateWorkoutSuggestion(UUID userId, LocalDate startDate, Integer days, String focusBodyPart);
     String generateWorkoutSuggestion(UUID userId, LocalDate startDate, Integer days);
 }
+

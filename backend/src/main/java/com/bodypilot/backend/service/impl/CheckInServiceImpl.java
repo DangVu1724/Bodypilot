@@ -57,7 +57,9 @@ public class CheckInServiceImpl implements CheckInService {
             daysSinceLastCheckIn = ChronoUnit.DAYS.between(lastCheckInDate, LocalDate.now());
         }
 
-        boolean isDue = daysSinceLastCheckIn >= 7;
+        LocalDate today = LocalDate.now();
+        boolean isSunday = today.getDayOfWeek() == java.time.DayOfWeek.SUNDAY;
+        boolean isDue = isSunday || daysSinceLastCheckIn >= 7;
 
         Double currentWeight = profile != null ? profile.getWeight() : (latestMetric != null ? latestMetric.getWeight() : 60.0);
         Double currentHeight = profile != null ? profile.getHeightCm() : (latestMetric != null ? latestMetric.getHeightCm() : 170.0);
