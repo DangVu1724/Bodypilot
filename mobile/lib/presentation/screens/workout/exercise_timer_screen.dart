@@ -26,8 +26,7 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
   late int _timeLeft;
   late int _totalDuration;
   Timer? _timer;
-  bool _isPaused = true;
-  Timer? _autoStartTimer;
+  bool _isPaused = false;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _hasStartedMusic = false;
 
@@ -36,38 +35,47 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
     super.initState();
     _totalDuration = _calculateTotalSeconds();
     _timeLeft = _totalDuration;
-    _startTimer();
 
     _audioPlayer.setReleaseMode(ReleaseMode.loop);
+    _audioPlayer.setVolume(1.0);
 
-    _autoStartTimer = Timer(const Duration(seconds: 5), () {
-      if (mounted && _isPaused) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
         _resumeWorkout();
       }
     });
+
+    _startTimer();
   }
 
-  void _resumeWorkout() {
+  void _resumeWorkout() async {
     setState(() {
       _isPaused = false;
     });
-    if (!_hasStartedMusic) {
-      _hasStartedMusic = true;
-      _audioPlayer.play(UrlSource('https://www.soundhelix.com/examples/mp3/SoundHelix-Song-8.mp3'));
-    } else {
-      _audioPlayer.resume();
+    try {
+      if (!_hasStartedMusic) {
+        _hasStartedMusic = true;
+        await _audioPlayer.play(UrlSource('https://cdn.pixabay.com/download/audio/2022/05/27/audio_1808fbf07a.mp3'));
+      } else {
+        await _audioPlayer.resume();
+      }
+    } catch (e) {
+      debugPrint("🚨 [ExerciseTimerScreen Audio Error]: $e");
     }
   }
 
-  void _pauseWorkout() {
+  void _pauseWorkout() async {
     setState(() {
       _isPaused = true;
     });
-    _audioPlayer.pause();
+    try {
+      await _audioPlayer.pause();
+    } catch (e) {
+      debugPrint("🚨 [ExerciseTimerScreen Pause Error]: $e");
+    }
   }
 
   void _togglePause() {
-    _autoStartTimer?.cancel();
     if (_isPaused) {
       _resumeWorkout();
     } else {
@@ -119,7 +127,6 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
 
   @override
   void dispose() {
-    _autoStartTimer?.cancel();
     _timer?.cancel();
     _audioPlayer.dispose();
     super.dispose();

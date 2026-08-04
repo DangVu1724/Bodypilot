@@ -248,7 +248,21 @@ public class DietSuggestionHelper {
 
             JsonNode root = objectMapper.readTree(cleanedJson);
             if (!root.isArray()) {
-                return rawJson;
+                if (root.isObject()) {
+                    if (root.has("days") && root.get("days").isArray()) {
+                        root = root.get("days");
+                    } else if (root.has("suggestions") && root.get("suggestions").isArray()) {
+                        root = root.get("suggestions");
+                    } else if (root.has("data") && root.get("data").isArray()) {
+                        root = root.get("data");
+                    } else if (root.has("result") && root.get("result").isArray()) {
+                        root = root.get("result");
+                    } else {
+                        return rawJson;
+                    }
+                } else {
+                    return rawJson;
+                }
             }
 
             List<Food> allFoods = getAllFoodsCached();

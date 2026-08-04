@@ -10,6 +10,7 @@ import 'package:mobile/presentation/bloc/checkin/checkin_cubit.dart';
 import 'widgets/home_header.dart';
 import 'widgets/home_calendar_section.dart';
 import 'widgets/checkin_card.dart';
+import 'widgets/ai_coach_card.dart';
 
 import 'widgets/metric_section.dart';
 import 'widgets/food_sections.dart';
@@ -64,6 +65,7 @@ class HomeScreen extends StatelessWidget {
                       const SizedBox(height: 16),
                       const MetricSection(),
                       const SizedBox(height: 24),
+                      const AiCoachCard(),
                       const WorkoutPlansSection(),
                       const SizedBox(height: 32),
                       SectionHeader(

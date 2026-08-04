@@ -1,29 +1,105 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/screens/workout/workout_preference_survey_screen.dart';
 import 'package:mobile/presentation/screens/workout/ai_workout_suggestion_screen.dart';
 import 'package:mobile/data/services/token_service.dart';
+import 'package:mobile/data/repositories/workout_diary_repository.dart';
 
 class AiSuggestionBanner extends StatelessWidget {
   const AiSuggestionBanner({super.key});
 
+  Future<void> _proceedToAiWorkoutScreen(BuildContext context, int days) async {
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final monday = today.subtract(Duration(days: today.weekday - 1));
+    final endDate = monday.add(Duration(days: days - 1));
+
+    try {
+      final rangeList = await workoutDiaryRepository.getDailyWorkoutRange(monday, endDate);
+      final daysWithWorkout = rangeList.where((day) => day.workoutItems.isNotEmpty).toList();
+
+      if (daysWithWorkout.isNotEmpty && context.mounted) {
+        final dateStr = "${DateFormat('dd/MM').format(monday)} - ${DateFormat('dd/MM').format(endDate)}";
+        final bool? shouldProceed = await showDialog<bool>(
+          context: context,
+          builder: (dialogContext) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 24),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Text(
+                    'Phát hiện lịch tập sẵn',
+                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  ),
+                ),
+              ],
+            ),
+            content: Text(
+              'Bạn đang có lịch tập sẵn trong ${daysWithWorkout.length} ngày (khoảng $dateStr).\n\nNếu tiếp tục, AI sẽ lên lịch tập gợi ý mới cho bạn xem trước. Lịch tập cũ sẽ bị thay thế khi bạn bấm Áp dụng.\n\nBạn có muốn tiếp tục nhờ AI tạo lịch tập không?',
+              style: const TextStyle(fontSize: 14, color: Color(0xFF475569), height: 1.4),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.of(dialogContext).pop(false),
+                child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+              ),
+              ElevatedButton(
+                onPressed: () => Navigator.of(dialogContext).pop(true),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  elevation: 0,
+                ),
+                child: const Text('Tiếp tục tạo với AI', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+
+        if (shouldProceed != true) return;
+      }
+    } catch (e) {
+      debugPrint("🚨 [AiSuggestionBanner] Error checking existing workouts: $e");
+    }
+
+    if (context.mounted) {
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          builder: (context) => AiWorkoutSuggestionScreen(days: days),
+        ),
+      );
+    }
+  }
+
   void _showAiOptionsBottomSheet(BuildContext context) {
+    final parentContext = context;
     int selectedDays = 7;
     bool isCompleted = TokenService.isAssessmentCompleted();
 
     showModalBottomSheet(
-      context: context,
+      context: parentContext,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
       ),
       backgroundColor: Colors.white,
-      builder: (BuildContext context) {
+      builder: (BuildContext modalContext) {
         return StatefulBuilder(
-          builder: (BuildContext context, StateSetter setModalState) {
+          builder: (BuildContext modalContext, StateSetter setModalState) {
             return SafeArea(
               child: Padding(
-                padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+                padding: EdgeInsets.fromLTRB(24, 16, 24, MediaQuery.of(modalContext).viewInsets.bottom + 24),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -79,7 +155,7 @@ class AiSuggestionBanner extends StatelessWidget {
                             ),
                             TextButton(
                               onPressed: () async {
-                                final result = await Navigator.of(context, rootNavigator: true).push<bool>(
+                                final result = await Navigator.of(parentContext, rootNavigator: true).push<bool>(
                                   MaterialPageRoute(
                                     builder: (context) => const WorkoutPreferenceSurveyScreen(),
                                   ),
@@ -149,15 +225,11 @@ class AiSuggestionBanner extends StatelessWidget {
                       height: 52,
                       child: ElevatedButton(
                         onPressed: () {
-                          Navigator.pop(context);
+                          Navigator.pop(modalContext);
                           if (!isCompleted) {
-                            _startSurveyFlow(context, selectedDays);
+                            _startSurveyFlow(parentContext, selectedDays);
                           } else {
-                            Navigator.of(context, rootNavigator: true).push(
-                              MaterialPageRoute(
-                                builder: (context) => AiWorkoutSuggestionScreen(days: selectedDays),
-                              ),
-                            );
+                            _proceedToAiWorkoutScreen(parentContext, selectedDays);
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -191,11 +263,7 @@ class AiSuggestionBanner extends StatelessWidget {
       ),
     );
     if (result == true && context.mounted) {
-      Navigator.of(context, rootNavigator: true).push(
-        MaterialPageRoute(
-          builder: (context) => AiWorkoutSuggestionScreen(days: days),
-        ),
-      );
+      _proceedToAiWorkoutScreen(context, days);
     }
   }
 

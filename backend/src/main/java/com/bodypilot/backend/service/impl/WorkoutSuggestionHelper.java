@@ -6,12 +6,12 @@ import com.bodypilot.backend.model.dto.workout.ExerciseCandidate;
 import com.bodypilot.backend.model.entity.health.Injury;
 import com.bodypilot.backend.model.entity.workout.Exercise;
 import com.bodypilot.backend.model.entity.workout.WorkoutPlan;
-import com.bodypilot.backend.model.entity.workout.WorkoutSession;
-import com.bodypilot.backend.model.entity.workout.WorkoutSessionExercise;
 import com.bodypilot.backend.model.entity.user.*;
 import com.bodypilot.backend.repository.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -27,12 +27,14 @@ public class WorkoutSuggestionHelper {
 
     private final ExerciseRepository exerciseRepository;
     private final UserInjuryRepository userInjuryRepository;
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
-    public List<ExerciseCandidate> getBalancedExerciseCandidates(UUID userId, String goalType) {
+    public List<ExerciseCandidate> getBalancedExerciseCandidates(UUID userId, String goalType, String focusBodyPart) {
         List<UserInjury> injuries = userInjuryRepository.findAllByUserId(userId);
         List<Exercise> filteredExercises = getFilteredExercises(injuries);
-        List<Exercise> limitedExercises = selectBalancedExercises(filteredExercises, 50, goalType);
+        List<Exercise> limitedExercises = selectBalancedExercises(filteredExercises, 100, goalType, focusBodyPart);
 
         return limitedExercises.stream()
                 .map(e -> new ExerciseCandidate(
@@ -40,15 +42,18 @@ public class WorkoutSuggestionHelper {
                         e.getName(),
                         e.getBodyPart() != null ? e.getBodyPart().getName() : "Không xác định",
                         e.getTargetMuscle() != null ? e.getTargetMuscle().getName() : "Không xác định",
-                        e.getDifficulty() != null ? e.getDifficulty().name() : "BEGINNER",
-                        e.getEquipment()
+                        e.getDifficulty() != null ? e.getDifficulty().name() : "BEGINNER"
                 ))
                 .collect(Collectors.toList());
     }
 
+    public List<ExerciseCandidate> getBalancedExerciseCandidates(UUID userId, String goalType) {
+        return getBalancedExerciseCandidates(userId, goalType, null);
+    }
+
     public String buildWorkoutPrompt(UserProfile profile, UserGoal goal, UserMetricHistory metric,
                                      List<UserInjury> injuries, List<ExerciseCandidate> candidates, 
-                                     List<WorkoutPlan> existingPlans, LocalDate startDate, Integer days) {
+                                     LocalDate startDate, Integer days, String focusBodyPart) {
         StringBuilder sb = new StringBuilder();
         sb.append("Tạo lịch tập luyện thể thao trong ").append(days).append(" ngày liên tiếp bắt đầu từ ngày ").append(startDate).append(" dựa trên thông tin người dùng và danh sách bài tập được cung cấp dưới đây:\n\n");
 
@@ -64,6 +69,11 @@ public class WorkoutSuggestionHelper {
             sb.append("- Mục tiêu thể hình: ").append(translateGoal(goal.getType())).append("\n");
             sb.append("- Cân nặng mục tiêu: ").append(goal.getTargetWeight() != null ? goal.getTargetWeight() + " kg" : "Chưa cập nhật").append("\n");
         }
+
+        String focusText = (focusBodyPart != null && !focusBodyPart.trim().isEmpty() && !"NONE".equalsIgnoreCase(focusBodyPart) && !"KHÔNG CÓ".equalsIgnoreCase(focusBodyPart))
+                ? focusBodyPart
+                : "Không có";
+        sb.append("- Bộ phận muốn tập chủ yếu: ").append(focusText).append("\n");
 
         if (!injuries.isEmpty()) {
             String injuryDetails = injuries.stream()
@@ -82,39 +92,8 @@ public class WorkoutSuggestionHelper {
             sb.append("[]\n");
         }
 
-        if (existingPlans != null && !existingPlans.isEmpty()) {
-            sb.append("\nDANH SÁCH GIÁO ÁN LUYỆN TẬP MẪU CÓ SẴN TRONG DATABASE (SỬ DỤNG NHƯ MỘT LỰA CHỌN GỢI Ý):\n");
-            for (WorkoutPlan plan : existingPlans) {
-                sb.append("- Giáo án: ").append(plan.getTitle())
-                  .append(" (Độ khó: ").append(plan.getDifficulty())
-                  .append(", Mục tiêu: ").append(plan.getGoal()).append(")\n");
-                sb.append("  Chi tiết buổi tập của giáo án:\n");
-                if (plan.getSessions() != null) {
-                    for (WorkoutSession session : plan.getSessions()) {
-                        sb.append("    + Buổi: ").append(session.getName()).append(" (Ngày thứ ").append(session.getDayNumber()).append(")\n");
-                        if (session.getSessionExercises() != null) {
-                            for (WorkoutSessionExercise se : session.getSessionExercises()) {
-                                if (se.getExercise() != null) {
-                                    sb.append("      * ").append(se.getExercise().getName())
-                                      .append(" (ID: ").append(se.getExercise().getId()).append(")")
-                                      .append(" - Sets: ").append(se.getSets() != null ? se.getSets() : 3)
-                                      .append(", Reps: ").append(se.getReps() != null ? se.getReps() : 10)
-                                      .append(", Tạ: ").append(se.getWeightKg() != null ? se.getWeightKg() + "kg" : "0kg")
-                                      .append("\n");
-                                }
-                            }
-                        }
-                    }
-                }
-                sb.append("\n");
-            }
-        }
-
         sb.append("\nYêu cầu định dạng đầu ra:\n");
-        sb.append("Bạn có 2 phương án để tạo lịch tập gợi ý ").append(days).append(" ngày:\n");
-        sb.append("PHƯƠNG ÁN A: Tự thiết kế một lịch tập mới hoàn toàn sử dụng các bài tập trong danh sách ứng viên (CANDIDATES) ở trên.\n");
-        sb.append("PHƯƠNG ÁN B: Nếu bạn thấy một trong các GIÁO ÁN MẪU CÓ SẴN (được liệt kê ở trên) PHÙ HỢP HOÀN HẢO với mục tiêu, độ khó, và không ảnh hưởng đến vùng chấn thương của người dùng, bạn có thể CHỌN ÁP DỤNG giáo án mẫu đó. Khi chọn phương án này, bạn hãy lấy chính xác các bài tập, sets, reps của các buổi trong giáo án đó để phân bổ vào lịch tập ").append(days).append(" ngày (những ngày không tập trong giáo án sẽ đặt là ngày nghỉ ngơi Rest day với danh sách workoutItems rỗng).\n\n");
-        sb.append("Bất kể chọn phương án nào, bạn PHẢI trả về một JSON array duy nhất đại diện cho lịch tập gợi ý của ").append(days).append(" ngày liên tiếp bắt đầu từ ngày ").append(startDate).append(".\n");
+        sb.append("Hãy tự thiết kế một lịch tập mới hoàn toàn sử dụng các bài tập trong danh sách ứng viên (CANDIDATES) ở trên để tạo lịch tập gợi ý trong ").append(days).append(" ngày liên tiếp bắt đầu từ ngày ").append(startDate).append(".\n");
         sb.append("RÀNG BUỘC CỐT LÕI: Bạn CHỈ ĐƯỢC CHỌN bài tập từ danh sách cung cấp ở trên. Bắt buộc phải khớp đúng UUID của bài tập trong trường `exerciseId`. KHÔNG tự ý tạo bài tập mới.\n");
         sb.append("Không được phép thêm bất kỳ chữ giải thích nào khác ngoài chuỗi JSON hợp lệ. Vui lòng cung cấp định dạng JSON chuẩn xác theo cấu trúc sau:\n");
         sb.append("[\n");
@@ -142,11 +121,46 @@ public class WorkoutSuggestionHelper {
         return sb.toString();
     }
 
+    public String buildWorkoutPrompt(UserProfile profile, UserGoal goal, UserMetricHistory metric,
+                                     List<UserInjury> injuries, List<ExerciseCandidate> candidates, 
+                                     List<WorkoutPlan> existingPlans, LocalDate startDate, Integer days) {
+        return buildWorkoutPrompt(profile, goal, metric, injuries, candidates, startDate, days, null);
+    }
+
+
     public String processAndLinkExercises(String rawJson) {
         try {
-            JsonNode root = objectMapper.readTree(rawJson);
+            if (rawJson == null || rawJson.trim().isEmpty()) {
+                return "[]";
+            }
+            String cleanedJson = rawJson.trim();
+            if (cleanedJson.startsWith("```json")) {
+                cleanedJson = cleanedJson.substring(7);
+            } else if (cleanedJson.startsWith("```")) {
+                cleanedJson = cleanedJson.substring(3);
+            }
+            if (cleanedJson.endsWith("```")) {
+                cleanedJson = cleanedJson.substring(0, cleanedJson.length() - 3);
+            }
+            cleanedJson = cleanedJson.trim();
+
+            JsonNode root = objectMapper.readTree(cleanedJson);
             if (!root.isArray()) {
-                return rawJson;
+                if (root.isObject()) {
+                    if (root.has("days") && root.get("days").isArray()) {
+                        root = root.get("days");
+                    } else if (root.has("suggestions") && root.get("suggestions").isArray()) {
+                        root = root.get("suggestions");
+                    } else if (root.has("data") && root.get("data").isArray()) {
+                        root = root.get("data");
+                    } else if (root.has("result") && root.get("result").isArray()) {
+                        root = root.get("result");
+                    } else {
+                        return rawJson;
+                    }
+                } else {
+                    return rawJson;
+                }
             }
 
             List<Exercise> allExercises = exerciseRepository.findAll();
@@ -280,115 +294,164 @@ public class WorkoutSuggestionHelper {
             .collect(Collectors.toList());
     }
 
-    private List<Exercise> selectBalancedExercises(List<Exercise> exercises, int limit, String goalType) {
+    private List<Exercise> selectBalancedExercises(List<Exercise> exercises, int limit, String goalType, String focusBodyPart) {
         if (exercises.size() <= limit) {
             return exercises;
         }
 
-        Map<UUID, List<Exercise>> categoryGroups = new HashMap<>();
-        UUID nullCategoryUuid = UUID.randomUUID();
-
         Random random = new Random();
         Map<Exercise, Double> exerciseScores = new HashMap<>();
         for (Exercise ex : exercises) {
-            UUID catId = (ex.getBodyPart() != null) ? ex.getBodyPart().getId() : nullCategoryUuid;
-            categoryGroups.computeIfAbsent(catId, k -> new ArrayList<>()).add(ex);
-            double score = calculateExerciseScore(ex, goalType) + (random.nextDouble() * 20.0);
+            double score = calculateExerciseScore(ex, goalType, focusBodyPart) + (random.nextDouble() * 15.0);
             exerciseScores.put(ex, score);
         }
 
-        for (List<Exercise> groupExs : categoryGroups.values()) {
-            groupExs.sort((e1, e2) -> Double.compare(exerciseScores.get(e2), exerciseScores.get(e1)));
+        List<Exercise> sortedExercises = new ArrayList<>(exercises);
+        sortedExercises.sort((e1, e2) -> Double.compare(exerciseScores.get(e2), exerciseScores.get(e1)));
+
+        List<Exercise> selected = new ArrayList<>();
+        Set<UUID> selectedIds = new HashSet<>();
+
+        // Tier 1: Scarce Categories (Cardio, Aerobics, Yoga) -> Include 100% of available exercises
+        List<Exercise> scarceExercises = sortedExercises.stream()
+                .filter(e -> {
+                    if (e.getCategory() == null) return false;
+                    String catName = e.getCategory().getName() != null ? e.getCategory().getName().toLowerCase() : "";
+                    String catCode = e.getCategory().getCode() != null ? e.getCategory().getCode().toLowerCase() : "";
+                    return catName.contains("tim mạch") || catName.contains("cardio") ||
+                           catName.contains("nhịp điệu") || catName.contains("aerobic") ||
+                           catName.contains("yoga");
+                })
+                .collect(Collectors.toList());
+
+        for (Exercise ex : scarceExercises) {
+            if (selected.size() < limit && selectedIds.add(ex.getId())) {
+                selected.add(ex);
+            }
         }
 
-        List<Exercise> selectedExercises = new ArrayList<>();
-        List<UUID> catIds = new ArrayList<>(categoryGroups.keySet());
+        // Tier 2: Focus Body Part Exercises (if user selected a specific focus body part)
+        if (focusBodyPart != null && !focusBodyPart.isBlank() && !"NONE".equalsIgnoreCase(focusBodyPart) && !"KHÔNG CÓ".equalsIgnoreCase(focusBodyPart)) {
+            String focusUpper = focusBodyPart.toUpperCase();
+            List<Exercise> focusExercises = sortedExercises.stream()
+                    .filter(e -> !selectedIds.contains(e.getId()))
+                    .filter(e -> {
+                        boolean matchBody = e.getBodyPart() != null && e.getBodyPart().getName() != null &&
+                                (e.getBodyPart().getName().toUpperCase().contains(focusUpper) ||
+                                 (e.getBodyPart().getCode() != null && focusUpper.contains(e.getBodyPart().getCode().toUpperCase())));
+                        boolean matchTarget = e.getTargetMuscle() != null && e.getTargetMuscle().getName() != null &&
+                                e.getTargetMuscle().getName().toUpperCase().contains(focusUpper);
+                        return matchBody || matchTarget;
+                    })
+                    .collect(Collectors.toList());
 
-        Map<UUID, Integer> categoryCounts = new HashMap<>();
-        for (UUID catId : catIds) {
-            categoryCounts.put(catId, 0);
-        }
-
-        int index = 0;
-        boolean addedAny;
-        do {
-            addedAny = false;
-            for (UUID catId : catIds) {
-                List<Exercise> groupExs = categoryGroups.get(catId);
-                int count = categoryCounts.get(catId);
-
-                String bodyPartCode = null;
-                if (!groupExs.isEmpty() && groupExs.get(0).getBodyPart() != null) {
-                    bodyPartCode = groupExs.get(0).getBodyPart().getCode();
-                }
-
-                int maxPerCategory = getMaxExerciseCategoryLimit(bodyPartCode, goalType);
-
-                if (count < maxPerCategory && index < groupExs.size()) {
-                    selectedExercises.add(groupExs.get(index));
-                    categoryCounts.put(catId, count + 1);
-                    addedAny = true;
-                    if (selectedExercises.size() >= limit) {
-                        break;
-                    }
+            int focusQuota = Math.min(40, focusExercises.size());
+            for (int i = 0; i < focusQuota && selected.size() < limit; i++) {
+                Exercise ex = focusExercises.get(i);
+                if (selectedIds.add(ex.getId())) {
+                    selected.add(ex);
                 }
             }
-            index++;
-        } while (addedAny && selectedExercises.size() < limit);
+        }
 
-        return selectedExercises;
+        // Tier 3: Goal-driven Category Quotas for remaining slots
+        int remainingSlots = limit - selected.size();
+        Map<String, List<Exercise>> categoryMap = new HashMap<>();
+        for (Exercise ex : sortedExercises) {
+            if (!selectedIds.contains(ex.getId())) {
+                String catName = ex.getCategory() != null && ex.getCategory().getName() != null 
+                        ? ex.getCategory().getName() 
+                        : "Khác";
+                categoryMap.computeIfAbsent(catName, k -> new ArrayList<>()).add(ex);
+            }
+        }
+
+        Map<String, Integer> categoryQuotas = getGoalCategoryQuotas(goalType, remainingSlots);
+
+        for (Map.Entry<String, List<Exercise>> entry : categoryMap.entrySet()) {
+            String catName = entry.getKey();
+            List<Exercise> catExs = entry.getValue();
+
+            int quota = getCategoryQuotaForName(catName, categoryQuotas);
+            int count = 0;
+            for (Exercise ex : catExs) {
+                if (count >= quota || selected.size() >= limit) break;
+                if (selectedIds.add(ex.getId())) {
+                    selected.add(ex);
+                    count++;
+                }
+            }
+        }
+
+        // Tier 4: Fill remaining slots up to limit (100) with top scoring exercises
+        for (Exercise ex : sortedExercises) {
+            if (selected.size() >= limit) break;
+            if (selectedIds.add(ex.getId())) {
+                selected.add(ex);
+            }
+        }
+
+        return selected;
     }
 
-    private int getMaxExerciseCategoryLimit(String bodyPartCode, String goalType) {
-        if (bodyPartCode == null) return 5;
-        bodyPartCode = bodyPartCode.toUpperCase().trim();
+    private Map<String, Integer> getGoalCategoryQuotas(String goalType, int remainingSlots) {
+        Map<String, Integer> quotas = new HashMap<>();
+        if (goalType == null) goalType = "MAINTAIN";
 
-        if (goalType == null) return 10;
-
-        return switch (goalType) {
-            case "LOSE_0_5KG", "LOSE_1KG" -> switch (bodyPartCode) {
-                case "CARDIO", "FULL_BODY" -> 15;
-                case "LEGS" -> 12;
-                case "CORE" -> 10;
-                case "BACK", "CHEST" -> 8;
-                case "ARMS" -> 5;
-                default -> 8;
-            };
-            case "GAIN_MUSCLE" -> switch (bodyPartCode) {
-                case "CHEST", "BACK", "LEGS" -> 15;
-                case "SHOULDERS" -> 12;
-                case "ARMS" -> 10;
-                case "CORE" -> 8;
-                case "CARDIO" -> 3;
-                default -> 8;
-            };
-            case "GAIN_0_5KG", "GAIN_1KG" -> switch (bodyPartCode) {
-                case "LEGS", "BACK", "CHEST" -> 15;
-                case "SHOULDERS" -> 10;
-                case "ARMS", "CORE" -> 8;
-                case "CARDIO" -> 2;
-                default -> 8;
-            };
-            case "ENDURANCE" -> switch (bodyPartCode) {
-                case "CARDIO" -> 20;
-                case "FULL_BODY", "LEGS" -> 15;
-                case "CORE" -> 12;
-                case "BACK", "CHEST" -> 8;
-                case "ARMS" -> 5;
-                default -> 8;
-            };
-            default -> switch (bodyPartCode) {
-                case "LEGS", "BACK", "CHEST" -> 12;
-                case "SHOULDERS" -> 10;
-                case "ARMS", "CORE", "CARDIO" -> 8;
-                default -> 8;
-            };
-        };
+        switch (goalType) {
+            case "GAIN_MUSCLE", "GAIN_0_5KG", "GAIN_1KG" -> {
+                quotas.put("Sức mạnh", (int) (remainingSlots * 0.65));
+                quotas.put("Cử tạ", (int) (remainingSlots * 0.15));
+                quotas.put("Giãn cơ", (int) (remainingSlots * 0.12));
+                quotas.put("Bật nhảy", (int) (remainingSlots * 0.08));
+            }
+            case "LOSE_0_5KG", "LOSE_1KG" -> {
+                quotas.put("Sức mạnh", (int) (remainingSlots * 0.50));
+                quotas.put("Bật nhảy", (int) (remainingSlots * 0.25));
+                quotas.put("Giãn cơ", (int) (remainingSlots * 0.15));
+                quotas.put("Cử tạ", (int) (remainingSlots * 0.10));
+            }
+            case "ENDURANCE" -> {
+                quotas.put("Sức mạnh", (int) (remainingSlots * 0.45));
+                quotas.put("Bật nhảy", (int) (remainingSlots * 0.30));
+                quotas.put("Giãn cơ", (int) (remainingSlots * 0.15));
+                quotas.put("Cử tạ", (int) (remainingSlots * 0.10));
+            }
+            default -> {
+                quotas.put("Sức mạnh", (int) (remainingSlots * 0.55));
+                quotas.put("Giãn cơ", (int) (remainingSlots * 0.20));
+                quotas.put("Bật nhảy", (int) (remainingSlots * 0.15));
+                quotas.put("Cử tạ", (int) (remainingSlots * 0.10));
+            }
+        }
+        return quotas;
     }
 
-    private double calculateExerciseScore(Exercise exercise, String goalType) {
+    private int getCategoryQuotaForName(String catName, Map<String, Integer> quotas) {
+        if (catName == null) return 15;
+        for (Map.Entry<String, Integer> entry : quotas.entrySet()) {
+            if (catName.toLowerCase().contains(entry.getKey().toLowerCase())) {
+                return Math.max(5, entry.getValue());
+            }
+        }
+        return 15;
+    }
+
+
+    private double calculateExerciseScore(Exercise exercise, String goalType, String focusBodyPart) {
         double score = 50.0;
         double met = exercise.getMetValue() != null ? exercise.getMetValue() : 3.0;
+
+        if (focusBodyPart != null && !focusBodyPart.isBlank()) {
+            String focusUpper = focusBodyPart.toUpperCase();
+            boolean matchesBodyPart = exercise.getBodyPart() != null && exercise.getBodyPart().getName() != null &&
+                    (exercise.getBodyPart().getName().toUpperCase().contains(focusUpper) || focusUpper.contains(exercise.getBodyPart().getCode() != null ? exercise.getBodyPart().getCode().toUpperCase() : ""));
+            boolean matchesTarget = exercise.getTargetMuscle() != null && exercise.getTargetMuscle().getName() != null &&
+                    exercise.getTargetMuscle().getName().toUpperCase().contains(focusUpper);
+            if (matchesBodyPart || matchesTarget) {
+                score += 60.0;
+            }
+        }
 
         if (goalType == null) return score + met * 2.0;
 
@@ -445,6 +508,7 @@ public class WorkoutSuggestionHelper {
             default -> met * 2.0;
         };
     }
+
 
     private String translateGoal(String goal) {
         if (goal == null) return null;

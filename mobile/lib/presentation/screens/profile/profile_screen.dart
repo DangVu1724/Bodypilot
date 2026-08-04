@@ -9,8 +9,13 @@ import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
-
 import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
+
+import 'package:mobile/presentation/screens/profile/edit_profile_screen.dart';
+import 'package:mobile/presentation/screens/profile/privacy_screen.dart';
+import 'package:mobile/presentation/screens/profile/help_center_screen.dart';
+import 'package:mobile/presentation/screens/profile/about_screen.dart';
+import 'package:mobile/presentation/screens/profile/scientific_basis_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -81,7 +86,7 @@ class ProfileScreen extends StatelessWidget {
 
                 _buildSectionTitle('Current Goal'),
                 const SizedBox(height: 16),
-                _buildGoalCard(goal, metrics?.weight),
+                _buildGoalCard(context, goal, metrics?.weight),
                 const SizedBox(height: 32),
 
                 _buildSectionTitle('Health Metrics'),
@@ -90,19 +95,39 @@ class ProfileScreen extends StatelessWidget {
                 const SizedBox(height: 32),
 
                 _buildSettingsGroup('Account', [
-                  _buildSettingsTile(Icons.person_outline, 'Edit Profile', () {}),
+                  _buildSettingsTile(Icons.person_outline, 'Edit Profile', () {
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(builder: (context) => EditProfileScreen(user: user)),
+                    );
+                  }),
                   _buildSettingsTile(Icons.notifications_none, 'Notifications', () => context.push(AppRoutes.notifications)),
-                  _buildSettingsTile(Icons.security, 'Privacy & Security', () {}),
+                  _buildSettingsTile(Icons.security, 'Privacy & Security', () {
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(builder: (context) => const PrivacyScreen()),
+                    );
+                  }),
                 ]),
                 const SizedBox(height: 24),
                 _buildSettingsGroup('Support', [
-                  _buildSettingsTile(Icons.help_outline, 'Help Center', () {}),
-                  _buildSettingsTile(Icons.info_outline, 'About BodyPilot', () {}),
+                  _buildSettingsTile(Icons.science_outlined, 'Cơ Sở Khoa Học & Dữ Liệu', () {
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(builder: (context) => const ScientificBasisScreen()),
+                    );
+                  }),
+                  _buildSettingsTile(Icons.help_outline, 'Help Center', () {
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(builder: (context) => const HelpCenterScreen()),
+                    );
+                  }),
+                  _buildSettingsTile(Icons.info_outline, 'About BodyPilot', () {
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(builder: (context) => const AboutScreen()),
+                    );
+                  }),
                 ]),
                 const SizedBox(height: 24),
                 _buildSettingsGroup('Danger Zone', [
                   _buildSettingsTile(Icons.logout, 'Logout', () => _showLogoutDialog(context), isDanger: true),
-                  _buildSettingsTile(Icons.delete_forever_outlined, 'Delete Account', () {}, isDanger: true),
                 ], showDivider: false),
                 const SizedBox(height: 60),
               ],
@@ -213,7 +238,7 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildGoalCard(dynamic goal, double? currentWeight) {
+  Widget _buildGoalCard(BuildContext context, dynamic goal, double? currentWeight) {
     final type = goal?.type ?? 'No active goal';
     final targetWeight = goal?.targetWeight;
     double progress = 0.65; // Mock progress
@@ -275,7 +300,7 @@ class ProfileScreen extends StatelessWidget {
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
-              onPressed: () {},
+              onPressed: () => _showUpdateGoalBottomSheet(context, goal, currentWeight),
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
                 foregroundColor: Colors.white,
@@ -385,6 +410,85 @@ class ProfileScreen extends StatelessWidget {
       trailing: Icon(Icons.chevron_right_rounded, size: 22, color: color.withOpacity(0.3)),
       onTap: onTap,
       contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+    );
+  }
+
+  void _showUpdateGoalBottomSheet(BuildContext context, dynamic goal, double? currentWeight) {
+    final weightController = TextEditingController(text: currentWeight?.toString() ?? '');
+    final targetWeightController = TextEditingController(text: goal?.targetWeight?.toString() ?? '');
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        return Padding(
+          padding: EdgeInsets.fromLTRB(24, 20, 24, MediaQuery.of(context).viewInsets.bottom + 24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Cập Nhật Mục Tiêu & Cân Nặng',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+              ),
+              const SizedBox(height: 6),
+              const Text(
+                'Nhập số cân nặng mới nhất để hệ thống tính lại Calo & tiến độ.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B)),
+              ),
+              const SizedBox(height: 20),
+              TextField(
+                controller: weightController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Cân nặng hiện tại (kg)',
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: targetWeightController,
+                keyboardType: TextInputType.number,
+                decoration: InputDecoration(
+                  labelText: 'Cân nặng mục tiêu (kg)',
+                  filled: true,
+                  fillColor: const Color(0xFFF8FAFC),
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(14)),
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                height: 48,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    context.read<UserCubit>().fetchUserProfile();
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Đã cập nhật tiến độ mục tiêu thành công!'), backgroundColor: Colors.green),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.primary,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                    elevation: 0,
+                  ),
+                  child: const Text('Cập Nhật Tiến Độ', style: TextStyle(fontWeight: FontWeight.bold)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
