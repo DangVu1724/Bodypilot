@@ -7,6 +7,7 @@ import com.bodypilot.backend.model.dto.auth.UserRegistrationRequest;
 import com.bodypilot.backend.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,6 +21,11 @@ import com.bodypilot.backend.model.dto.auth.GoogleLoginRequest;
 public class AuthController {
 
     private final AuthService authService;
+
+    @GetMapping("/health")
+    public ApiResponse<String> healthCheck() {
+        return ApiResponse.ok("Server is up and running smoothly");
+    }
 
     @PostMapping("/register")
     public ApiResponse<AuthResponse> register(@Valid @RequestBody UserRegistrationRequest request) {
