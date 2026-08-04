@@ -1,0 +1,6 @@
+target/
+.git/
+.idea/
+*.log
+backend_err.txt
+backend_log.txt
