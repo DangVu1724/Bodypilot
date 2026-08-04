@@ -4,6 +4,8 @@ import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
+import 'package:mobile/presentation/bloc/step/step_cubit.dart';
+import 'package:intl/intl.dart';
 import 'widgets/calorie_dashboard_card.dart';
 import 'widgets/weight_goal_card.dart';
 import 'widgets/ai_suggestion_banner.dart';
@@ -63,6 +65,7 @@ class _MealScreenState extends State<MealScreen> {
   @override
   Widget build(BuildContext context) {
     final statusBarHeight = MediaQuery.of(context).padding.top;
+    final stepState = context.watch<StepCubit>().state;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -91,7 +94,9 @@ class _MealScreenState extends State<MealScreen> {
               avatarUrl = state.user.profile?.avatarUrl;
             }
 
-            String stepsStr = _getStepsAmount(goal);
+            String targetStepsStr = _getStepsAmount(goal);
+            String currentStepsStr = NumberFormat('#,###').format(stepState.steps);
+            String stepsDisplay = '$currentStepsStr / $targetStepsStr';
             String waterStr = _getWaterAmount(goal, weight);
 
             return CustomScrollView(
@@ -154,7 +159,7 @@ class _MealScreenState extends State<MealScreen> {
                             Expanded(
                               child: _buildStatCard(
                                 title: 'Steps',
-                                value: stepsStr,
+                                value: stepsDisplay,
                                 unit: 'steps',
                                 icon: FontAwesomeIcons.shoePrints,
                               ),

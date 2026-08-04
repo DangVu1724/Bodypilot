@@ -26,6 +26,7 @@ import 'package:mobile/data/services/push_notification_service.dart';
 import 'package:logger/logger.dart';
 
 import 'package:mobile/presentation/bloc/notification/notification_cubit.dart';
+import 'package:mobile/presentation/bloc/step/step_cubit.dart';
 
 final _logger = Logger();
 
@@ -62,6 +63,7 @@ class BodyPilotApp extends StatelessWidget {
         BlocProvider(create: (context) => MealCubit(nutritionDiaryRepository)),
         BlocProvider(create: (context) => WorkoutDiaryCubit(workoutDiaryRepository)),
         BlocProvider(create: (context) => NotificationCubit()),
+        BlocProvider(create: (context) => StepCubit()),
       ],
       child: MaterialApp.router(
         title: 'BodyPilot',

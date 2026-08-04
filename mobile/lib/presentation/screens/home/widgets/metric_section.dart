@@ -6,6 +6,7 @@ import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
+import 'package:mobile/presentation/bloc/step/step_cubit.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:go_router/go_router.dart';
 
@@ -146,6 +147,10 @@ class _MetricSectionState extends State<MetricSection> {
     if (userState is UserLoaded) {
       targetCalories = userState.user.metrics?.targetCalories ?? 2000.0;
       goal = userState.user.metrics?.goal ?? 'MAINTAIN';
+      final weight = userState.user.metrics?.weight;
+      if (weight != null && weight > 0) {
+        context.read<StepCubit>().updateUserWeight(weight);
+      }
     }
 
     double totalCaloriesBurned = 0.0;
@@ -249,6 +254,8 @@ class _MetricSectionState extends State<MetricSection> {
           ),
           const SizedBox(width: 16),
 
+          const SizedBox(width: 16),
+
           // Card 3: Active Minutes
           MetricCard(
             title: 'Vận động',
@@ -276,6 +283,40 @@ class _MetricSectionState extends State<MetricSection> {
                 ),
               ],
             ),
+          ),
+          const SizedBox(width: 16),
+
+          // Card 4: Step Counter
+          Builder(
+            builder: (context) {
+              final stepState = context.watch<StepCubit>().state;
+              return MetricCard(
+                title: 'Bước chân',
+                value: NumberFormat('#,###').format(stepState.steps),
+                unit: 'bước',
+                icon: const Icon(Icons.directions_walk_rounded, color: Colors.white, size: 20),
+                gradientColors: const [Color(0xFFEC4899), Color(0xFFD946EF)],
+                bottomWidget: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(2),
+                      child: LinearProgressIndicator(
+                        value: stepState.progress,
+                        backgroundColor: Colors.white.withOpacity(0.2),
+                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                        minHeight: 4,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Đốt: ${stepState.caloriesBurned.toStringAsFixed(0)} kcal',
+                      style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.8), fontSize: 10),
+                    ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
       ),

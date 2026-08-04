@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMotionUsageDescription</key>
+	<string>BodyPilot cần sử dụng cảm biến đếm bước chân để theo dõi số bước vận động hàng ngày của bạn.</string>
 </dict>
 </plist>
