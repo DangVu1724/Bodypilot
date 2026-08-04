@@ -6,14 +6,13 @@ import 'package:mobile/core/routes/app_pages.dart';
 class ApiClient {
   late final Dio dio;
 
-  // IP Wi-Fi máy tính để chạy máy thật: '192.168.100.20'
-  // IP cho Android Emulator: '10.0.2.2'
-  static const String serverIp = '192.168.100.20';
+  // Render Cloud Server
+  static const String serverUrl = 'https://bodypilot-to4y.onrender.com/api/v1';
 
   ApiClient() {
     dio = Dio(
       BaseOptions(
-        baseUrl: 'http://$serverIp:8080/api/v1',
+        baseUrl: serverUrl,
         connectTimeout: const Duration(seconds: 30),
         receiveTimeout: const Duration(seconds: 300),
         headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
