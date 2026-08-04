@@ -79,4 +79,25 @@ class TokenService {
     }
     return null;
   }
+
+  static Future<void> saveChatHistory(String userId, List<Map<String, dynamic>> messagesJson) async {
+    await _prefs?.setString('chat_history_$userId', jsonEncode(messagesJson));
+  }
+
+  static List<Map<String, dynamic>> getChatHistory(String userId) {
+    final raw = _prefs?.getString('chat_history_$userId');
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        final List<dynamic> decoded = jsonDecode(raw);
+        return decoded.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      } catch (e) {
+        return [];
+      }
+    }
+    return [];
+  }
+
+  static Future<void> clearChatHistory(String userId) async {
+    await _prefs?.remove('chat_history_$userId');
+  }
 }

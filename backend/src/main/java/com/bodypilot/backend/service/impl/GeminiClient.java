@@ -2,6 +2,8 @@ package com.bodypilot.backend.service.impl;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import lombok.extern.slf4j.Slf4j;
 import okhttp3.*;
 import org.springframework.beans.factory.annotation.Value;
@@ -24,7 +26,9 @@ public class GeminiClient {
     @Value("${gemini.model:gemini-2.5-flash}")
     private String model;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper()
+            .registerModule(new JavaTimeModule())
+            .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
     private final OkHttpClient httpClient = new OkHttpClient.Builder()
             .connectTimeout(60, TimeUnit.SECONDS)
@@ -37,7 +41,11 @@ public class GeminiClient {
     }
 
     public String callGemini(String prompt, String systemInstructionText) throws IOException {
-        log.info("Preparing Gemini request: model={}, apiUrl={}", model, apiUrl);
+        return callGemini(prompt, systemInstructionText, false);
+    }
+
+    public String callGemini(String prompt, String systemInstructionText, boolean forceJson) throws IOException {
+        log.info("Preparing Gemini request: model={}, apiUrl={}, forceJson={}", model, apiUrl, forceJson);
 
         // Build Gemini Request Body
         Map<String, Object> requestBodyMap = new HashMap<>();
@@ -59,10 +67,12 @@ public class GeminiClient {
         requestBodyMap.put("systemInstruction", systemInstruction);
 
         // generationConfig
-        requestBodyMap.put("generationConfig", Map.of(
-                "temperature", 0.7,
-                "responseMimeType", "application/json"
-        ));
+        Map<String, Object> genConfig = new HashMap<>();
+        genConfig.put("temperature", 0.7);
+        if (forceJson) {
+            genConfig.put("responseMimeType", "application/json");
+        }
+        requestBodyMap.put("generationConfig", genConfig);
 
         String jsonBody = objectMapper.writeValueAsString(requestBodyMap);
         log.info("Request Body:\n{}", jsonBody);

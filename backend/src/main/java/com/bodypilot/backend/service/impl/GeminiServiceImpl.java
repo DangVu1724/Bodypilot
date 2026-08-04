@@ -41,7 +41,8 @@ public class GeminiServiceImpl implements GeminiService {
 
     @Override
     public String generateMealSuggestion(UUID userId, LocalDate startDate, Integer days, String userFeedback) {
-        log.info("generateMealSuggestion invoked: userId={}, startDate={}, days={}, userFeedback={}", userId, startDate, days, userFeedback);
+        long startTime = System.currentTimeMillis();
+        log.info("🚀 [MEAL_AI_START] Bắt đầu tạo gợi ý thực đơn (Meal) cho userId={}, startDate={}, days={}, userFeedback={}", userId, startDate, days, userFeedback);
         try {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -82,22 +83,28 @@ public class GeminiServiceImpl implements GeminiService {
             String prompt = dietSuggestionHelper.buildPrompt(profile, activeGoal, latestMetric, allergies, diets, dislikedFoods, candidates, startDate, days, userFeedback);
             log.info("Sending meal suggestion prompt to Gemini AI for user {}: \n{}", userId, prompt);
 
-            String rawJson = geminiClient.callGemini(prompt, "Bạn là một chuyên gia dinh dưỡng và lên thực đơn cá nhân hóa chuyên nghiệp. Hãy đưa ra thực đơn cực kỳ chi tiết, khoa học, thực tế dưới dạng JSON array hợp lệ phù hợp với danh sách thực phẩm được cung cấp.");
+            String rawJson = geminiClient.callGemini(prompt, "Bạn là một chuyên gia dinh dưỡng và lên thực đơn cá nhân hóa chuyên nghiệp. Hãy đưa ra thực đơn cực kỳ chi tiết, khoa học, thực tế dưới dạng JSON array hợp lệ phù hợp với danh sách thực phẩm được cung cấp.", true);
             log.info("Received raw meal suggestion JSON from Gemini AI for user {}: \n{}", userId, rawJson);
             
             log.info("Processing food mappings, exact macro scaling and saving to DTOs...");
             java.math.BigDecimal targetCal = (latestMetric != null && latestMetric.getTargetCalories() != null) 
                     ? java.math.BigDecimal.valueOf(latestMetric.getTargetCalories()) : null;
-            return dietSuggestionHelper.processAndLinkFoods(rawJson, targetCal);
+            String result = dietSuggestionHelper.processAndLinkFoods(rawJson, targetCal);
+
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            log.info("✅ [MEAL_AI_END] Hoàn thành tạo gợi ý thực đơn (Meal) cho userId={}! Tổng thời gian xử lý: {} ms ({} giây)", userId, elapsedTime, String.format("%.2f", elapsedTime / 1000.0));
+            return result;
         } catch (Exception e) {
-            log.error("Exception in generateMealSuggestion: ", e);
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            log.error("❌ [MEAL_AI_ERROR] Thất bại sau {} ms ({} giây) khi tạo thực đơn: ", elapsedTime, String.format("%.2f", elapsedTime / 1000.0), e);
             return dietSuggestionHelper.getFallbackJson(startDate, "❌ Đã xảy ra lỗi khi lập thực đơn: " + e.getMessage(), days);
         }
     }
 
     @Override
-    public String generateWorkoutSuggestion(UUID userId, LocalDate startDate, Integer days) {
-        log.info("generateWorkoutSuggestion invoked: userId={}, startDate={}, days={}", userId, startDate, days);
+    public String generateWorkoutSuggestion(UUID userId, LocalDate startDate, Integer days, String focusBodyPart) {
+        long startTime = System.currentTimeMillis();
+        log.info("🚀 [WORKOUT_AI_START] Bắt đầu tạo gợi ý lịch tập (Workout) cho userId={}, startDate={}, days={}, focusBodyPart={}", userId, startDate, days, focusBodyPart);
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
@@ -106,7 +113,7 @@ public class GeminiServiceImpl implements GeminiService {
 
         if (!apiKeyConfigured) {
             log.warn("Gemini API key is missing. Returning fallback JSON.");
-            return workoutSuggestionHelper.getFallbackWorkoutJson(startDate, "Cáº¥u hÃ¬nh Gemini ChÆ°a Sáºµn SÃ ng. Vui lÃ²ng cáº¥u hÃ¬nh gemini.api.key trong application.properties.", days);
+            return workoutSuggestionHelper.getFallbackWorkoutJson(startDate, "Cấu hình Gemini Chưa Sẵn Sàng. Vui lòng cấu hình gemini.api.key trong application.properties.", days);
         }
 
         UserProfile profile = user.getProfile();
@@ -124,36 +131,28 @@ public class GeminiServiceImpl implements GeminiService {
             goalType = latestMetric.getGoal();
         }
 
-        List<ExerciseCandidate> candidates = workoutSuggestionHelper.getBalancedExerciseCandidates(userId, goalType);
+        List<ExerciseCandidate> candidates = workoutSuggestionHelper.getBalancedExerciseCandidates(userId, goalType, focusBodyPart);
 
-        // Láº¥y danh sÃ¡ch giÃ¡o Ã¡n luyá»‡n táº­p máº«u cÃ³ sáºµn phÃ¹ há»£p vá»›i má»¥c tiÃªu cá»§a user
-        Goal goalEnum = null;
-        if (goalType != null) {
-            try {
-                goalEnum = Goal.valueOf(goalType);
-            } catch (IllegalArgumentException e) {
-                // Ignore
-            }
-        }
-
-        List<WorkoutPlan> existingPlans;
-        if (goalEnum != null) {
-            existingPlans = workoutPlanRepository.findByGoal(goalEnum);
-        } else {
-            existingPlans = workoutPlanRepository.findAll();
-        }
-
-        String prompt = workoutSuggestionHelper.buildWorkoutPrompt(profile, activeGoal, latestMetric, injuries, candidates, existingPlans, startDate, days);
+        String prompt = workoutSuggestionHelper.buildWorkoutPrompt(profile, activeGoal, latestMetric, injuries, candidates, startDate, days, focusBodyPart);
         log.info("Sending workout suggestion prompt to Gemini AI for user {}: \n{}", userId, prompt);
 
         try {
-            String rawJson = geminiClient.callGemini(prompt, "Báº¡n lÃ  má»™t huáº¥n luyá»‡n viÃªn cÃ¡ nhÃ¢n (PT) chuyÃªn nghiá»‡p. HÃ£y lÃªn lá»‹ch trÃ¬nh táº­p luyá»‡n thá»ƒ hÃ¬nh cá»±c ká»³ chi tiáº¿t, khoa há»c, thá»±c táº¿ phÃ¹ há»£p vá»›i thá»ƒ tráº¡ng ngÆ°á»i dÃ¹ng dÆ°á»›i dáº¡ng JSON array há»£p lá»‡ phÃ¹ há»£p vá»›i danh sÃ¡ch bÃ i táº­p Ä‘Æ°á»£c cung cáº¥p.");
+            String rawJson = geminiClient.callGemini(prompt, "Bạn là một huấn luyện viên cá nhân (PT) chuyên nghiệp. Hãy lên lịch trình tập luyện thể hình cực kỳ chi tiết, khoa học, thực tế phù hợp với thể trạng người dùng dưới dạng JSON array hợp lệ phù hợp với danh sách bài tập được cung cấp.", true);
             log.info("Received raw workout suggestion JSON from Gemini AI for user {}: \n{}", userId, rawJson);
-            return workoutSuggestionHelper.processAndLinkExercises(rawJson);
+            String result = workoutSuggestionHelper.processAndLinkExercises(rawJson);
+
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            log.info("✅ [WORKOUT_AI_END] Hoàn thành tạo gợi ý lịch tập (Workout) cho userId={}! Tổng thời gian xử lý: {} ms ({} giây)", userId, elapsedTime, String.format("%.2f", elapsedTime / 1000.0));
+            return result;
         } catch (Exception e) {
-            log.error("Error calling Gemini API for workout suggestion: ", e);
-            return workoutSuggestionHelper.getFallbackWorkoutJson(startDate, "âŒ ÄÃ£ xáº£y ra lá»—i khi gá»i AI: " + e.getMessage(), days);
+            long elapsedTime = System.currentTimeMillis() - startTime;
+            log.error("❌ [WORKOUT_AI_ERROR] Thất bại sau {} ms ({} giây) khi tạo lịch tập: ", elapsedTime, String.format("%.2f", elapsedTime / 1000.0), e);
+            return workoutSuggestionHelper.getFallbackWorkoutJson(startDate, "❌ Đã xảy ra lỗi khi gọi AI: " + e.getMessage(), days);
         }
     }
-}
 
+    @Override
+    public String generateWorkoutSuggestion(UUID userId, LocalDate startDate, Integer days) {
+        return generateWorkoutSuggestion(userId, startDate, days, null);
+    }
+}
