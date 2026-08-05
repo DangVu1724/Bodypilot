@@ -9,6 +9,7 @@ import 'package:mobile/presentation/bloc/food/food_state.dart';
 import 'package:mobile/presentation/bloc/food_list/food_list_cubit.dart';
 import 'package:mobile/presentation/bloc/food_list/food_list_state.dart';
 import 'package:mobile/presentation/widgets/skeleton.dart';
+import 'package:mobile/data/repositories/food_repository.dart';
 import 'package:mobile/core/utils/category_image_helper.dart';
 
 class FoodListScreen extends StatefulWidget {
@@ -28,6 +29,7 @@ class _FoodListScreenState extends State<FoodListScreen> {
     super.initState();
     _initializeFromCache();
     _loadFoods();
+    foodRepository.prefetchPopularFoodCategories();
   }
 
   void _initializeFromCache() {

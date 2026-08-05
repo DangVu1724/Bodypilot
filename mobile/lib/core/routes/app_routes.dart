@@ -19,4 +19,5 @@ class AppRoutes {
   static const String activeMinutesDetail = '/active-minutes-detail';
   static const String notifications = '/notifications';
   static const String aiChat = '/ai-chat';
+  static const String stepDetail = '/step-detail';
 }

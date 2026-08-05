@@ -38,6 +38,9 @@ class CheckInRequestModel {
   final String hungerLevel;
   final String goalChoice;
   final double? targetWeight;
+  final String? workoutState;
+  final bool? hasInjury;
+  final List<String>? injuredParts;
   final String? notes;
 
   CheckInRequestModel({
@@ -48,6 +51,9 @@ class CheckInRequestModel {
     required this.hungerLevel,
     required this.goalChoice,
     this.targetWeight,
+    this.workoutState,
+    this.hasInjury,
+    this.injuredParts,
     this.notes,
   });
 
@@ -60,6 +66,9 @@ class CheckInRequestModel {
       'hungerLevel': hungerLevel,
       'goalChoice': goalChoice,
       if (targetWeight != null) 'targetWeight': targetWeight,
+      if (workoutState != null) 'workoutState': workoutState,
+      if (hasInjury != null) 'hasInjury': hasInjury,
+      if (injuredParts != null) 'injuredParts': injuredParts,
       if (notes != null) 'notes': notes,
     };
   }

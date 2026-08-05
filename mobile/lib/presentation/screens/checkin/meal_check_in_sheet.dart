@@ -3,7 +3,10 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
-import 'package:mobile/presentation/screens/meal/ai_meal_suggestion_screen.dart';
+import 'package:mobile/presentation/bloc/checkin/checkin_cubit.dart';
+import 'package:mobile/presentation/bloc/checkin/checkin_state.dart';
+import 'package:mobile/presentation/screens/checkin/checkin_result_dialog.dart';
+import 'package:core_shared/models/check_in_model.dart';
 
 class MealCheckInSheet extends StatefulWidget {
   final double currentWeight;
@@ -66,39 +69,41 @@ class _MealCheckInSheetState extends State<MealCheckInSheet> {
     });
 
     try {
-      Navigator.pop(context);
-      context.read<UserCubit>().fetchUserProfile();
+      final request = CheckInRequestModel(
+        newWeight: weight,
+        adherenceLevel: _isGoalCompleted == false ? 'GOOD' : 'EXCELLENT',
+        energyLevel: _selectedEnergyStatus,
+        hungerLevel: _selectedEnergyStatus == 'HUNGRY' ? 'HUNGRY' : 'NORMAL',
+        goalChoice: _isGoalCompleted == true ? _selectedNewGoal : 'KEEP_SAME',
+      );
+
+      final checkInCubit = context.read<CheckInCubit>();
+      final userCubit = context.read<UserCubit>();
+
+      Navigator.pop(context); // Close bottom sheet
+
+      await checkInCubit.submitCheckIn(request);
+      await userCubit.fetchUserProfile();
+      await checkInCubit.fetchCheckInStatus();
 
       if (mounted) {
-        if (_isGoalCompleted == true) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('🎉 Chúc mừng bạn đã hoàn thành mục tiêu! Hãy tạo thực đơn cho mục tiêu mới.'),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Đã ghi nhận Check-in Chủ Nhật! AI đang sinh thực đơn điều chỉnh...'),
-              backgroundColor: Colors.green,
-            ),
+        final state = checkInCubit.state;
+        if (state is CheckInSuccess) {
+          showDialog(
+            context: context,
+            builder: (_) => CheckInResultDialog(result: state.result),
           );
         }
-
-        Navigator.of(context, rootNavigator: true).push(
-          MaterialPageRoute(
-            builder: (context) => const AiMealSuggestionScreen(days: 7),
-          ),
-        );
       }
     } catch (e) {
       setState(() {
         _isSubmitting = false;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Có lỗi xảy ra: $e'), backgroundColor: Colors.red),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Có lỗi xảy ra: $e'), backgroundColor: Colors.red),
+        );
+      }
     }
   }
 
@@ -259,7 +264,7 @@ class _MealCheckInSheetState extends State<MealCheckInSheet> {
               ),
               child: _isSubmitting
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                  : Text('Xác Nhận & Sinh Thực Đơn AI Tuần Mới', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15)),
+                  : Text('Hoàn Tất Check-in', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ),
         ],

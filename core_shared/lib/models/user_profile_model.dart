@@ -1,11 +1,13 @@
 class UserProfileModel {
   final String? fullName;
   final String? avatarUrl;
+  final String? gender;
   final bool isAssessmentCompleted;
 
   UserProfileModel({
     this.fullName,
     this.avatarUrl,
+    this.gender,
     required this.isAssessmentCompleted,
   });
 
@@ -13,6 +15,7 @@ class UserProfileModel {
     return UserProfileModel(
       fullName: json['fullName'] as String?,
       avatarUrl: json['avatarUrl'] as String?,
+      gender: json['gender'] as String?,
       isAssessmentCompleted: json['isAssessmentCompleted'] as bool? ?? json['assessmentCompleted'] as bool? ?? false,
     );
   }
@@ -21,6 +24,7 @@ class UserProfileModel {
     return {
       'fullName': fullName,
       'avatarUrl': avatarUrl,
+      'gender': gender,
       'isAssessmentCompleted': isAssessmentCompleted,
     };
   }

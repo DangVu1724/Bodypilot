@@ -35,7 +35,9 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   try {
     await Firebase.initializeApp();
-    await PushNotificationService.init();
+    PushNotificationService.init().catchError((e) {
+      _logger.e("PushNotificationService init error: $e");
+    });
   } catch (e) {
     _logger.e("Firebase initialization failed: $e");
   }

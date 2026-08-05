@@ -14,4 +14,5 @@ import java.util.List;
 public class ChatRequest {
     private String userQuery;
     private List<ChatMessageDTO> history;
+    private String selectedModel;
 }

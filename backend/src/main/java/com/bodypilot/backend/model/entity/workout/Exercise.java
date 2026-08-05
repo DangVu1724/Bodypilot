@@ -15,7 +15,10 @@ import java.util.List;
 import java.util.Set;
 
 @Entity
-@Table(name = "exercises")
+@Table(name = "exercises", indexes = {
+        @Index(name = "idx_exercise_category_id", columnList = "category_id"),
+        @Index(name = "idx_exercise_body_part_id", columnList = "body_part_id")
+})
 @Getter
 @Setter
 @NoArgsConstructor

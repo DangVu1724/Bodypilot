@@ -15,23 +15,31 @@ class ExerciseCubit extends Cubit<ExerciseState> {
       final response = await _repository.searchExercises(
         size: 10,
       );
-      if (!isClosed) emit(ExerciseLoaded(exercises: response.content, hasMore: !response.last));
+      if (!isClosed) {
+        emit(ExerciseLoaded(
+          exercises: response.content,
+          totalElements: response.totalElements,
+          hasMore: !response.last,
+        ));
+      }
     } catch (e) {
       if (!isClosed) emit(ExerciseError(e.toString()));
     }
   }
 
-  Future<void> fetchExercisesByCategory(String categoryId) async {
+  Future<void> fetchExercisesByCategory(String categoryId, {bool forceRefresh = false}) async {
     if (!isClosed) emit(ExerciseLoading());
     try {
       final response = await _repository.searchExercises(
         categoryId: categoryId,
         page: 0,
         size: 20,
+        forceRefresh: forceRefresh,
       );
       if (!isClosed) {
         emit(ExerciseLoaded(
           exercises: response.content,
+          totalElements: response.totalElements,
           hasMore: !response.last && response.content.length >= 20,
           currentPage: 0,
         ));
@@ -63,6 +71,7 @@ class ExerciseCubit extends Cubit<ExerciseState> {
       if (!isClosed) {
         emit(currentState.copyWith(
           exercises: newExercises,
+          totalElements: response.totalElements,
           hasMore: !isLast,
           isLoadingMore: false,
           currentPage: nextPage,

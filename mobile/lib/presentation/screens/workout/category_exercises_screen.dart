@@ -3,6 +3,7 @@ import 'package:core_shared/models/workout_category_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/presentation/widgets/smooth_loading_overlay.dart';
 
 import '../../../data/repositories/exercise_repository.dart';
 import '../../bloc/workout/exercise_cubit.dart';
@@ -50,17 +51,22 @@ class _CategoryExercisesScreenState extends State<CategoryExercisesScreen> {
         builder: (context) {
           return Scaffold(
             backgroundColor: Colors.white,
-            body: NotificationListener<ScrollNotification>(
-              onNotification: (scrollInfo) {
-                if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
-                  context.read<ExerciseCubit>().loadMoreExercises(widget.category.id);
-                }
-                return false;
+            body: RefreshIndicator(
+              onRefresh: () async {
+                await context.read<ExerciseCubit>().fetchExercisesByCategory(widget.category.id, forceRefresh: true);
               },
-              child: CustomScrollView(
-                controller: _scrollController,
-                physics: const BouncingScrollPhysics(),
-                slivers: [_buildHeader(context), _buildExerciseList()],
+              child: NotificationListener<ScrollNotification>(
+                onNotification: (scrollInfo) {
+                  if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 300) {
+                    context.read<ExerciseCubit>().loadMoreExercises(widget.category.id);
+                  }
+                  return false;
+                },
+                child: CustomScrollView(
+                  controller: _scrollController,
+                  physics: const AlwaysScrollableScrollPhysics(parent: BouncingScrollPhysics()),
+                  slivers: [_buildHeader(context), _buildExerciseList()],
+                ),
               ),
             ),
           );
@@ -111,13 +117,20 @@ class _CategoryExercisesScreenState extends State<CategoryExercisesScreen> {
                     children: [
                       const Icon(Icons.fitness_center, color: Colors.white, size: 28),
                       const SizedBox(width: 8),
-                      Text(widget.category.code, style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 32)),
-                      const Spacer(),
+                      Expanded(
+                        child: Text(
+                          widget.category.name.isNotEmpty ? widget.category.name : widget.category.code,
+                          style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 24),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
                       BlocBuilder<ExerciseCubit, ExerciseState>(
                         builder: (context, state) {
                           int total = 0;
                           if (state is ExerciseLoaded) {
-                            total = state.exercises.length;
+                            total = state.totalElements;
                           }
                           return Container(
                             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
@@ -126,7 +139,7 @@ class _CategoryExercisesScreenState extends State<CategoryExercisesScreen> {
                               borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              '$total Discovered',
+                              '$total Bài tập',
                               style: AppTheme.bodyStyle.copyWith(color: Colors.white, fontSize: 12),
                             ),
                           );
@@ -179,7 +192,7 @@ class _CategoryExercisesScreenState extends State<CategoryExercisesScreen> {
               BlocBuilder<ExerciseCubit, ExerciseState>(
                 builder: (context, state) {
                   if (state is ExerciseLoading) {
-                    return const ExerciseVerticalSkeleton();
+                    return const SmoothLoadingOverlay();
                   }
                   if (state is ExerciseLoaded) {
                     return Column(
@@ -238,7 +251,7 @@ class _CategoryExercisesScreenState extends State<CategoryExercisesScreen> {
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
               child: Image.network(
-                exercise.mediaUrl ?? exercise.thumbnailUrl ?? 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500',
+                exercise.displayImageUrl,
                 width: 70,
                 height: 70,
                 fit: BoxFit.cover,

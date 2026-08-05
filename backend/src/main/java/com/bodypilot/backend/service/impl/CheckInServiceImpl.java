@@ -34,6 +34,9 @@ public class CheckInServiceImpl implements CheckInService {
     private final UserProfileRepository profileRepository;
     private final UserGoalRepository goalRepository;
     private final UserMetricHistoryRepository metricHistoryRepository;
+    private final UserCheckInHistoryRepository userCheckInHistoryRepository;
+    private final UserInjuryRepository userInjuryRepository;
+    private final InjuryRepository injuryRepository;
     private final CalorieCalculatorService calorieCalculatorService;
     private final GeminiClient geminiClient;
     private final NotificationService notificationService;
@@ -46,27 +49,33 @@ public class CheckInServiceImpl implements CheckInService {
         UserProfile profile = profileRepository.findByUserId(userId)
                 .orElse(null);
 
-        List<UserMetricHistory> historyList = metricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId);
-        UserMetricHistory latestMetric = historyList.isEmpty() ? null : historyList.get(0);
-
-        LocalDate lastCheckInDate = null;
-        long daysSinceLastCheckIn = 7; // Default to due if no history
-
-        if (latestMetric != null && latestMetric.getCreatedAt() != null) {
-            lastCheckInDate = latestMetric.getCreatedAt().toLocalDate();
-            daysSinceLastCheckIn = ChronoUnit.DAYS.between(lastCheckInDate, LocalDate.now());
-        }
+        UserCheckInHistory latestCheckIn = userCheckInHistoryRepository.findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
+        LocalDate lastCheckInDate = latestCheckIn != null ? latestCheckIn.getCheckInDate() : null;
 
         LocalDate today = LocalDate.now();
-        boolean isSunday = today.getDayOfWeek() == java.time.DayOfWeek.SUNDAY;
-        boolean isDue = isSunday || daysSinceLastCheckIn >= 7;
+        java.time.DayOfWeek dayOfWeek = today.getDayOfWeek();
+        boolean isSundayOrMonday = dayOfWeek == java.time.DayOfWeek.SUNDAY || dayOfWeek == java.time.DayOfWeek.MONDAY;
 
-        Double currentWeight = profile != null ? profile.getWeight() : (latestMetric != null ? latestMetric.getWeight() : 60.0);
-        Double currentHeight = profile != null ? profile.getHeightCm() : (latestMetric != null ? latestMetric.getHeightCm() : 170.0);
+        LocalDate sundayOfThisWeek;
+        if (dayOfWeek == java.time.DayOfWeek.SUNDAY) {
+            sundayOfThisWeek = today;
+        } else if (dayOfWeek == java.time.DayOfWeek.MONDAY) {
+            sundayOfThisWeek = today.minusDays(1);
+        } else {
+            sundayOfThisWeek = today.with(java.time.temporal.TemporalAdjusters.previous(java.time.DayOfWeek.SUNDAY));
+        }
+
+        boolean checkedInThisWeek = userCheckInHistoryRepository.existsByUserIdAndCheckInDateBetween(userId, sundayOfThisWeek, today);
+        boolean isDue = isSundayOrMonday && !checkedInThisWeek;
+
+        long daysSinceLastCheckIn = lastCheckInDate != null ? ChronoUnit.DAYS.between(lastCheckInDate, today) : 7;
+
+        Double currentWeight = profile != null && profile.getWeight() != null ? profile.getWeight() : 60.0;
+        Double currentHeight = profile != null && profile.getHeightCm() != null ? profile.getHeightCm() : 170.0;
 
         UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
                 .stream().findFirst().orElse(null);
-        String goalStr = activeGoal != null ? activeGoal.getType() : (latestMetric != null ? latestMetric.getGoal() : "LOSE_0_5KG");
+        String goalStr = activeGoal != null ? activeGoal.getType() : "LOSE_0_5KG";
 
         return CheckInStatusResponse.builder()
                 .isCheckInDue(isDue)
@@ -159,6 +168,65 @@ public class CheckInServiceImpl implements CheckInService {
 
         // Generate AI Feedback
         String aiFeedback = generateAiCheckInFeedback(previousWeight, newWeight, weightChange, request, calculationResult);
+
+        // Save UserCheckInHistory
+        String injuredPartsStr = (request.getInjuredParts() != null && !request.getInjuredParts().isEmpty())
+                ? String.join(",", request.getInjuredParts())
+                : null;
+
+        UserCheckInHistory checkInHistory = UserCheckInHistory.builder()
+                .user(user)
+                .checkInDate(LocalDate.now())
+                .weight(newWeight)
+                .heightCm(heightCm)
+                .adherenceLevel(request.getAdherenceLevel())
+                .energyLevel(request.getEnergyLevel())
+                .hungerLevel(request.getHungerLevel())
+                .workoutState(request.getWorkoutState())
+                .hasInjury(request.getHasInjury())
+                .injuredParts(injuredPartsStr)
+                .goalChoice(selectedGoalStr)
+                .targetWeight(request.getTargetWeight())
+                .notes(request.getNotes())
+                .newBmr(calculationResult.getBmr())
+                .newTdee(calculationResult.getTdee())
+                .newTargetCalories(calculationResult.getTargetCalories())
+                .aiFeedback(aiFeedback)
+                .build();
+        userCheckInHistoryRepository.save(checkInHistory);
+
+        // Sync UserInjuries in database
+        if (request.getHasInjury() != null) {
+            if (Boolean.FALSE.equals(request.getHasInjury()) || request.getInjuredParts() == null || request.getInjuredParts().isEmpty()) {
+                List<UserInjury> existingInjuries = userInjuryRepository.findAllByUserId(userId);
+                if (!existingInjuries.isEmpty()) {
+                    userInjuryRepository.deleteAll(existingInjuries);
+                }
+            } else {
+                List<UserInjury> existingInjuries = userInjuryRepository.findAllByUserId(userId);
+                List<String> selectedCodes = request.getInjuredParts();
+
+                for (UserInjury existing : existingInjuries) {
+                    if (existing.getInjury() != null && !selectedCodes.contains(existing.getInjury().getCode())) {
+                        userInjuryRepository.delete(existing);
+                    }
+                }
+                for (String code : selectedCodes) {
+                    boolean exists = existingInjuries.stream()
+                            .anyMatch(u -> u.getInjury() != null && code.equalsIgnoreCase(u.getInjury().getCode()));
+                    if (!exists) {
+                        injuryRepository.findByCode(code).ifPresent(injury -> {
+                            UserInjury newUi = UserInjury.builder()
+                                    .user(user)
+                                    .injury(injury)
+                                    .recoveryStatus(com.bodypilot.backend.model.enums.RecoveryStatus.RECOVERING)
+                                    .build();
+                            userInjuryRepository.save(newUi);
+                        });
+                    }
+                }
+            }
+        }
 
         try {
             notificationService.createNotification(userId, com.bodypilot.backend.model.dto.notification.CreateNotificationRequest.builder()

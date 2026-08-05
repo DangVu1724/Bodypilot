@@ -6,10 +6,9 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/presentation/bloc/meal/meal_state.dart';
 import 'package:core_shared/models/daily_eating_model.dart';
-import 'package:mobile/presentation/bloc/food/food_cubit.dart';
-import 'package:core_shared/models/food_model.dart';
 import 'package:mobile/presentation/screens/meal/widgets/calender_meal.dart';
 import 'widgets/add_meal_bottom_sheet.dart';
+import 'widgets/smart_swap_bottom_sheet.dart';
 import 'package:mobile/core/utils/category_image_helper.dart';
 
 class MealPlanScreen extends StatefulWidget {
@@ -400,21 +399,6 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
       itemBuilder: (context, index) {
         final item = slot.items[index];
 
-        // Lookup cooking time in food cache
-        final cachedFoods = context.read<FoodCubit>().state.foods;
-        final foodMatch = cachedFoods.firstWhere(
-          (f) => f.id == item.foodId,
-          orElse: () => FoodModel(
-            id: '',
-            name: '',
-            type: '',
-            caloriesPer100g: 0,
-            proteinPer100g: 0,
-            fatPer100g: 0,
-            carbsPer100g: 0,
-          ),
-        );
-        final cookingTime = foodMatch.recipe?.cookingTimeMinutes ?? 15;
         final totalMacros = item.proteinSnapshot + item.fatSnapshot + item.carbsSnapshot;
         final proteinRatio = totalMacros > 0 ? item.proteinSnapshot / totalMacros : 0.0;
         final fatRatio = totalMacros > 0 ? item.fatSnapshot / totalMacros : 0.0;
@@ -468,6 +452,37 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
                     ),
                     const Spacer(),
                     GestureDetector(
+                      onTap: () {
+                        if (item.foodId != null) {
+                          SmartSwapBottomSheet.show(
+                            context,
+                            foodId: item.foodId!,
+                            currentFoodName: item.foodNameSnapshot,
+                            currentServingQuantity: item.servingQuantity,
+                            onFoodSwapped: (candidate) {
+                              if (item.id != null) {
+                                context.read<MealCubit>().removeFoodFromDiary(item.id!, state.selectedDate!);
+                              }
+                              context.read<MealCubit>().addFoodToDiary(
+                                    date: state.selectedDate!,
+                                    mealType: slot.mealType,
+                                    itemData: {
+                                      'foodId': candidate.foodId,
+                                      'servingQuantity': candidate.recommendedServingQuantity,
+                                    },
+                                  );
+                            },
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        margin: const EdgeInsets.only(right: 8),
+                        decoration: BoxDecoration(color: Colors.black.withOpacity(0.35), shape: BoxShape.circle),
+                        child: const Icon(Icons.swap_horiz_rounded, color: Colors.white, size: 20),
+                      ),
+                    ),
+                    GestureDetector(
                       onTap: () => _showMealItemOptions(context, item, state.selectedDate!),
                       child: Container(
                         padding: const EdgeInsets.all(6),
@@ -488,7 +503,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
                 ),
                 const SizedBox(height: 4),
 
-                // Kcal & Cooking time
+                // Kcal & Serving quantity
                 Row(
                   children: [
                     const Icon(Icons.local_fire_department, color: Colors.orange, size: 15),
@@ -497,10 +512,18 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
                       '${item.caloriesSnapshot.toStringAsFixed(0)} kcal',
                       style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
                     ),
-                    const SizedBox(width: 10),
-                    const Icon(Icons.access_time, color: Colors.white, size: 13),
-                    const SizedBox(width: 4),
-                    Text('${cookingTime}min', style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12)),
+                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                      child: Text(
+                        '${item.servingQuantity.toStringAsFixed(0)} ${item.servingUnitSnapshot ?? 'g'}',
+                        style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -573,6 +596,37 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
                 ),
               ),
               const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.swap_horizontal_circle_outlined, color: Color(0xFFFF7A30)),
+                title: const Text(
+                  'Đổi món tương đương (Smart Swap)',
+                  style: TextStyle(color: Color(0xFFFF7A30), fontWeight: FontWeight.bold),
+                ),
+                onTap: () {
+                  Navigator.of(context).pop();
+                  if (item.foodId != null) {
+                    SmartSwapBottomSheet.show(
+                      context,
+                      foodId: item.foodId!,
+                      currentFoodName: item.foodNameSnapshot,
+                      currentServingQuantity: item.servingQuantity,
+                      onFoodSwapped: (candidate) {
+                        if (item.id != null) {
+                          context.read<MealCubit>().removeFoodFromDiary(item.id!, date);
+                        }
+                        context.read<MealCubit>().addFoodToDiary(
+                              date: date,
+                              mealType: _selectedMealType,
+                              itemData: {
+                                'foodId': candidate.foodId,
+                                'servingQuantity': candidate.recommendedServingQuantity,
+                              },
+                            );
+                      },
+                    );
+                  }
+                },
+              ),
               ListTile(
                 leading: const Icon(Icons.delete_outline, color: Colors.red),
                 title: const Text(

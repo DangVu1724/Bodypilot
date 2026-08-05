@@ -62,31 +62,54 @@ class _AiChatScreenState extends State<AiChatScreen> {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: const BoxDecoration(
-                color: Colors.white24,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 20),
-            ),
-            const SizedBox(width: 10),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        title: BlocBuilder<ChatbotCubit, ChatbotState>(
+          builder: (context, state) {
+            return Row(
               children: [
-                Text(
-                  'BodyPilot AI Coach',
-                  style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: const BoxDecoration(
+                    color: Colors.white24,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 20),
                 ),
-                Text(
-                  'Trợ lý Sức Khỏe & Dinh Dưỡng',
-                  style: GoogleFonts.inter(fontSize: 11, color: Colors.white70),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'BodyPilot AI Coach',
+                        style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      GestureDetector(
+                        onTap: () => _showModelSelectorBottomSheet(context, state.selectedModel),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.25),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                _getModelLabel(state.selectedModel),
+                                style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.white),
+                              ),
+                              const Icon(Icons.keyboard_arrow_down_rounded, color: Colors.white, size: 14),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ),
-          ],
+            );
+          },
         ),
         actions: [
           IconButton(
@@ -305,6 +328,161 @@ class _AiChatScreenState extends State<AiChatScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  String _getModelLabel(String model) {
+    switch (model) {
+      case 'llama-3.1-8b-instant':
+        return 'Llama 3.1 8B 🚀';
+      case 'llama-3.3-70b-versatile':
+        return 'Llama 3.3 70B ⚡';
+      case 'gemini-2.5-flash':
+      default:
+        return 'Gemini 2.5 🤖';
+    }
+  }
+
+  void _showModelSelectorBottomSheet(BuildContext context, String currentModel) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      builder: (ctx) {
+        final models = [
+          {
+            'id': 'gemini-2.5-flash',
+            'name': 'Gemini 2.5 Flash (Google)',
+            'tag': '🤖 Mặc định',
+            'desc': 'Trợ lý AI đa năng nổi tiếng của Google, tốc độ cao & hiểu ngữ cảnh xuất sắc.',
+          },
+          /* Cấu trúc Groq AI giữ lại để về sau tích hợp lại
+          {
+            'id': 'llama-3.1-8b-instant',
+            'name': 'Llama 3.1 8B (Groq)',
+            'tag': '🚀 Tốc độ cao',
+            'desc': 'Phản hồi tức thì (~40ms), trả lời ngắn gọn, tiết kiệm thời gian.',
+          },
+          {
+            'id': 'llama-3.3-70b-versatile',
+            'name': 'Llama 3.3 70B (Groq)',
+            'tag': '⚡ Thông minh',
+            'desc': 'Mô hình mã nguồn mở mạnh mẽ cho câu hỏi chuyên sâu.',
+          },
+          */
+        ];
+
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Center(
+                  child: Container(
+                    width: 36,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  'Chọn Model AI Chatbot',
+                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Ngữ cảnh cuộc trò chuyện sẽ được giữ nguyên khi thay đổi model.',
+                  style: GoogleFonts.inter(fontSize: 12, color: Colors.grey[600]),
+                ),
+                const SizedBox(height: 16),
+                Flexible(
+                  child: ListView.separated(
+                    shrinkWrap: true,
+                    itemCount: models.length,
+                    separatorBuilder: (_, __) => const Divider(height: 12),
+                    itemBuilder: (context, index) {
+                      final item = models[index];
+                      final isSelected = item['id'] == currentModel;
+
+                      return InkWell(
+                        onTap: () {
+                          context.read<ChatbotCubit>().changeModel(item['id']!);
+                          Navigator.pop(ctx);
+                        },
+                        borderRadius: BorderRadius.circular(12),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: isSelected ? AppTheme.primary.withOpacity(0.08) : Colors.transparent,
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: isSelected ? AppTheme.primary : Colors.transparent,
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                isSelected ? Icons.radio_button_checked : Icons.radio_button_off,
+                                color: isSelected ? AppTheme.primary : Colors.grey[400],
+                                size: 20,
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Text(
+                                          item['name']!,
+                                          style: GoogleFonts.outfit(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                            color: isSelected ? AppTheme.primary : const Color(0xFF1E293B),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                          decoration: BoxDecoration(
+                                            color: Colors.grey[100],
+                                            borderRadius: BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            item['tag']!,
+                                            style: GoogleFonts.inter(fontSize: 10, fontWeight: FontWeight.w600, color: Colors.grey[700]),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      item['desc']!,
+                                      style: GoogleFonts.inter(fontSize: 11, color: Colors.grey[600]),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

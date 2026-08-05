@@ -1,11 +1,13 @@
 import 'package:core_shared/core_shared.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
 import 'package:mobile/presentation/widgets/skeleton.dart';
 import 'package:mobile/core/utils/category_image_helper.dart';
+import 'package:mobile/presentation/screens/meal/widgets/smart_swap_bottom_sheet.dart';
 
 class FoodDetailScreen extends StatefulWidget {
   final String foodId;
@@ -180,8 +182,41 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
             ),
           const SizedBox(height: 12),
           if (food.servings.isNotEmpty) _buildServingSelector(food),
+          const SizedBox(height: 16),
+          _buildSmartSwapButton(food),
           const SizedBox(height: 24),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSmartSwapButton(FoodModel food) {
+    return Container(
+      width: double.infinity,
+      height: 48,
+      child: OutlinedButton.icon(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: const Color(0xFFFF7A30),
+          side: const BorderSide(color: Color(0xFFFF7A30), width: 1.5),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        ),
+        icon: const Icon(Icons.swap_horizontal_circle_rounded),
+        label: Text(
+          '🔄 Đổi Món Tương Đương (Smart Swap)',
+          style: GoogleFonts.outfit(fontSize: 14, fontWeight: FontWeight.bold),
+        ),
+        onPressed: () {
+          final servingQty = (_selectedServing?.grams ?? 100).toDouble();
+          SmartSwapBottomSheet.show(
+            context,
+            foodId: food.id,
+            currentFoodName: food.name,
+            currentServingQuantity: servingQty,
+            onFoodSwapped: (candidate) {
+              context.read<FoodCubit>().getFoodDetails(candidate.foodId);
+            },
+          );
+        },
       ),
     );
   }

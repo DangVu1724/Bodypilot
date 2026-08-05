@@ -100,4 +100,12 @@ class TokenService {
   static Future<void> clearChatHistory(String userId) async {
     await _prefs?.remove('chat_history_$userId');
   }
+
+  static Future<void> saveSelectedModel(String model) async {
+    await _prefs?.setString('selected_chat_model', model);
+  }
+
+  static String? getSelectedModel() {
+    return _prefs?.getString('selected_chat_model');
+  }
 }

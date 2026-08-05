@@ -45,7 +45,22 @@ public class GeminiClient {
     }
 
     public String callGemini(String prompt, String systemInstructionText, boolean forceJson) throws IOException {
-        log.info("Preparing Gemini request: model={}, apiUrl={}, forceJson={}", model, apiUrl, forceJson);
+        String targetModel = (this.model != null && !this.model.trim().isEmpty()) ? this.model.trim() : "gemini-2.5-flash";
+        try {
+            return executeGeminiCall(targetModel, prompt, systemInstructionText, forceJson);
+        } catch (IOException e) {
+            log.warn("⚠️ [GeminiClient] Primary model '{}' failed ({}). Retrying with 'gemini-2.0-flash'...", targetModel, e.getMessage());
+            try {
+                return executeGeminiCall("gemini-2.0-flash", prompt, systemInstructionText, forceJson);
+            } catch (IOException ex) {
+                log.warn("⚠️ [GeminiClient] Fallback model 'gemini-2.0-flash' failed, retrying with 'gemini-1.5-flash'...");
+                return executeGeminiCall("gemini-1.5-flash", prompt, systemInstructionText, forceJson);
+            }
+        }
+    }
+
+    private String executeGeminiCall(String targetModel, String prompt, String systemInstructionText, boolean forceJson) throws IOException {
+        log.info("Preparing Gemini request: model={}, apiUrl={}, forceJson={}", targetModel, apiUrl, forceJson);
 
         // Build Gemini Request Body
         Map<String, Object> requestBodyMap = new HashMap<>();
@@ -75,12 +90,11 @@ public class GeminiClient {
         requestBodyMap.put("generationConfig", genConfig);
 
         String jsonBody = objectMapper.writeValueAsString(requestBodyMap);
-        log.info("Request Body:\n{}", jsonBody);
 
         RequestBody body = RequestBody.create(jsonBody, MediaType.get("application/json; charset=utf-8"));
 
-        String requestUrl = apiUrl + model + ":generateContent?key=" + apiKey;
-        log.info("Gemini request URL prepared for model {} (api key redacted)", model);
+        String requestUrl = apiUrl + targetModel + ":generateContent?key=" + apiKey;
+        log.info("Gemini request URL prepared for model {}", targetModel);
 
         Request request = new Request.Builder()
                 .url(requestUrl)
@@ -88,12 +102,11 @@ public class GeminiClient {
                 .build();
 
         long start = System.currentTimeMillis();
-        log.info("Calling Gemini...");
+        log.info("Calling Gemini API...");
         try (Response response = httpClient.newCall(request).execute()) {
             log.info("Gemini responded in {} ms", System.currentTimeMillis() - start);
 
             String responseBody = response.body() != null ? response.body().string() : "";
-            log.info("Gemini Response:\n{}", responseBody);
 
             if (!response.isSuccessful()) {
                 throw new IOException("Gemini API call failed with code " + response.code() + ". Details: " + responseBody);

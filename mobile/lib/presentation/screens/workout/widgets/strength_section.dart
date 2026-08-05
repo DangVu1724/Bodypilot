@@ -27,7 +27,7 @@ class StrengthSection extends StatelessWidget {
 
           return Column(
             children: [
-              SectionTitle(title: 'Strength', subtitle: '(${exercises.length})', actionText: 'See All'),
+              SectionTitle(title: 'Strength', subtitle: '(${state.totalElements})', actionText: 'See All'),
               const SizedBox(height: 12),
               SizedBox(
                 height: 180,
@@ -48,11 +48,7 @@ class StrengthSection extends StatelessWidget {
                           color: Colors.grey[100],
                           borderRadius: BorderRadius.circular(20),
                           image: DecorationImage(
-                            image: NetworkImage(
-                              exercise.thumbnailUrl?.isNotEmpty == true
-                                  ? exercise.thumbnailUrl!
-                                  : 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=400&q=80',
-                            ),
+                            image: NetworkImage(exercise.displayImageUrl),
                             fit: BoxFit.cover,
                           ),
                         ),

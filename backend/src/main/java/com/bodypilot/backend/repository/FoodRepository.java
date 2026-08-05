@@ -27,4 +27,10 @@ public interface FoodRepository extends JpaRepository<Food, UUID> {
 
     @Query("SELECT f FROM Food f LEFT JOIN FETCH f.category LEFT JOIN FETCH f.recipe")
     java.util.List<Food> findAllWithRelations();
+
+    @EntityGraph(attributePaths = {"category"})
+    java.util.List<Food> findByCategoryIdAndIsRecommendedTrue(UUID categoryId);
+
+    @EntityGraph(attributePaths = {"category"})
+    java.util.List<Food> findByIsRecommendedTrue();
 }

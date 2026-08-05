@@ -6,7 +6,7 @@ class ApiClient {
   ApiClient() {
     dio = Dio(
       BaseOptions(
-        baseUrl: 'http://localhost:8080/', // Chỉ để host tại đây
+        baseUrl: 'https://bodypilot-to4y.onrender.com/',
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 10),
         headers: {

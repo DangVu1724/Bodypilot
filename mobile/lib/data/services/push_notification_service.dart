@@ -41,6 +41,13 @@ class PushNotificationService {
 
     FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
 
+    try {
+      await _firebaseMessaging.subscribeToTopic('all_users');
+      _logger.i("Subscribed to FCM topic 'all_users'");
+    } catch (e) {
+      _logger.w("Failed to subscribe to FCM topic 'all_users': $e");
+    }
+
     await _initLocalNotifications();
     await setupScheduledReminders();
 

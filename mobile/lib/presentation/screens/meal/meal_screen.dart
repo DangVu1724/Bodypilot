@@ -21,25 +21,47 @@ class MealScreen extends StatefulWidget {
 }
 
 class _MealScreenState extends State<MealScreen> {
-  String _getStepsAmount(String goal) {
+  int _calculateTargetSteps(String goal, String? gender) {
+    final isFemale = gender?.toUpperCase() == 'FEMALE' || gender == 'Nữ';
+    final isMale = gender?.toUpperCase() == 'MALE' || gender == 'Nam';
+
     switch (goal) {
       case 'LOSE_1KG':
-        return '15,000';
+        if (isFemale) return 12000;
+        if (isMale) return 15000;
+        return 13500;
       case 'LOSE_0_5KG':
-        return '12,000';
+        if (isFemale) return 10000;
+        if (isMale) return 12500;
+        return 11000;
       case 'HEALTHY_LIFESTYLE':
-        return '10,000';
+        if (isFemale) return 8000;
+        if (isMale) return 10000;
+        return 9000;
       case 'MAINTAIN':
-        return '8,000';
+        if (isFemale) return 7000;
+        if (isMale) return 8000;
+        return 7500;
       case 'GAIN_MUSCLE':
-        return '6,000';
+        if (isFemale) return 5000;
+        if (isMale) return 6000;
+        return 5500;
       case 'GAIN_0_5KG':
-        return '5,000';
+        if (isFemale) return 4500;
+        if (isMale) return 5000;
+        return 4500;
       case 'GAIN_1KG':
-        return '4,000';
+        return 4000;
       default:
-        return '8,000';
+        if (isFemale) return 7000;
+        if (isMale) return 8000;
+        return 8000;
     }
+  }
+
+  String _getStepsAmount(String goal, String? gender) {
+    final target = _calculateTargetSteps(goal, gender);
+    return NumberFormat('#,###').format(target);
   }
 
   String _getWaterAmount(String goal, double weight) {
@@ -84,17 +106,17 @@ class _MealScreenState extends State<MealScreen> {
           builder: (context, state) {
             double weight = 0.0;
             String goal = 'MAINTAIN';
-            String? userName;
+            String? gender;
             String? avatarUrl;
 
             if (state is UserLoaded) {
               weight = state.user.metrics?.weight ?? 0.0;
               goal = state.user.metrics?.goal ?? 'MAINTAIN';
-              userName = state.user.profile?.fullName;
+              gender = state.user.profile?.gender;
               avatarUrl = state.user.profile?.avatarUrl;
             }
 
-            String targetStepsStr = _getStepsAmount(goal);
+            String targetStepsStr = _getStepsAmount(goal, gender);
             String currentStepsStr = NumberFormat('#,###').format(stepState.steps);
             String stepsDisplay = '$currentStepsStr / $targetStepsStr';
             String waterStr = _getWaterAmount(goal, weight);

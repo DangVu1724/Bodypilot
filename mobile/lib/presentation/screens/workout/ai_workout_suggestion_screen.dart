@@ -509,6 +509,33 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
     );
   }
 
+  void _toggleStartDate(bool startTomorrow) {
+    if (_startTomorrow == startTomorrow) return;
+    setState(() {
+      _startTomorrow = startTomorrow;
+      if (_suggestions.isNotEmpty) {
+        final now = DateTime.now();
+        final baseDate = startTomorrow
+            ? DateTime(now.year, now.month, now.day).add(const Duration(days: 1))
+            : DateTime(now.year, now.month, now.day);
+        _suggestions = List.generate(_suggestions.length, (i) {
+          final model = _suggestions[i];
+          final newDate = baseDate.add(Duration(days: i));
+          return DailyWorkoutModel(
+            id: model.id,
+            date: newDate,
+            note: model.note,
+            isAiGenerated: model.isAiGenerated,
+            totalCaloriesPlanned: model.totalCaloriesPlanned,
+            totalCaloriesBurned: model.totalCaloriesBurned,
+            isCompleted: model.isCompleted,
+            workoutItems: model.workoutItems,
+          );
+        });
+      }
+    });
+  }
+
   Widget _buildContentState() {
     if (_suggestions.isEmpty) {
       return _buildErrorState();
@@ -573,8 +600,7 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
                         selected: !_startTomorrow,
                         onSelected: (selected) {
                           if (selected && _startTomorrow) {
-                            setState(() { _startTomorrow = false; });
-                            _fetchAiSuggestion();
+                            _toggleStartDate(false);
                           }
                         },
                         selectedColor: AppTheme.primary,
@@ -586,8 +612,7 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
                         selected: _startTomorrow,
                         onSelected: (selected) {
                           if (selected && !_startTomorrow) {
-                            setState(() { _startTomorrow = true; });
-                            _fetchAiSuggestion();
+                            _toggleStartDate(true);
                           }
                         },
                         selectedColor: AppTheme.primary,

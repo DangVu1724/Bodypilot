@@ -177,6 +177,8 @@ class _MealPlanSectionState extends State<MealPlanSection> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
+                          _buildMacroItem('Serving', '${item.servingQuantity.toStringAsFixed(0)} ${item.servingUnitSnapshot ?? 'g'}', const Color(0xFF00B4D8)),
+                          const SizedBox(height: 4),
                           _buildMacroItem('Calories', '${item.caloriesSnapshot.toStringAsFixed(0)} kcal', Colors.orange),
                           const SizedBox(height: 4),
                           _buildMacroItem('Protein', '${item.proteinSnapshot.toStringAsFixed(1)}g', Colors.blue),

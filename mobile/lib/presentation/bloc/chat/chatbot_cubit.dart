@@ -9,14 +9,30 @@ class ChatbotCubit extends Cubit<ChatbotState> {
     loadHistory();
   }
 
+  void changeModel(String newModel) {
+    if (newModel.isNotEmpty && newModel != state.selectedModel) {
+      TokenService.saveSelectedModel(newModel);
+      emit(ChatbotUpdated(
+        messages: state.messages,
+        isThinking: state.isThinking,
+        selectedModel: newModel,
+      ));
+    }
+  }
+
   void loadHistory() {
     final userId = TokenService.getUserId();
+    final savedModel = TokenService.getSelectedModel() ?? state.selectedModel;
     if (userId != null) {
       final savedMaps = TokenService.getChatHistory(userId);
       if (savedMaps.isNotEmpty) {
         final messages = savedMaps.map((m) => ChatMessage.fromJson(m)).toList();
-        emit(ChatbotUpdated(messages: messages, isThinking: false));
+        emit(ChatbotUpdated(messages: messages, isThinking: false, selectedModel: savedModel));
+        return;
       }
+    }
+    if (savedModel != state.selectedModel) {
+      emit(ChatbotUpdated(messages: state.messages, isThinking: state.isThinking, selectedModel: savedModel));
     }
   }
 
@@ -62,7 +78,7 @@ class ChatbotCubit extends Cubit<ChatbotState> {
 
     final updatedMessages = List<ChatMessage>.from(state.messages)..add(userMsg);
 
-    emit(ChatbotUpdated(messages: updatedMessages, isThinking: true));
+    emit(ChatbotUpdated(messages: updatedMessages, isThinking: true, selectedModel: state.selectedModel));
 
     try {
       // Build history of last 6 messages
@@ -71,7 +87,12 @@ class ChatbotCubit extends Cubit<ChatbotState> {
           .map((m) => m.toHistoryMap())
           .toList();
 
-      final res = await userRepository.sendChatMessage(userId, trimmed, history);
+      final res = await userRepository.sendChatMessage(
+        userId,
+        trimmed,
+        history,
+        selectedModel: state.selectedModel,
+      );
       final rawReply = res['reply'] as String? ?? 'Tôi đã nhận được câu hỏi của bạn!';
       final replyText = _cleanReply(rawReply);
 
@@ -83,7 +104,7 @@ class ChatbotCubit extends Cubit<ChatbotState> {
       );
 
       final finalMessages = List<ChatMessage>.from(updatedMessages)..add(aiMsg);
-      emit(ChatbotUpdated(messages: finalMessages, isThinking: false));
+      emit(ChatbotUpdated(messages: finalMessages, isThinking: false, selectedModel: state.selectedModel));
       await _saveCurrentHistory(finalMessages);
     } catch (e) {
       print("🚨 [ChatbotCubit Error]: $e");
@@ -98,6 +119,7 @@ class ChatbotCubit extends Cubit<ChatbotState> {
         messages: errorMessages,
         errorMessage: e.toString(),
         isThinking: false,
+        selectedModel: state.selectedModel,
       ));
       await _saveCurrentHistory(errorMessages);
     }
@@ -108,6 +130,6 @@ class ChatbotCubit extends Cubit<ChatbotState> {
     if (userId != null) {
       await TokenService.clearChatHistory(userId);
     }
-    emit(ChatbotInitial());
+    emit(ChatbotInitial(selectedModel: state.selectedModel));
   }
 }

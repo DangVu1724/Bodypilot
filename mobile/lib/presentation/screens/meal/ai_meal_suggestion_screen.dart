@@ -145,6 +145,15 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
     }
   }
 
+  void _toggleStartDate(bool startTomorrow) {
+    if (_isLoading || _isRegenerating || _isSaving) return;
+    setState(() {
+      _startTomorrow = startTomorrow;
+      _selectedDayIndex = 0;
+    });
+    _fetchAiSuggestion();
+  }
+
   Future<void> _sendFeedback() async {
     final feedbackText = _feedbackController.text.trim();
     if (feedbackText.isEmpty || _isRegenerating || _isLoading || _isSaving) return;
@@ -162,9 +171,13 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
       if (userId == null) {
         throw Exception("Không tìm thấy thông tin tài khoản người dùng.");
       }
+      final startDateStr = DateFormat('yyyy-MM-dd').format(
+        _startTomorrow ? DateTime.now().add(const Duration(days: 1)) : DateTime.now(),
+      );
       final jsonString = await userRepository.getAiDietSuggestion(
         userId,
         days: widget.days,
+        startDate: startDateStr,
         userFeedback: feedbackText,
       );
       final List<dynamic> decoded = jsonDecode(jsonString) as List<dynamic>;
@@ -530,8 +543,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                         selected: !_startTomorrow,
                         onSelected: (selected) {
                           if (selected && _startTomorrow) {
-                            setState(() { _startTomorrow = false; });
-                            _fetchAiSuggestion();
+                            _toggleStartDate(false);
                           }
                         },
                         selectedColor: const Color(0xFFFF7A30),
@@ -543,8 +555,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                         selected: _startTomorrow,
                         onSelected: (selected) {
                           if (selected && !_startTomorrow) {
-                            setState(() { _startTomorrow = true; });
-                            _fetchAiSuggestion();
+                            _toggleStartDate(true);
                           }
                         },
                         selectedColor: const Color(0xFFFF7A30),

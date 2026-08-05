@@ -201,13 +201,14 @@ class UserRepository {
     }
   }
 
-  Future<Map<String, dynamic>> sendChatMessage(String userId, String userQuery, List<Map<String, String>> history) async {
+  Future<Map<String, dynamic>> sendChatMessage(String userId, String userQuery, List<Map<String, String>> history, {String? selectedModel}) async {
     try {
       final response = await apiClient.post(
         '/users/$userId/chat',
         data: {
           'userQuery': userQuery,
           'history': history,
+          if (selectedModel != null) 'selectedModel': selectedModel,
         },
       );
       if (response.data['success'] == true) {

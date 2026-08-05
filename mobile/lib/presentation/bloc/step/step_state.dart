@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:mobile/data/repositories/step_repository.dart';
 
 class StepState extends Equatable {
   final int steps;
@@ -7,6 +8,8 @@ class StepState extends Equatable {
   final String pedestrianStatus;
   final bool isPermissionGranted;
   final String? errorMessage;
+  final List<StepHistoryModel> history;
+  final bool isLoadingHistory;
 
   const StepState({
     this.steps = 0,
@@ -15,9 +18,13 @@ class StepState extends Equatable {
     this.pedestrianStatus = 'unknown',
     this.isPermissionGranted = true,
     this.errorMessage,
+    this.history = const [],
+    this.isLoadingHistory = false,
   });
 
   double get caloriesBurned => steps * (0.0005 * userWeight);
+
+  double get distanceKm => steps * 0.00075;
 
   double get progress => targetSteps > 0 ? (steps / targetSteps).clamp(0.0, 1.0) : 0.0;
 
@@ -28,6 +35,8 @@ class StepState extends Equatable {
     String? pedestrianStatus,
     bool? isPermissionGranted,
     String? errorMessage,
+    List<StepHistoryModel>? history,
+    bool? isLoadingHistory,
   }) {
     return StepState(
       steps: steps ?? this.steps,
@@ -36,6 +45,8 @@ class StepState extends Equatable {
       pedestrianStatus: pedestrianStatus ?? this.pedestrianStatus,
       isPermissionGranted: isPermissionGranted ?? this.isPermissionGranted,
       errorMessage: errorMessage,
+      history: history ?? this.history,
+      isLoadingHistory: isLoadingHistory ?? this.isLoadingHistory,
     );
   }
 
@@ -47,5 +58,7 @@ class StepState extends Equatable {
         pedestrianStatus,
         isPermissionGranted,
         errorMessage,
+        history,
+        isLoadingHistory,
       ];
 }

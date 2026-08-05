@@ -47,31 +47,35 @@ class ChatMessage extends Equatable {
 abstract class ChatbotState extends Equatable {
   final List<ChatMessage> messages;
   final bool isThinking;
+  final String selectedModel;
 
   const ChatbotState({
     required this.messages,
     this.isThinking = false,
+    this.selectedModel = 'gemini-2.5-flash',
   });
 
   @override
-  List<Object?> get props => [messages, isThinking];
+  List<Object?> get props => [messages, isThinking, selectedModel];
 }
 
 class ChatbotInitial extends ChatbotState {
-  ChatbotInitial() : super(messages: [
-    ChatMessage(
-      id: 'welcome',
-      role: 'model',
-      content: 'Chào bạn! Tôi là BodyPilot AI Coach 🤖\n\nTôi có thể giúp bạn giải đáp mọi thắc mắc về thực đơn calo, bài tập fitness, tư vấn chấn thương hoặc cách sử dụng BodyPilot. Bạn cần hỗ trợ gì hôm nay?',
-      timestamp: DateTime.now(),
-    ),
-  ]);
+  ChatbotInitial({super.selectedModel = 'gemini-2.5-flash'})
+      : super(messages: [
+          ChatMessage(
+            id: 'welcome',
+            role: 'model',
+            content: 'Chào bạn! Tôi là BodyPilot AI Coach 🤖\n\nTôi có thể giúp bạn giải đáp mọi thắc mắc về thực đơn calo, bài tập fitness, tư vấn chấn thương hoặc cách sử dụng BodyPilot. Bạn cần hỗ trợ gì hôm nay?',
+            timestamp: DateTime.now(),
+          ),
+        ]);
 }
 
 class ChatbotUpdated extends ChatbotState {
   const ChatbotUpdated({
     required super.messages,
     super.isThinking,
+    super.selectedModel,
   });
 }
 
@@ -82,8 +86,9 @@ class ChatbotError extends ChatbotState {
     required super.messages,
     required this.errorMessage,
     super.isThinking = false,
+    super.selectedModel,
   });
 
   @override
-  List<Object?> get props => [messages, isThinking, errorMessage];
+  List<Object?> get props => [messages, isThinking, errorMessage, selectedModel];
 }

@@ -148,9 +148,41 @@ class _MetricSectionState extends State<MetricSection> {
       targetCalories = userState.user.metrics?.targetCalories ?? 2000.0;
       goal = userState.user.metrics?.goal ?? 'MAINTAIN';
       final weight = userState.user.metrics?.weight;
+      final gender = userState.user.profile?.gender;
       if (weight != null && weight > 0) {
         context.read<StepCubit>().updateUserWeight(weight);
       }
+
+      final isFemale = gender?.toUpperCase() == 'FEMALE' || gender == 'Nữ';
+      final isMale = gender?.toUpperCase() == 'MALE' || gender == 'Nam';
+
+      final int targetSteps;
+      switch (goal) {
+        case 'LOSE_1KG':
+          targetSteps = isFemale ? 12000 : (isMale ? 15000 : 13500);
+          break;
+        case 'LOSE_0_5KG':
+          targetSteps = isFemale ? 10000 : (isMale ? 12500 : 11000);
+          break;
+        case 'HEALTHY_LIFESTYLE':
+          targetSteps = isFemale ? 8000 : (isMale ? 10000 : 9000);
+          break;
+        case 'MAINTAIN':
+          targetSteps = isFemale ? 7000 : (isMale ? 8000 : 7500);
+          break;
+        case 'GAIN_MUSCLE':
+          targetSteps = isFemale ? 5000 : (isMale ? 6000 : 5500);
+          break;
+        case 'GAIN_0_5KG':
+          targetSteps = isFemale ? 4500 : (isMale ? 5000 : 4500);
+          break;
+        case 'GAIN_1KG':
+          targetSteps = 4000;
+          break;
+        default:
+          targetSteps = isFemale ? 7000 : (isMale ? 8000 : 8000);
+      }
+      context.read<StepCubit>().setTargetSteps(targetSteps);
     }
 
     double totalCaloriesBurned = 0.0;
@@ -296,6 +328,7 @@ class _MetricSectionState extends State<MetricSection> {
                 unit: 'bước',
                 icon: const Icon(Icons.directions_walk_rounded, color: Colors.white, size: 20),
                 gradientColors: const [Color(0xFFEC4899), Color(0xFFD946EF)],
+                onTap: () => context.push(AppRoutes.stepDetail),
                 bottomWidget: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [

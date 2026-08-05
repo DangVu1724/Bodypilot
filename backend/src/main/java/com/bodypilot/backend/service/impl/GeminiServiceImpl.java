@@ -30,7 +30,7 @@ public class GeminiServiceImpl implements GeminiService {
     private final UserInjuryRepository userInjuryRepository;
     private final WorkoutPlanRepository workoutPlanRepository;
 
-    private final GeminiClient geminiClient;
+    private final LlmRouterService llmRouterService;
     private final DietSuggestionHelper dietSuggestionHelper;
     private final WorkoutSuggestionHelper workoutSuggestionHelper;
 
@@ -47,12 +47,12 @@ public class GeminiServiceImpl implements GeminiService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-            boolean apiKeyConfigured = geminiClient.isApiKeyConfigured();
-            log.info("Gemini API key configured for meal suggestion: {}", apiKeyConfigured);
+            boolean apiKeyConfigured = llmRouterService.isAiReady();
+            log.info("AI API key configured for meal suggestion: {}", apiKeyConfigured);
 
             if (!apiKeyConfigured) {
-                log.warn("Gemini API key is missing. Returning fallback JSON.");
-                return dietSuggestionHelper.getFallbackJson(startDate, "Cấu hình Gemini Chưa Sẵn Sàng. Vui lòng cấu hình gemini.api.key trong application.properties.", days);
+                log.warn("AI API key is missing. Returning fallback JSON.");
+                return dietSuggestionHelper.getFallbackJson(startDate, "Cấu hình AI Key Chưa Sẵn Sàng. Vui lòng kiểm tra API Key trong application.properties.", days);
             }
 
             log.info("Retrieving user profile, goals and metric history...");
@@ -81,10 +81,10 @@ public class GeminiServiceImpl implements GeminiService {
 
             log.info("Building Gemini Prompt with user feedback...");
             String prompt = dietSuggestionHelper.buildPrompt(profile, activeGoal, latestMetric, allergies, diets, dislikedFoods, candidates, startDate, days, userFeedback);
-            log.info("Sending meal suggestion prompt to Gemini AI for user {}: \n{}", userId, prompt);
+            log.info("Sending meal suggestion prompt to AI for user {}: \n{}", userId, prompt);
 
-            String rawJson = geminiClient.callGemini(prompt, "Bạn là một chuyên gia dinh dưỡng và lên thực đơn cá nhân hóa chuyên nghiệp. Hãy đưa ra thực đơn cực kỳ chi tiết, khoa học, thực tế dưới dạng JSON array hợp lệ phù hợp với danh sách thực phẩm được cung cấp.", true);
-            log.info("Received raw meal suggestion JSON from Gemini AI for user {}: \n{}", userId, rawJson);
+            String rawJson = llmRouterService.routeChatRequest(null, prompt, "Bạn là một chuyên gia dinh dưỡng và lên thực đơn cá nhân hóa chuyên nghiệp. Hãy đưa ra thực đơn cực kỳ chi tiết, khoa học, thực tế dưới dạng JSON array hợp lệ phù hợp với danh sách thực phẩm được cung cấp.", true);
+            log.info("Received raw meal suggestion JSON from AI for user {}: \n{}", userId, rawJson);
             
             log.info("Processing food mappings, exact macro scaling and saving to DTOs...");
             java.math.BigDecimal targetCal = (latestMetric != null && latestMetric.getTargetCalories() != null) 
@@ -108,12 +108,12 @@ public class GeminiServiceImpl implements GeminiService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-        boolean apiKeyConfigured = geminiClient.isApiKeyConfigured();
-        log.info("Gemini API key configured for workout suggestion: {}", apiKeyConfigured);
+        boolean apiKeyConfigured = llmRouterService.isAiReady();
+        log.info("AI API key configured for workout suggestion: {}", apiKeyConfigured);
 
         if (!apiKeyConfigured) {
-            log.warn("Gemini API key is missing. Returning fallback JSON.");
-            return workoutSuggestionHelper.getFallbackWorkoutJson(startDate, "Cấu hình Gemini Chưa Sẵn Sàng. Vui lòng cấu hình gemini.api.key trong application.properties.", days);
+            log.warn("AI API key is missing. Returning fallback JSON.");
+            return workoutSuggestionHelper.getFallbackWorkoutJson(startDate, "Cấu hình AI Key Chưa Sẵn Sàng. Vui lòng kiểm tra API Key trong application.properties.", days);
         }
 
         UserProfile profile = user.getProfile();
@@ -134,10 +134,10 @@ public class GeminiServiceImpl implements GeminiService {
         List<ExerciseCandidate> candidates = workoutSuggestionHelper.getBalancedExerciseCandidates(userId, goalType, focusBodyPart);
 
         String prompt = workoutSuggestionHelper.buildWorkoutPrompt(profile, activeGoal, latestMetric, injuries, candidates, startDate, days, focusBodyPart);
-        log.info("Sending workout suggestion prompt to Gemini AI for user {}: \n{}", userId, prompt);
+        log.info("Sending workout suggestion prompt to AI for user {}: \n{}", userId, prompt);
 
         try {
-            String rawJson = geminiClient.callGemini(prompt, "Bạn là một huấn luyện viên cá nhân (PT) chuyên nghiệp. Hãy lên lịch trình tập luyện thể hình cực kỳ chi tiết, khoa học, thực tế phù hợp với thể trạng người dùng dưới dạng JSON array hợp lệ phù hợp với danh sách bài tập được cung cấp.", true);
+            String rawJson = llmRouterService.routeChatRequest(null, prompt, "Bạn là một huấn luyện viên cá nhân (PT) chuyên nghiệp. Hãy lên lịch trình tập luyện thể hình cực kỳ chi tiết, khoa học, thực tế phù hợp với thể trạng người dùng dưới dạng JSON array hợp lệ phù hợp với danh sách bài tập được cung cấp.", true);
             log.info("Received raw workout suggestion JSON from Gemini AI for user {}: \n{}", userId, rawJson);
             String result = workoutSuggestionHelper.processAndLinkExercises(rawJson);
 

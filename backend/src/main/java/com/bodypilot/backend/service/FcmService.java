@@ -69,4 +69,33 @@ public class FcmService {
             return null;
         }
     }
+
+    /**
+     * Gửi thông báo đến tất cả thiết bị đã đăng ký một Topic cụ thể
+     *
+     * @param topic tên Topic (ví dụ: "all_users")
+     * @param title Tiêu đề
+     * @param body  Nội dung
+     * @return String ID tin nhắn từ Firebase
+     */
+    public String sendNotificationToTopic(String topic, String title, String body) {
+        try {
+            Notification notification = Notification.builder()
+                    .setTitle(title)
+                    .setBody(body)
+                    .build();
+
+            Message message = Message.builder()
+                    .setTopic(topic)
+                    .setNotification(notification)
+                    .build();
+
+            String response = FirebaseMessaging.getInstance().send(message);
+            System.out.println(">>> [FCM Topic] Gửi thông báo thành công tới topic '" + topic + "': " + response);
+            return response;
+        } catch (Exception e) {
+            System.err.println(">>> [FCM Topic] Lỗi gửi thông báo tới topic '" + topic + "': " + e.getMessage());
+            return null;
+        }
+    }
 }

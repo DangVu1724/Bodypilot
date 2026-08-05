@@ -25,12 +25,12 @@ public class ChatbotServiceImpl implements ChatbotService {
     private final UserMetricHistoryRepository metricHistoryRepository;
     private final UserAllergyRepository allergyRepository;
     private final UserInjuryRepository userInjuryRepository;
-    private final GeminiClient geminiClient;
+    private final LlmRouterService llmRouterService;
 
     @Override
     public ChatResponse processChat(UUID userId, ChatRequest request) {
         long startTime = System.currentTimeMillis();
-        log.info("💬 [AI_CHAT_START] Xử lý câu hỏi chat cho userId={}, userQuery='{}'", userId, request.getUserQuery());
+        log.info("💬 [AI_CHAT_START] Xử lý câu hỏi chat cho userId={}, selectedModel={}, userQuery='{}'", userId, request.getSelectedModel(), request.getUserQuery());
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -55,14 +55,10 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         String reply;
         try {
-            if (geminiClient.isApiKeyConfigured()) {
-                reply = geminiClient.callGemini(formattedPrompt, systemInstruction, false);
-            } else {
-                reply = "Xin lỗi bạn, cấu hình kết nối AI hiện tại chưa sẵn sàng. Bạn vui lòng thử lại sau ít phút nhé!";
-            }
+            reply = llmRouterService.routeChatRequest(request.getSelectedModel(), formattedPrompt, systemInstruction, false);
         } catch (Exception e) {
             log.error("❌ Error generating chatbot response: ", e);
-            reply = "Xin lỗi bạn, tôi gặp sự cố nhỏ khi kết nối dữ liệu. Bạn có thể lặp lại câu hỏi về dinh dưỡng hay bài tập được không?";
+            reply = "Xin lỗi bạn, tôi gặp sự cố nhỏ khi kết nối dữ liệu AI. Bạn có thể lặp lại câu hỏi về dinh dưỡng hay bài tập được không?";
         }
 
         reply = cleanReplyText(reply);

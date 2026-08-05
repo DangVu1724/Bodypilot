@@ -19,6 +19,20 @@ class ExerciseModel {
   final int? defaultDuration;
   final String? durationUnit;
 
+  String get displayImageUrl {
+    String? raw = thumbnailUrl;
+    if (raw == null || raw.trim().isEmpty) {
+      raw = mediaUrl;
+    }
+    if (raw != null && raw.trim().isNotEmpty) {
+      final firstUrl = raw.split(';').first.split(',').first.trim();
+      if (firstUrl.isNotEmpty && (firstUrl.startsWith('http://') || firstUrl.startsWith('https://'))) {
+        return firstUrl;
+      }
+    }
+    return 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=500';
+  }
+
   ExerciseModel({
     required this.id,
     required this.code,

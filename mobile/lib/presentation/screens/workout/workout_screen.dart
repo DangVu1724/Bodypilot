@@ -13,10 +13,22 @@ import 'widgets/workout_plans_section.dart';
 import 'widgets/strength_section.dart';
 import 'widgets/ai_suggestion_card.dart';
 import 'widgets/workout_plan_section.dart';
+import 'package:mobile/data/repositories/exercise_repository.dart';
 
 
-class WorkoutScreen extends StatelessWidget {
+class WorkoutScreen extends StatefulWidget {
   const WorkoutScreen({super.key});
+
+  @override
+  State<WorkoutScreen> createState() => _WorkoutScreenState();
+}
+
+class _WorkoutScreenState extends State<WorkoutScreen> {
+  @override
+  void initState() {
+    super.initState();
+    exerciseRepository.prefetchPopularCategories();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -37,11 +49,9 @@ class WorkoutScreen extends StatelessWidget {
         ),
         child: BlocBuilder<UserCubit, UserState>(
           builder: (context, state) {
-            String? userName;
             String? avatarUrl;
 
             if (state is UserLoaded) {
-              userName = state.user.profile?.fullName;
               avatarUrl = state.user.profile?.avatarUrl;
             }
 
@@ -51,6 +61,7 @@ class WorkoutScreen extends StatelessWidget {
                   context.read<WorkoutPlanCubit>().fetchPlansFull(forceRefresh: true),
                   context.read<ExerciseCubit>().fetchStrengthExercises(forceRefresh: true),
                   context.read<WorkoutCategoryCubit>().fetchCategories(forceRefresh: true),
+                  exerciseRepository.prefetchPopularCategories(),
                 ]);
               },
               child: CustomScrollView(

@@ -23,6 +23,7 @@ import 'package:mobile/presentation/screens/metrics/active_minutes_detail_screen
 import 'package:mobile/presentation/screens/notification/notification_screen.dart';
 import 'package:mobile/presentation/screens/chat/ai_chat_screen.dart';
 import 'package:mobile/presentation/bloc/chat/chatbot_cubit.dart';
+import 'package:mobile/presentation/screens/step/step_detail_screen.dart';
 
 class AppPages {
   AppPages._();
@@ -88,6 +89,10 @@ class AppPages {
           create: (context) => ChatbotCubit(),
           child: const AiChatScreen(),
         ),
+      ),
+      GoRoute(
+        path: AppRoutes.stepDetail,
+        builder: (context, state) => const StepDetailScreen(),
       ),
     ],
   );

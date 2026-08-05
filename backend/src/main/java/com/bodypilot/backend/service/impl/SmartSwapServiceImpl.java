@@ -48,17 +48,29 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                 .map(a -> a.getAllergyMaster().getId())
                 .collect(Collectors.toSet());
 
-        List<Food> allFoods = foodRepository.findAll();
+        List<Food> candidatePool = new ArrayList<>();
+        if (targetFood.getCategory() != null) {
+            candidatePool = foodRepository.findByCategoryIdAndIsRecommendedTrue(targetFood.getCategory().getId());
+        }
+
+        if (candidatePool.size() < 5) {
+            candidatePool = foodRepository.findByIsRecommendedTrue();
+        }
+
+        // Exclude target food and allergic foods
+        List<Food> filteredFoods = candidatePool.stream()
+                .filter(food -> !food.getId().equals(targetFood.getId()))
+                .filter(food -> !allergicFoodIds.contains(food.getId()))
+                .filter(food -> food.getCaloriesPer100g() != null && food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) > 0)
+                .collect(Collectors.toList());
+
+        // Shuffle to select random candidates
+        Collections.shuffle(filteredFoods);
+        List<Food> selectedFoods = filteredFoods.stream().limit(10).collect(Collectors.toList());
+
         List<FoodSmartSwapCandidateDTO> candidates = new ArrayList<>();
 
-        for (Food food : allFoods) {
-            if (food.getId().equals(targetFood.getId())) {
-                continue;
-            }
-            if (food.getCaloriesPer100g() == null || food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) <= 0) {
-                continue;
-            }
-
+        for (Food food : selectedFoods) {
             // Calculate recommended serving quantity to match target calories
             BigDecimal recFactor = targetCal.divide(food.getCaloriesPer100g(), 4, RoundingMode.HALF_UP);
             BigDecimal recQuantity = recFactor.multiply(new BigDecimal("100")).setScale(1, RoundingMode.HALF_UP);
@@ -84,7 +96,6 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                 score = Math.max(65.0, Math.min(98.0, 100.0 - (diff * 200.0)));
             }
 
-            // Boost score if same category
             if (targetFood.getCategory() != null && food.getCategory() != null &&
                     targetFood.getCategory().getId().equals(food.getCategory().getId())) {
                 score = Math.min(99.0, score + 5.0);
@@ -110,7 +121,6 @@ public class SmartSwapServiceImpl implements SmartSwapService {
 
         return candidates.stream()
                 .sorted(Comparator.comparing(FoodSmartSwapCandidateDTO::getMatchScore).reversed())
-                .limit(10)
                 .collect(Collectors.toList());
     }
 
