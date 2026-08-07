@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:core_shared/core_shared.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme.dart';
 import '../../data/repositories/admin_repository.dart';
 import '../widgets/base_table_screen.dart';
@@ -16,6 +15,7 @@ class IngredientsScreen extends StatefulWidget {
 
 class _IngredientsScreenState extends State<IngredientsScreen> {
   late Future<List<FoodModel>> _ingredientsFuture;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -25,7 +25,14 @@ class _IngredientsScreenState extends State<IngredientsScreen> {
 
   void _refreshIngredients() {
     setState(() {
-      _ingredientsFuture = adminRepository.getAllIngredients(forceRefresh: true);
+      _ingredientsFuture = adminRepository.getAllIngredients(search: _searchQuery, forceRefresh: true);
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+      _ingredientsFuture = adminRepository.getAllIngredients(search: query, forceRefresh: false);
     });
   }
 
@@ -99,7 +106,7 @@ class _IngredientsScreenState extends State<IngredientsScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         if (snapshot.hasError) {
           return Center(child: Text('Lỗi: ${snapshot.error}'));
         }
@@ -111,9 +118,11 @@ class _IngredientsScreenState extends State<IngredientsScreen> {
           subtitle: 'Quản lý thực phẩm thô (Ingredients) từ hệ thống',
           onRefresh: _refreshIngredients,
           onAddPressed: () => _showAddEditDialog(),
+          onSearchChanged: _onSearchChanged,
+          searchHint: 'Tìm theo tên nguyên liệu...',
           columns: const ['ID', 'Tên thực phẩm', 'Calo/100g', 'Protein', 'Hạng mục', 'Thao tác'],
           rows: ingredients.map((ing) => DataRow(cells: [
-            DataCell(Text(ing.id.substring(0, 8))),
+            DataCell(Text(ing.id.length >= 8 ? ing.id.substring(0, 8) : ing.id)),
             DataCell(Text(ing.name)),
             DataCell(Text('${ing.caloriesPer100g} kcal')),
             DataCell(Text('${ing.proteinPer100g}g')),

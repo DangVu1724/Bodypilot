@@ -91,7 +91,7 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
       icon: Icon(icon, color: color, size: 20),
       label: Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
       style: TextButton.styleFrom(
-        backgroundColor: color.withOpacity(0.1),
+        backgroundColor: color.withValues(alpha: 0.1),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
       ),
@@ -104,7 +104,7 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -141,7 +141,7 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,7 +206,7 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
         const SizedBox(height: 8),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-          decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
+          decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(8)),
           child: Text(value, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)),
         ),
       ],
@@ -226,7 +226,7 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.03), blurRadius: 20, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.03), blurRadius: 20, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -248,7 +248,7 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
               return Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: m.color.withOpacity(0.05),
+                  color: m.color.withValues(alpha: 0.05),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
@@ -260,7 +260,7 @@ class _IngredientDetailScreenState extends State<IngredientDetailScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(m.label, style: TextStyle(fontSize: 10, color: m.color.withOpacity(0.8))),
+                          Text(m.label, style: TextStyle(fontSize: 10, color: m.color.withValues(alpha: 0.8))),
                           Text('${m.value}${m.unit}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
                         ],
                       ),

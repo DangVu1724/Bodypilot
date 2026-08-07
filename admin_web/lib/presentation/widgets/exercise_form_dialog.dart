@@ -222,7 +222,7 @@ class _ExerciseFormDialogState extends State<ExerciseFormDialog> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<String>(
-                        value: _difficulty,
+                        initialValue: _difficulty,
                         decoration: const InputDecoration(labelText: 'Độ khó'),
                         items: [
                           'BEGINNER',
@@ -252,7 +252,7 @@ class _ExerciseFormDialogState extends State<ExerciseFormDialog> {
                           const SizedBox(width: 12),
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              value: _durationUnit,
+                              initialValue: _durationUnit,
                               decoration: const InputDecoration(labelText: 'Đơn vị'),
                               items: [
                                 'SECONDS',
@@ -266,21 +266,21 @@ class _ExerciseFormDialogState extends State<ExerciseFormDialog> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<WorkoutCategoryModel>(
-                        value: _selectedCategory,
+                        initialValue: _selectedCategory,
                         decoration: const InputDecoration(labelText: 'Nhóm bài tập (Category)'),
                         items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
                         onChanged: (v) => setState(() => _selectedCategory = v),
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<BodyPartModel>(
-                        value: _selectedBodyPart,
+                        initialValue: _selectedBodyPart,
                         decoration: const InputDecoration(labelText: 'Bộ phận cơ thể (Body Part)'),
                         items: _bodyParts.map((b) => DropdownMenuItem(value: b, child: Text(b.name))).toList(),
                         onChanged: (v) => setState(() => _selectedBodyPart = v),
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<MuscleModel>(
-                        value: _selectedTargetMuscle,
+                        initialValue: _selectedTargetMuscle,
                         decoration: const InputDecoration(labelText: 'Nhóm cơ chính (Target Muscle)'),
                         items: _muscles.map((m) => DropdownMenuItem(value: m, child: Text(m.name))).toList(),
                         onChanged: (v) => setState(() => _selectedTargetMuscle = v),

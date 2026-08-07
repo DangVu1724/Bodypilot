@@ -31,6 +31,7 @@ public class SmartSwapServiceImpl implements SmartSwapService {
     private final UserDietPreferenceRepository dietPreferenceRepository;
     private final UserFoodPreferenceRepository foodPreferenceRepository;
     private final UserInjuryRepository userInjuryRepository;
+    private final DietSuggestionHelper dietSuggestionHelper;
 
     @Override
     public List<FoodSmartSwapCandidateDTO> getFoodSwapCandidates(User user, FoodSmartSwapRequest request) {
@@ -75,10 +76,13 @@ public class SmartSwapServiceImpl implements SmartSwapService {
             BigDecimal recFactor = targetCal.divide(food.getCaloriesPer100g(), 4, RoundingMode.HALF_UP);
             BigDecimal recQuantity = recFactor.multiply(new BigDecimal("100")).setScale(1, RoundingMode.HALF_UP);
 
-            if (recQuantity.compareTo(new BigDecimal("30.0")) < 0) {
-                recQuantity = new BigDecimal("30.0");
-            } else if (recQuantity.compareTo(new BigDecimal("500.0")) > 0) {
-                recQuantity = new BigDecimal("500.0");
+            BigDecimal minQty = dietSuggestionHelper.getMinQuantityForCategory(food);
+            BigDecimal maxQty = dietSuggestionHelper.getMaxQuantityForCategory(food);
+
+            if (recQuantity.compareTo(minQty) < 0) {
+                recQuantity = minQty;
+            } else if (recQuantity.compareTo(maxQty) > 0) {
+                recQuantity = maxQty;
             }
 
             BigDecimal actualFactor = recQuantity.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);

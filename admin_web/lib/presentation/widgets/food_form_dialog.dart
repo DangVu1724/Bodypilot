@@ -154,7 +154,7 @@ class _FoodFormDialogState extends State<FoodFormDialog> {
                       ),
                       const SizedBox(height: 12),
                       DropdownButtonFormField<FoodCategoryModel>(
-                        value: _selectedCategory,
+                        initialValue: _selectedCategory,
                         decoration: const InputDecoration(labelText: 'Danh mục (Category)'),
                         items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
                         onChanged: (v) => setState(() => _selectedCategory = v),
@@ -238,7 +238,7 @@ class _FoodFormDialogState extends State<FoodFormDialog> {
                         children: [
                           Expanded(
                             child: DropdownButtonFormField<String>(
-                              value: _selectedDefaultServingId,
+                              initialValue: _selectedDefaultServingId,
                               decoration: const InputDecoration(labelText: 'Khẩu phần mặc định'),
                               hint: const Text('Chọn mặc định'),
                               items: _servings
@@ -368,7 +368,7 @@ class _FoodFormDialogState extends State<FoodFormDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selectedUnitCode,
+                initialValue: selectedUnitCode,
                 decoration: const InputDecoration(labelText: 'Mã đơn vị'),
                 items: [
                   'GRAM',

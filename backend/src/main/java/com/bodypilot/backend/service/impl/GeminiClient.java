@@ -49,12 +49,18 @@ public class GeminiClient {
         try {
             return executeGeminiCall(targetModel, prompt, systemInstructionText, forceJson);
         } catch (IOException e) {
-            log.warn("⚠️ [GeminiClient] Primary model '{}' failed ({}). Retrying with 'gemini-2.0-flash'...", targetModel, e.getMessage());
+            if (e.getMessage() != null && (e.getMessage().contains("429") || e.getMessage().contains("RESOURCE_EXHAUSTED"))) {
+                throw new IOException("Gemini API Rate Limit / Quota Exceeded (429). Vui lòng thử lại sau ít phút hoặc đổi API Key Gemini mới.", e);
+            }
+            log.warn("⚠️ [GeminiClient] Primary model '{}' failed ({}). Retrying with 'gemini-2.0-flash-lite'...", targetModel, e.getMessage());
             try {
-                return executeGeminiCall("gemini-2.0-flash", prompt, systemInstructionText, forceJson);
+                return executeGeminiCall("gemini-2.0-flash-lite", prompt, systemInstructionText, forceJson);
             } catch (IOException ex) {
-                log.warn("⚠️ [GeminiClient] Fallback model 'gemini-2.0-flash' failed, retrying with 'gemini-1.5-flash'...");
-                return executeGeminiCall("gemini-1.5-flash", prompt, systemInstructionText, forceJson);
+                if (ex.getMessage() != null && (ex.getMessage().contains("429") || ex.getMessage().contains("RESOURCE_EXHAUSTED"))) {
+                    throw new IOException("Gemini API Rate Limit / Quota Exceeded (429). Vui lòng thử lại sau ít phút hoặc đổi API Key Gemini mới.", ex);
+                }
+                log.warn("⚠️ [GeminiClient] Fallback model failed: {}", ex.getMessage());
+                throw e; // Throw original primary error to avoid masking
             }
         }
     }
@@ -84,6 +90,7 @@ public class GeminiClient {
         // generationConfig
         Map<String, Object> genConfig = new HashMap<>();
         genConfig.put("temperature", 0.7);
+        genConfig.put("maxOutputTokens", 8192);
         if (forceJson) {
             genConfig.put("responseMimeType", "application/json");
         }

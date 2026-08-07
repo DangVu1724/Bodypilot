@@ -12,7 +12,8 @@ import 'package:mobile/core/utils/category_image_helper.dart';
 
 class AiMealSuggestionScreen extends StatefulWidget {
   final int days;
-  const AiMealSuggestionScreen({super.key, this.days = 7});
+  final bool startTomorrow;
+  const AiMealSuggestionScreen({super.key, this.days = 7, this.startTomorrow = false});
 
   @override
   State<AiMealSuggestionScreen> createState() => _AiMealSuggestionScreenState();
@@ -93,11 +94,12 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
     MealType.SNACK: Icons.apple_outlined,
   };
 
-  bool _startTomorrow = false;
+  late bool _startTomorrow;
 
   @override
   void initState() {
     super.initState();
+    _startTomorrow = widget.startTomorrow;
     _fetchAiSuggestion();
   }
 
@@ -434,41 +436,154 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
   }
 
   Widget _buildErrorState() {
+    final rawMsg = _errorMessage ?? '';
+    final isGeminiQuotaError = rawMsg.contains('429') ||
+        rawMsg.toLowerCase().contains('quota') ||
+        rawMsg.toLowerCase().contains('rate limit') ||
+        rawMsg.toLowerCase().contains('exhausted') ||
+        rawMsg.toLowerCase().contains('token') ||
+        rawMsg.toLowerCase().contains('gemini');
+
     return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32.0),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 32.0),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 64, color: Colors.red),
-            const SizedBox(height: 20),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: isGeminiQuotaError
+                    ? Colors.amber.withValues(alpha: 0.12)
+                    : Colors.red.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isGeminiQuotaError
+                    ? Icons.hourglass_top_rounded
+                    : Icons.cloud_off_rounded,
+                size: 56,
+                color: isGeminiQuotaError ? Colors.amber[800] : Colors.red,
+              ),
+            ),
+            const SizedBox(height: 24),
             Text(
-              'Có lỗi xảy ra',
+              isGeminiQuotaError
+                  ? 'Lỗi Hạn Ngạch AI (Gemini Quota Exceeded)'
+                  : 'Không thể khởi tạo thực đơn AI',
               style: GoogleFonts.workSans(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
-                color: const Color(0xFF131517),
+                color: const Color(0xFF1E293B),
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 10),
+            Text(
+              isGeminiQuotaError
+                  ? 'Dịch vụ AI Gemini hiện tại đã hết lượt dùng miễn phí hoặc vượt quá hạn ngạch cho phép (HTTP 429).'
+                  : 'Đã xảy ra sự cố trong quá trình tạo gợi ý thực đơn từ AI.',
+              style: AppTheme.bodyStyle.copyWith(
+                color: const Color(0xFF64748B),
+                fontSize: 14,
+                height: 1.4,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 20),
+
+            // Diagnostic & Tips Card
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: isGeminiQuotaError
+                    ? Colors.amber.withValues(alpha: 0.08)
+                    : Colors.grey.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: isGeminiQuotaError
+                      ? Colors.amber.withValues(alpha: 0.3)
+                      : Colors.grey.withValues(alpha: 0.3),
+                ),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(
+                        Icons.lightbulb_outline,
+                        color: isGeminiQuotaError
+                            ? Colors.amber[800]
+                            : AppTheme.primary,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Hướng dẫn xử lý:',
+                        style: AppTheme.semiboldStyle.copyWith(
+                          fontSize: 14,
+                          color: AppTheme.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    '1. Thử lại sau 1 - 2 phút (Google AI sẽ tự động reset lượt gọi).',
+                    style: AppTheme.bodyStyle.copyWith(fontSize: 13, color: const Color(0xFF334155)),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    '2. Thay thế API Key Gemini mới trong backend local nếu liên tục lỗi.',
+                    style: AppTheme.bodyStyle.copyWith(fontSize: 13, color: const Color(0xFF334155)),
+                  ),
+                  if (rawMsg.isNotEmpty) ...[
+                    const Divider(height: 20),
+                    Text(
+                      'Chi tiết lỗi: $rawMsg',
+                      style: AppTheme.bodyStyle.copyWith(
+                        fontSize: 12,
+                        color: Colors.red[700],
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 28),
+            SizedBox(
+              width: double.infinity,
+              height: 48,
+              child: ElevatedButton.icon(
+                onPressed: _fetchAiSuggestion,
+                icon: const Icon(Icons.refresh, color: Colors.white),
+                label: const Text(
+                  'Thử lại ngay',
+                  style: TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFF7A30),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  elevation: 0,
+                ),
               ),
             ),
             const SizedBox(height: 8),
-            Text(
-              _errorMessage ?? 'Không thể tải gợi ý thực đơn.',
-              style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary),
-              textAlign: TextAlign.center,
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton.icon(
-              onPressed: _fetchAiSuggestion,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Thử lại'),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFFF7A30),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-              ),
-            ),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Quay lại'),
+              child: Text(
+                'Quay lại',
+                style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary),
+              ),
             ),
           ],
         ),
@@ -520,46 +635,6 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                             height: 1.35,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  margin: const EdgeInsets.only(bottom: 14),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF8FAFC),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: const Color(0xFFE2E8F0)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.calendar_today_rounded, size: 18, color: Color(0xFF64748B)),
-                      const SizedBox(width: 10),
-                      Text('Bắt đầu:', style: GoogleFonts.workSans(fontSize: 13, fontWeight: FontWeight.w600, color: const Color(0xFF334155))),
-                      const Spacer(),
-                      ChoiceChip(
-                        label: const Text('Hôm nay'),
-                        selected: !_startTomorrow,
-                        onSelected: (selected) {
-                          if (selected && _startTomorrow) {
-                            _toggleStartDate(false);
-                          }
-                        },
-                        selectedColor: const Color(0xFFFF7A30),
-                        labelStyle: TextStyle(color: !_startTomorrow ? Colors.white : const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      const SizedBox(width: 8),
-                      ChoiceChip(
-                        label: const Text('Ngày mai'),
-                        selected: _startTomorrow,
-                        onSelected: (selected) {
-                          if (selected && !_startTomorrow) {
-                            _toggleStartDate(true);
-                          }
-                        },
-                        selectedColor: const Color(0xFFFF7A30),
-                        labelStyle: TextStyle(color: _startTomorrow ? Colors.white : const Color(0xFF64748B), fontSize: 12, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),

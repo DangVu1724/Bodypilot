@@ -83,12 +83,12 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
             // Custom food data from DTO
             mealItem.setIsCustom(true);
             mealItem.setFoodNameSnapshot(itemDTO.getFoodName());
-            mealItem.setCaloriesSnapshot(itemDTO.getCalories());
-            mealItem.setProteinSnapshot(itemDTO.getProtein());
-            mealItem.setFatSnapshot(itemDTO.getFat());
-            mealItem.setCarbsSnapshot(itemDTO.getCarbs());
-            mealItem.setFiberSnapshot(itemDTO.getFiber());
-            mealItem.setServingUnitSnapshot(itemDTO.getServingUnit());
+            mealItem.setCaloriesSnapshot(itemDTO.getCalories() != null ? itemDTO.getCalories() : BigDecimal.ZERO);
+            mealItem.setProteinSnapshot(itemDTO.getProtein() != null ? itemDTO.getProtein() : BigDecimal.ZERO);
+            mealItem.setFatSnapshot(itemDTO.getFat() != null ? itemDTO.getFat() : BigDecimal.ZERO);
+            mealItem.setCarbsSnapshot(itemDTO.getCarbs() != null ? itemDTO.getCarbs() : BigDecimal.ZERO);
+            mealItem.setFiberSnapshot(itemDTO.getFiber() != null ? itemDTO.getFiber() : BigDecimal.ZERO);
+            mealItem.setServingUnitSnapshot(itemDTO.getServingUnit() != null ? itemDTO.getServingUnit() : "g");
             mealItem.setImageUrlSnapshot(itemDTO.getImageUrl());
         }
 

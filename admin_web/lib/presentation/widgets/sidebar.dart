@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme.dart';
 
 class AdminSidebar extends StatelessWidget {
@@ -83,7 +82,7 @@ class AdminSidebar extends StatelessWidget {
               color: AppTheme.primaryColor,
               borderRadius: BorderRadius.circular(12),
               boxShadow: [
-                BoxShadow(color: AppTheme.primaryColor.withOpacity(0.2), blurRadius: 10, offset: const Offset(0, 4)),
+                BoxShadow(color: AppTheme.primaryColor.withValues(alpha: 0.2), blurRadius: 10, offset: const Offset(0, 4)),
               ],
             ),
             child: Icon(Icons.fitness_center, color: Colors.white, size: 24),

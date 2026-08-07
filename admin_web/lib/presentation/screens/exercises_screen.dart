@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:core_shared/core_shared.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme.dart';
 import '../../data/repositories/admin_repository.dart';
 import '../widgets/base_table_screen.dart';
@@ -16,6 +15,7 @@ class ExercisesScreen extends StatefulWidget {
 
 class _ExercisesScreenState extends State<ExercisesScreen> {
   late Future<List<ExerciseModel>> _exercisesFuture;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -25,7 +25,14 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
 
   void _refreshExercises() {
     setState(() {
-      _exercisesFuture = adminRepository.getAllExercises(forceRefresh: true);
+      _exercisesFuture = adminRepository.getAllExercises(search: _searchQuery, forceRefresh: true);
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+      _exercisesFuture = adminRepository.getAllExercises(search: query, forceRefresh: false);
     });
   }
 
@@ -87,7 +94,7 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         if (snapshot.hasError) {
           return Center(child: Text('Lỗi: ${snapshot.error}'));
         }
@@ -99,6 +106,8 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
           subtitle: 'Danh sách các bài tập workout thực tế từ hệ thống',
           onRefresh: _refreshExercises,
           onAddPressed: () => _showAddEditDialog(),
+          onSearchChanged: _onSearchChanged,
+          searchHint: 'Tìm theo mã hoặc tên bài tập...',
           columns: const ['Mã', 'Tên bài tập', 'Độ khó', 'Hạng mục', 'Thao tác'],
           rows: exercises.map((ex) => DataRow(cells: [
             DataCell(Text(ex.code)),

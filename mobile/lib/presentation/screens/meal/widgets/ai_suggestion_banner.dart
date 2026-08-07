@@ -9,20 +9,19 @@ import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
 class AiSuggestionBanner extends StatelessWidget {
   const AiSuggestionBanner({super.key});
 
-  Future<void> _proceedToAiMealScreen(BuildContext context, int days) async {
+  Future<void> _proceedToAiMealScreen(BuildContext context, int days, bool startTomorrow) async {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final monday = today.subtract(Duration(days: today.weekday - 1));
-    final endDate = monday.add(Duration(days: days - 1));
+    final startDate = DateTime(now.year, now.month, now.day).add(Duration(days: startTomorrow ? 1 : 0));
+    final endDate = startDate.add(Duration(days: days - 1));
 
     try {
-      final rangeList = await nutritionDiaryRepository.getDailyEatingRange(monday, endDate);
+      final rangeList = await nutritionDiaryRepository.getDailyEatingRange(startDate, endDate);
       final daysWithFood = rangeList.where((day) {
         return day.mealSlots.any((slot) => slot.items.isNotEmpty);
       }).toList();
 
       if (daysWithFood.isNotEmpty && context.mounted) {
-        final dateStr = "${DateFormat('dd/MM').format(monday)} - ${DateFormat('dd/MM').format(endDate)}";
+        final dateStr = "${DateFormat('dd/MM').format(startDate)} - ${DateFormat('dd/MM').format(endDate)}";
         final bool? shouldProceed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
@@ -79,13 +78,14 @@ class AiSuggestionBanner extends StatelessWidget {
       Navigator.of(
         context,
         rootNavigator: true,
-      ).push(MaterialPageRoute(builder: (context) => AiMealSuggestionScreen(days: days)));
+      ).push(MaterialPageRoute(builder: (context) => AiMealSuggestionScreen(days: days, startTomorrow: startTomorrow)));
     }
   }
 
   void _showAiOptionsBottomSheet(BuildContext context) {
     final parentContext = context;
     int selectedDays = 7;
+    bool startTomorrow = false;
     bool isCompleted = TokenService.isAssessmentCompleted();
 
     showModalBottomSheet(
@@ -175,6 +175,69 @@ class AiSuggestionBanner extends StatelessWidget {
                       const SizedBox(height: 24),
                     ],
                     Text(
+                      'Thời điểm bắt đầu',
+                      style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: const Color(0xFF1E293B)),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                startTomorrow = false;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: !startTomorrow ? AppTheme.primary : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: !startTomorrow ? AppTheme.primary : const Color(0xFFE2E8F0)),
+                              ),
+                              child: Text(
+                                'Hôm nay',
+                                style: AppTheme.semiboldStyle.copyWith(
+                                  fontSize: 14,
+                                  color: !startTomorrow ? Colors.white : const Color(0xFF475569),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                startTomorrow = true;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: startTomorrow ? AppTheme.primary : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: startTomorrow ? AppTheme.primary : const Color(0xFFE2E8F0)),
+                              ),
+                              child: Text(
+                                'Ngày mai',
+                                style: AppTheme.semiboldStyle.copyWith(
+                                  fontSize: 14,
+                                  color: startTomorrow ? Colors.white : const Color(0xFF475569),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    Text(
                       'Thời gian lập lịch',
                       style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: const Color(0xFF1E293B)),
                     ),
@@ -222,9 +285,9 @@ class AiSuggestionBanner extends StatelessWidget {
                         onPressed: () {
                           Navigator.pop(modalContext);
                           if (!isCompleted) {
-                            _startSurveyFlow(parentContext, selectedDays);
+                            _startSurveyFlow(parentContext, selectedDays, startTomorrow);
                           } else {
-                            _proceedToAiMealScreen(parentContext, selectedDays);
+                            _proceedToAiMealScreen(parentContext, selectedDays, startTomorrow);
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -249,13 +312,13 @@ class AiSuggestionBanner extends StatelessWidget {
     );
   }
 
-  void _startSurveyFlow(BuildContext context, int days) async {
+  void _startSurveyFlow(BuildContext context, int days, bool startTomorrow) async {
     final result = await Navigator.of(
       context,
       rootNavigator: true,
     ).push<bool>(MaterialPageRoute(builder: (context) => const MealPreferenceSurveyScreen()));
     if (result == true && context.mounted) {
-      _proceedToAiMealScreen(context, days);
+      _proceedToAiMealScreen(context, days, startTomorrow);
     }
   }
 

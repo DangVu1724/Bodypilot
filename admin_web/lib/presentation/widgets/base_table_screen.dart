@@ -8,6 +8,8 @@ class BaseTableScreen extends StatelessWidget {
   final List<DataRow> rows;
   final VoidCallback? onAddPressed;
   final VoidCallback? onRefresh;
+  final ValueChanged<String>? onSearchChanged;
+  final String? searchHint;
 
   const BaseTableScreen({
     super.key,
@@ -17,6 +19,8 @@ class BaseTableScreen extends StatelessWidget {
     required this.rows,
     this.onAddPressed,
     this.onRefresh,
+    this.onSearchChanged,
+    this.searchHint,
   });
 
   @override
@@ -78,7 +82,31 @@ class BaseTableScreen extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 24),
+          if (onSearchChanged != null) ...[
+            Container(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: TextField(
+                onChanged: onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: searchHint ?? 'Tìm kiếm $title...',
+                  prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
+                  filled: true,
+                  fillColor: Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(color: Colors.grey.shade300),
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
@@ -87,7 +115,7 @@ class BaseTableScreen extends StatelessWidget {
               border: Border.all(color: Colors.grey.shade200),
             ),
             child: DataTable(
-              headingRowColor: MaterialStateProperty.all(Colors.grey.shade50),
+              headingRowColor: WidgetStateProperty.all(Colors.grey.shade50),
               columns: columns
                   .map((c) => DataColumn(
                         label: Text(

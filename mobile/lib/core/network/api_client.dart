@@ -7,10 +7,10 @@ class ApiClient {
   late final Dio dio;
 
   // --- SERVER URL CONFIGURATION ---
-  // 1. Render Cloud Production: 'https://bodypilot-to4y.onrender.com/api/v1'
-  // 2. Real Physical Device (Wi-Fi): 'http://192.168.100.20:8080/api/v1'
-  // 3. Android Emulator: 'http://10.0.2.2:8080/api/v1'
-  // 4. Windows App / iOS Simulator / Web: 'http://localhost:8080/api/v1'
+  // 1. Real Physical Device (Wi-Fi): 'http://192.168.100.20:8080/api/v1'
+  // 2. Android Emulator: 'http://10.0.2.2:8080/api/v1'
+  // 3. Windows App / iOS Simulator / Web: 'http://localhost:8080/api/v1'
+  // 4. Render Cloud Production: 'https://bodypilot-to4y.onrender.com/api/v1'
 
   static const String serverUrl = 'https://bodypilot-to4y.onrender.com/api/v1';
 

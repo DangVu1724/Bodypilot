@@ -2,31 +2,80 @@ import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme.dart';
+import '../../data/models/admin_stats_model.dart';
+import '../../data/repositories/admin_repository.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
+  State<DashboardScreen> createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  late Future<AdminStatsModel> _statsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _statsFuture = adminRepository.getDashboardStats();
+  }
+
+  void _refreshStats() {
+    setState(() {
+      _statsFuture = adminRepository.getDashboardStats();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _buildHeader(),
-          const SizedBox(height: 32),
-          _buildStatGrid(),
-          const SizedBox(height: 32),
-          Row(
+    return FutureBuilder<AdminStatsModel>(
+      future: _statsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('Lỗi tải dữ liệu: ${snapshot.error}'),
+                const SizedBox(height: 16),
+                ElevatedButton.icon(
+                  onPressed: _refreshStats,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Thử lại'),
+                ),
+              ],
+            ),
+          );
+        }
+
+        final stats = snapshot.data!;
+
+        return SingleChildScrollView(
+          padding: const EdgeInsets.all(32),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(flex: 2, child: _buildMainChart()),
-              const SizedBox(width: 24),
-              Expanded(child: _buildRecentActivity()),
+              _buildHeader(),
+              const SizedBox(height: 32),
+              _buildStatGrid(stats),
+              const SizedBox(height: 32),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(flex: 2, child: _buildMainChart(stats)),
+                  const SizedBox(width: 24),
+                  Expanded(child: _buildRecentActivity(stats)),
+                ],
+              ),
             ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 
@@ -42,15 +91,15 @@ class DashboardScreen extends StatelessWidget {
               style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: AppTheme.textPrimary),
             ),
             Text(
-              'Chào mừng quay trở lại, đây là những gì đang diễn ra hôm nay.',
+              'Dữ liệu thực tế và chỉ số vận hành BodyPilot.',
               style: TextStyle(color: AppTheme.textSecondary),
             ),
           ],
         ),
         ElevatedButton.icon(
-          onPressed: () {},
-          icon: const Icon(LucideIcons.calendar, size: 18),
-          label: const Text('Xuất báo cáo'),
+          onPressed: _refreshStats,
+          icon: const Icon(Icons.refresh, size: 18),
+          label: const Text('Làm mới'),
           style: ElevatedButton.styleFrom(
             backgroundColor: AppTheme.primaryColor,
             foregroundColor: Colors.white,
@@ -62,23 +111,56 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatGrid() {
+  Widget _buildStatGrid(AdminStatsModel stats) {
     return GridView.count(
       crossAxisCount: 4,
       crossAxisSpacing: 24,
       mainAxisSpacing: 24,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      children: const [
-        StatCard(title: 'Tổng người dùng', value: '1,284', trend: '+12%', isUp: true, icon: LucideIcons.users),
-        StatCard(title: 'Bài tập mới', value: '48', trend: '+5%', isUp: true, icon: LucideIcons.dumbbell),
-        StatCard(title: 'Lượt truy cập', value: '15,690', trend: '-2%', isUp: false, icon: LucideIcons.activity),
-        StatCard(title: 'Doanh thu (mock)', value: '12.5M', trend: '+18%', isUp: true, icon: LucideIcons.dollarSign),
+      children: [
+        StatCard(
+          title: 'Tổng người dùng',
+          value: '${stats.totalUsers}',
+          trend: '+${stats.userGrowthPercentage}%',
+          isUp: true,
+          icon: LucideIcons.users,
+        ),
+        StatCard(
+          title: 'Bài tập',
+          value: '${stats.totalExercises}',
+          trend: 'Active',
+          isUp: true,
+          icon: LucideIcons.dumbbell,
+        ),
+        StatCard(
+          title: 'Món ăn (Dishes)',
+          value: '${stats.totalDishes}',
+          trend: 'Ready',
+          isUp: true,
+          icon: LucideIcons.utensils,
+        ),
+        StatCard(
+          title: 'Nguyên liệu (Ingredients)',
+          value: '${stats.totalIngredients}',
+          trend: 'Master',
+          isUp: true,
+          icon: LucideIcons.apple,
+        ),
       ],
     );
   }
 
-  Widget _buildMainChart() {
+  Widget _buildMainChart(AdminStatsModel stats) {
+    List<FlSpot> spots = [];
+    for (int i = 0; i < stats.userGrowthChart.length; i++) {
+      spots.add(FlSpot(i.toDouble(), stats.userGrowthChart[i].count.toDouble()));
+    }
+
+    if (spots.isEmpty) {
+      spots = [const FlSpot(0, 0)];
+    }
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -89,32 +171,43 @@ class DashboardScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Thống kê truy cập tuần này', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Tăng trưởng người dùng (7 ngày qua)', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 32),
           SizedBox(
             height: 300,
             child: LineChart(
               LineChartData(
-                gridData: const FlGridData(show: false),
-                titlesData: const FlTitlesData(show: false),
+                gridData: const FlGridData(show: true, drawVerticalLine: false),
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      getTitlesWidget: (value, meta) {
+                        int index = value.toInt();
+                        if (index >= 0 && index < stats.userGrowthChart.length) {
+                          return Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: Text(stats.userGrowthChart[index].date, style: const TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
+                          );
+                        }
+                        return const Text('');
+                      },
+                    ),
+                  ),
+                  leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
                 borderData: FlBorderData(show: false),
                 lineBarsData: [
                   LineChartBarData(
-                    spots: const [
-                      FlSpot(0, 3),
-                      FlSpot(2.6, 2),
-                      FlSpot(4.9, 5),
-                      FlSpot(6.8, 3.1),
-                      FlSpot(8, 4),
-                      FlSpot(9.5, 3),
-                      FlSpot(11, 4),
-                    ],
+                    spots: spots,
                     isCurved: true,
                     color: AppTheme.primaryColor,
                     barWidth: 4,
                     isStrokeCapRound: true,
-                    dotData: const FlDotData(show: false),
-                    belowBarData: BarAreaData(show: true, color: AppTheme.primaryColor.withOpacity(0.1)),
+                    dotData: const FlDotData(show: true),
+                    belowBarData: BarAreaData(show: true, color: AppTheme.primaryColor.withValues(alpha: 0.1)),
                   ),
                 ],
               ),
@@ -125,7 +218,9 @@ class DashboardScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildRecentActivity() {
+  Widget _buildRecentActivity(AdminStatsModel stats) {
+    final activities = stats.recentActivities;
+
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: BoxDecoration(
@@ -136,31 +231,41 @@ class DashboardScreen extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Text('Hoạt động gần đây', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          const Text('Hoạt động mới nhất', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
           const SizedBox(height: 24),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: 5,
-            separatorBuilder: (context, index) => const SizedBox(height: 16),
-            itemBuilder: (context, index) => Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(color: Colors.grey.shade50, shape: BoxShape.circle),
-                  child: const Icon(LucideIcons.users, size: 16, color: AppTheme.textSecondary),
+          activities.isEmpty
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 32.0),
+                  child: Center(child: Text('Chưa có hoạt động nào', style: TextStyle(color: AppTheme.textSecondary))),
+                )
+              : ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: activities.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 16),
+                  itemBuilder: (context, index) {
+                    final item = activities[index];
+                    return Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(color: Colors.blue.shade50, shape: BoxShape.circle),
+                          child: const Icon(LucideIcons.userCheck, size: 16, color: AppTheme.primaryColor),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(item.title, style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13), overflow: TextOverflow.ellipsis),
+                              Text(item.timeAgo, style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
-                const SizedBox(width: 12),
-                const Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('Người dùng mới đăng ký', style: TextStyle(fontWeight: FontWeight.w500)),
-                    Text('2 phút trước', style: TextStyle(fontSize: 12, color: AppTheme.textSecondary)),
-                  ],
-                ),
-              ],
-            ),
-          ),
         ],
       ),
     );
@@ -201,7 +306,7 @@ class StatCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(8),
                 decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withOpacity(0.1),
+                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: AppTheme.primaryColor, size: 20),

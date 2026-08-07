@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:core_shared/core_shared.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme.dart';
 import '../../data/repositories/admin_repository.dart';
 import '../widgets/base_table_screen.dart';
-import '../widgets/food_form_dialog.dart';
 import 'dish_detail_screen.dart';
 import 'dish_form_screen.dart';
 
@@ -17,6 +15,7 @@ class DishesScreen extends StatefulWidget {
 
 class _DishesScreenState extends State<DishesScreen> {
   late Future<List<FoodModel>> _dishesFuture;
+  String _searchQuery = '';
 
   @override
   void initState() {
@@ -26,7 +25,14 @@ class _DishesScreenState extends State<DishesScreen> {
 
   void _refreshDishes() {
     setState(() {
-      _dishesFuture = adminRepository.getAllDishes(forceRefresh: true);
+      _dishesFuture = adminRepository.getAllDishes(search: _searchQuery, forceRefresh: true);
+    });
+  }
+
+  void _onSearchChanged(String query) {
+    setState(() {
+      _searchQuery = query;
+      _dishesFuture = adminRepository.getAllDishes(search: query, forceRefresh: false);
     });
   }
 
@@ -89,7 +95,7 @@ class _DishesScreenState extends State<DishesScreen> {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
         }
-        
+
         if (snapshot.hasError) {
           return Center(child: Text('Lỗi: ${snapshot.error}'));
         }
@@ -101,9 +107,11 @@ class _DishesScreenState extends State<DishesScreen> {
           subtitle: 'Quản lý các thành phẩm (Dishes) từ hệ thống',
           onRefresh: _refreshDishes,
           onAddPressed: () => _showAddEditDialog(),
+          onSearchChanged: _onSearchChanged,
+          searchHint: 'Tìm theo tên món ăn...',
           columns: const ['ID', 'Tên món', 'Hạng mục', 'Calo/100g', 'Protein', 'Carbs', 'Thao tác'],
           rows: dishes.map((dish) => DataRow(cells: [
-            DataCell(Text(dish.id.substring(0, 8))),
+            DataCell(Text(dish.id.length >= 8 ? dish.id.substring(0, 8) : dish.id)),
             DataCell(Text(dish.name)),
             DataCell(Text(dish.categoryName ?? 'Chưa phân loại')),
             DataCell(Text('${dish.caloriesPer100g} kcal')),

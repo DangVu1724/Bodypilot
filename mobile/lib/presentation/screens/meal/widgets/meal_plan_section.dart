@@ -105,7 +105,7 @@ class _MealPlanSectionState extends State<MealPlanSection> {
     }
 
     return SizedBox(
-      height: 245,
+      height: 275,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         itemCount: items.length,

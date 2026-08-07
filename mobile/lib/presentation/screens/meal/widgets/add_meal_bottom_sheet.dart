@@ -34,6 +34,18 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
     text: '100',
   );
 
+  // Custom Food Form State
+  bool _isCustomMode = false;
+  final GlobalKey<FormState> _customFormKey = GlobalKey<FormState>();
+  final TextEditingController _customNameController = TextEditingController();
+  final TextEditingController _customCaloriesController = TextEditingController();
+  final TextEditingController _customProteinController = TextEditingController();
+  final TextEditingController _customCarbsController = TextEditingController();
+  final TextEditingController _customFatController = TextEditingController();
+  final TextEditingController _customQuantityController = TextEditingController(text: '100');
+  String _customUnit = 'g';
+  final List<String> _unitPresets = ['g', 'khẩu phần', 'bát', 'đĩa', 'chén', 'cốc'];
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +57,12 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
   void dispose() {
     _searchController.dispose();
     _quantityController.dispose();
+    _customNameController.dispose();
+    _customCaloriesController.dispose();
+    _customProteinController.dispose();
+    _customCarbsController.dispose();
+    _customFatController.dispose();
+    _customQuantityController.dispose();
     // Reset global food search when closing the bottom sheet
     context.read<FoodCubit>().searchFoods(query: '');
     super.dispose();
@@ -182,7 +200,9 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  'Add to ${_getMealTypeName(widget.selectedMealType)}',
+                  _isCustomMode
+                      ? 'Custom Food'
+                      : 'Add to ${_getMealTypeName(widget.selectedMealType)}',
                   style: AppTheme.headlineStyle.copyWith(
                     fontSize: 22,
                     color: AppTheme.textPrimary,
@@ -197,7 +217,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
           ),
           const SizedBox(height: 16),
 
-          if (_selectedFood == null) ...[
+          if (_selectedFood == null && !_isCustomMode) ...[
             // Search Field
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -256,13 +276,61 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
             const SizedBox(height: 16),
           ],
 
-          // Main body (either list or quantity configuration)
+          // Main body (custom form, food list or quantity configuration)
           Expanded(
-            child: _selectedFood == null
-                ? _buildFoodList()
-                : _buildQuantityConfig(),
+            child: _isCustomMode
+                ? _buildCustomFoodForm()
+                : (_selectedFood == null
+                    ? _buildFoodList()
+                    : _buildQuantityConfig()),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildAddCustomFoodBanner() {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      color: AppTheme.primary.withValues(alpha: 0.08),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: AppTheme.primary.withValues(alpha: 0.3)),
+      ),
+      elevation: 0,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            color: AppTheme.primary,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(Icons.add_task, color: Colors.white, size: 22),
+        ),
+        title: Text(
+          'Tự thêm món tùy chỉnh',
+          style: AppTheme.semiboldStyle.copyWith(
+            fontSize: 15,
+            color: AppTheme.primary,
+          ),
+        ),
+        subtitle: Text(
+          'Nhập thủ công calo và dinh dưỡng',
+          style: AppTheme.bodyStyle.copyWith(
+            fontSize: 12,
+            color: AppTheme.textSecondary,
+          ),
+        ),
+        trailing: const Icon(Icons.chevron_right, color: AppTheme.primary),
+        onTap: () {
+          setState(() {
+            _isCustomMode = true;
+            if (_searchQuery.isNotEmpty) {
+              _customNameController.text = _searchQuery;
+            }
+          });
+        },
       ),
     );
   }
@@ -289,27 +357,69 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
 
         if (filteredFoods.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.restaurant_menu, size: 64, color: Colors.grey[300]),
-                const SizedBox(height: 16),
-                Text(
-                  'No meal foods found',
-                  style: AppTheme.semiboldStyle.copyWith(
-                    color: AppTheme.textSecondary,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.restaurant_menu, size: 64, color: Colors.grey[300]),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Không tìm thấy món phù hợp',
+                    style: AppTheme.semiboldStyle.copyWith(
+                      color: AppTheme.textSecondary,
+                      fontSize: 16,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Text(
+                    'Bạn có thể tự thêm món ăn này vào thực đơn của mình.',
+                    textAlign: TextAlign.center,
+                    style: AppTheme.bodyStyle.copyWith(
+                      color: Colors.grey[600],
+                      fontSize: 13,
+                    ),
+                  ),
+                  const SizedBox(height: 24),
+                  ElevatedButton.icon(
+                    onPressed: () {
+                      setState(() {
+                        _isCustomMode = true;
+                        if (_searchQuery.isNotEmpty) {
+                          _customNameController.text = _searchQuery;
+                        }
+                      });
+                    },
+                    icon: const Icon(Icons.add_circle_outline),
+                    label: Text(
+                      _searchQuery.isNotEmpty
+                          ? 'Tạo món "$_searchQuery"'
+                          : 'Tạo món tùy chỉnh',
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppTheme.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           );
         }
 
         return ListView.builder(
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
-          itemCount: filteredFoods.length,
+          itemCount: filteredFoods.length + 1,
           itemBuilder: (context, index) {
-            final food = filteredFoods[index];
+            if (index == 0) {
+              return _buildAddCustomFoodBanner();
+            }
+
+            final food = filteredFoods[index - 1];
             final isDish = food.type == 'DISH' || food.type == 'BOTH';
 
             return Card(
@@ -390,6 +500,313 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
         );
       },
     );
+  }
+
+  Widget _buildCustomFoodForm() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      child: Form(
+        key: _customFormKey,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                IconButton(
+                  icon: const Icon(Icons.arrow_back),
+                  onPressed: () {
+                    setState(() {
+                      _isCustomMode = false;
+                    });
+                  },
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'Tạo món ăn tùy chỉnh',
+                  style: AppTheme.headlineStyle.copyWith(fontSize: 18),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+
+            // Tên món ăn
+            Text(
+              'Tên món ăn *',
+              style: AppTheme.semiboldStyle.copyWith(fontSize: 14),
+            ),
+            const SizedBox(height: 6),
+            TextFormField(
+              controller: _customNameController,
+              decoration: InputDecoration(
+                hintText: 'VD: Phở bò nhà làm, Cơm tấm sườn...',
+                hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.grey[300]!),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: AppTheme.primary),
+                ),
+                filled: true,
+                fillColor: Colors.grey[50],
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Vui lòng nhập tên món';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Số lượng & Đơn vị tính
+            Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Số lượng *',
+                        style: AppTheme.semiboldStyle.copyWith(fontSize: 14),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        controller: _customQuantityController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        decoration: InputDecoration(
+                          hintText: '100',
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: AppTheme.primary),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'Bắt buộc';
+                          }
+                          final parsed = double.tryParse(value);
+                          if (parsed == null || parsed <= 0) {
+                            return 'Không hợp lệ';
+                          }
+                          return null;
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Đơn vị tính *',
+                        style: AppTheme.semiboldStyle.copyWith(fontSize: 14),
+                      ),
+                      const SizedBox(height: 6),
+                      DropdownButtonFormField<String>(
+                        initialValue: _unitPresets.contains(_customUnit) ? _customUnit : _unitPresets.first,
+                        items: _unitPresets.map((unit) {
+                          return DropdownMenuItem<String>(
+                            value: unit,
+                            child: Text(unit, style: const TextStyle(fontSize: 14)),
+                          );
+                        }).toList(),
+                        onChanged: (val) {
+                          if (val != null) {
+                            setState(() {
+                              _customUnit = val;
+                            });
+                          }
+                        },
+                        decoration: InputDecoration(
+                          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(color: Colors.grey[300]!),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: const BorderSide(color: AppTheme.primary),
+                          ),
+                          filled: true,
+                          fillColor: Colors.grey[50],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // Giá trị dinh dưỡng
+            Text(
+              'Giá trị dinh dưỡng (cho khẩu phần trên)',
+              style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: AppTheme.textPrimary),
+            ),
+            const SizedBox(height: 12),
+
+            // Calo (kcal)
+            TextFormField(
+              controller: _customCaloriesController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Calo (kcal) *',
+                prefixIcon: const Icon(Icons.local_fire_department, color: Colors.orange),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                filled: true,
+                fillColor: Colors.orange.withValues(alpha: 0.05),
+              ),
+              validator: (value) {
+                if (value == null || value.trim().isEmpty) {
+                  return 'Vui lòng nhập số calo';
+                }
+                final parsed = double.tryParse(value);
+                if (parsed == null || parsed < 0) {
+                  return 'Vui lòng nhập số hợp lệ';
+                }
+                return null;
+              },
+            ),
+            const SizedBox(height: 12),
+
+            // Protein (g)
+            TextFormField(
+              controller: _customProteinController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Đạm / Protein (g)',
+                prefixIcon: const Icon(Icons.fitness_center, color: Colors.blue),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                filled: true,
+                fillColor: Colors.blue.withValues(alpha: 0.05),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Carbs (g)
+            TextFormField(
+              controller: _customCarbsController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Tinh bột / Carbs (g)',
+                prefixIcon: const Icon(Icons.grain, color: Colors.amber),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                filled: true,
+                fillColor: Colors.amber.withValues(alpha: 0.05),
+              ),
+            ),
+            const SizedBox(height: 12),
+
+            // Fat (g)
+            TextFormField(
+              controller: _customFatController,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: InputDecoration(
+                labelText: 'Chất béo / Fat (g)',
+                prefixIcon: const Icon(Icons.opacity, color: Colors.red),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                filled: true,
+                fillColor: Colors.red.withValues(alpha: 0.05),
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // Submit Button
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                onPressed: _submitCustomFood,
+                child: const Text(
+                  'Thêm vào thực đơn',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _submitCustomFood() async {
+    if (_customFormKey.currentState?.validate() ?? false) {
+      final name = _customNameController.text.trim();
+      final quantity = double.tryParse(_customQuantityController.text) ?? 100.0;
+      final calories = double.tryParse(_customCaloriesController.text) ?? 0.0;
+      final protein = double.tryParse(_customProteinController.text) ?? 0.0;
+      final carbs = double.tryParse(_customCarbsController.text) ?? 0.0;
+      final fat = double.tryParse(_customFatController.text) ?? 0.0;
+
+      final itemData = {
+        'foodId': null,
+        'isCustom': true,
+        'foodName': name,
+        'servingQuantity': quantity,
+        'servingUnit': _customUnit,
+        'calories': calories,
+        'protein': protein,
+        'fat': fat,
+        'carbs': carbs,
+      };
+
+      await context.read<MealCubit>().addFoodToDiary(
+        date: widget.selectedDate,
+        mealType: widget.selectedMealType,
+        itemData: itemData,
+      );
+
+      if (!mounted) return;
+
+      await context.read<MealCubit>().fetchDailyEating(
+        widget.selectedDate,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Đã thêm món "$name" vào ${_getMealTypeName(widget.selectedMealType)}',
+            ),
+            backgroundColor: Colors.green,
+          ),
+        );
+        Navigator.of(context).pop();
+      }
+    }
   }
 
   Widget _buildQuantityConfig() {
@@ -501,37 +918,43 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
           const SizedBox(height: 16),
 
           // Portions Quick Presets
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [50, 100, 150, 200, 300, 500].map((preset) {
-              final isSelected = _quantity == preset;
-              return GestureDetector(
-                onTap: () {
-                  setState(() {
-                    _quantity = preset.toDouble();
-                    _quantityController.text = preset.toString();
-                  });
-                },
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 8,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected ? AppTheme.primary : Colors.grey[100],
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Text(
-                    '${preset}g',
-                    style: TextStyle(
-                      color: isSelected ? Colors.white : AppTheme.textPrimary,
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: [50, 100, 150, 200, 300, 500].map((preset) {
+                final isSelected = _quantity == preset;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8.0),
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        _quantity = preset.toDouble();
+                        _quantityController.text = preset.toString();
+                      });
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isSelected ? AppTheme.primary : Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        '${preset}g',
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : AppTheme.textPrimary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
           const SizedBox(height: 32),
 

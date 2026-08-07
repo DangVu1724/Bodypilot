@@ -33,4 +33,6 @@ public interface FoodRepository extends JpaRepository<Food, UUID> {
 
     @EntityGraph(attributePaths = {"category"})
     java.util.List<Food> findByIsRecommendedTrue();
+
+    long countByType(FoodType type);
 }

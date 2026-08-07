@@ -394,7 +394,7 @@ class _DishFormScreenState extends State<DishFormScreen> {
             ),
             const SizedBox(height: 16),
             DropdownButtonFormField<FoodCategoryModel>(
-              value: _selectedCategory,
+              initialValue: _selectedCategory,
               decoration: const InputDecoration(labelText: 'Danh mục (Category)', border: OutlineInputBorder()),
               items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
               onChanged: (v) => setState(() => _selectedCategory = v),
@@ -408,7 +408,7 @@ class _DishFormScreenState extends State<DishFormScreen> {
             const SizedBox(height: 16),
             const SizedBox(height: 16),
             DropdownButtonFormField<String>(
-              value: _selectedDefaultServingId,
+              initialValue: _selectedDefaultServingId,
               decoration: const InputDecoration(labelText: 'Khẩu phần mặc định', border: OutlineInputBorder()),
               hint: const Text('Chọn khẩu phần mặc định'),
               items: _servings.map((s) => DropdownMenuItem(value: s.id, child: Text('${s.name} (${s.grams}g)'))).toList(),
@@ -672,7 +672,7 @@ class _DishFormScreenState extends State<DishFormScreen> {
               TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Tên khẩu phần (vd: Bát, Cái, Cup)')),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: selectedUnitCode,
+                initialValue: selectedUnitCode,
                 decoration: const InputDecoration(labelText: 'Mã đơn vị'),
                 items: ['GRAM', 'ML', 'PIECE', 'BOWL', 'CUP', 'SLICE', 'PORTION']
                     .map((u) => DropdownMenuItem(value: u, child: Text(u))).toList(),

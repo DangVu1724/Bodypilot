@@ -52,6 +52,16 @@ public class UserServiceImpl implements UserService {
                 .collect(Collectors.toList());
     }
 
+    @Override
+    public List<UserResponse> searchUsers(String query) {
+        if (query == null || query.isBlank()) {
+            return getAllUsers();
+        }
+        return userRepository.searchUsers(query).stream()
+                .map(this::mapToUserResponse)
+                .collect(Collectors.toList());
+    }
+
     private UserResponse mapToUserResponse(User user) {
         UUID userId = user.getId();
         UserProfile profile = user.getProfile();

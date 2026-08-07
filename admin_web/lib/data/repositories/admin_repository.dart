@@ -1,6 +1,7 @@
 import 'package:core_shared/core_shared.dart';
 import 'package:dio/dio.dart';
 import '../../core/network/api_client.dart';
+import '../models/admin_stats_model.dart';
 
 class AdminRepository {
   List<UserModel>? _cachedUsers;
@@ -8,17 +9,34 @@ class AdminRepository {
   List<FoodModel>? _cachedIngredients;
   List<FoodModel>? _cachedDishes;
 
-  // 1. Lấy danh sách người dùng (Full)
-  Future<List<UserModel>> getAllUsers({bool forceRefresh = false}) async {
-    if (_cachedUsers != null && !forceRefresh) return _cachedUsers!;
+  // 0. Lấy thống kê tổng quan (Dashboard Stats)
+  Future<AdminStatsModel> getDashboardStats() async {
+    try {
+      final response = await apiClient.get('api/v1/admin/dashboard-stats');
+      final dynamic rawData = response.data['data'] ?? response.data;
+      return AdminStatsModel.fromJson(rawData as Map<String, dynamic>);
+    } on DioException catch (e) {
+      throw Exception('Lỗi API Dashboard Stats: ${e.response?.data['message'] ?? e.message}');
+    } catch (e) {
+      throw Exception('Lỗi xử lý dữ liệu Dashboard Stats: $e');
+    }
+  }
+
+  // 1. Lấy danh sách người dùng (Full & Search)
+  Future<List<UserModel>> getAllUsers({String? search, bool forceRefresh = false}) async {
+    if (_cachedUsers != null && !forceRefresh && (search == null || search.isEmpty)) return _cachedUsers!;
     
     try {
-      final response = await apiClient.get('api/v1/users');
+      final Map<String, dynamic> params = {};
+      if (search != null && search.isNotEmpty) params['search'] = search;
+
+      final response = await apiClient.get('api/v1/users', queryParameters: params);
       final dynamic rawData = response.data['data'] ?? response.data;
 
       if (rawData is List) {
-        _cachedUsers = rawData.map((json) => UserModel.fromJson(json as Map<String, dynamic>)).toList();
-        return _cachedUsers!;
+        final users = rawData.map((json) => UserModel.fromJson(json as Map<String, dynamic>)).toList();
+        if (search == null || search.isEmpty) _cachedUsers = users;
+        return users;
       }
       return [];
     } on DioException catch (e) {
@@ -29,16 +47,20 @@ class AdminRepository {
   }
 
   // 2. Lấy danh sách bài tập
-  Future<List<ExerciseModel>> getAllExercises({bool forceRefresh = false}) async {
-    if (_cachedExercises != null && !forceRefresh) return _cachedExercises!;
+  Future<List<ExerciseModel>> getAllExercises({String? search, bool forceRefresh = false}) async {
+    if (_cachedExercises != null && !forceRefresh && (search == null || search.isEmpty)) return _cachedExercises!;
 
     try {
-      final response = await apiClient.get('api/v1/exercises', queryParameters: {'size': 100});
+      final Map<String, dynamic> params = {'size': 100};
+      if (search != null && search.isNotEmpty) params['name'] = search;
+
+      final response = await apiClient.get('api/v1/exercises', queryParameters: params);
       final dynamic rawData = response.data['data'] ?? response.data;
       
       List<dynamic> content = (rawData is Map) ? (rawData['content'] ?? []) : (rawData as List);
-      _cachedExercises = content.map((json) => ExerciseModel.fromJson(json as Map<String, dynamic>)).toList();
-      return _cachedExercises!;
+      final exercises = content.map((json) => ExerciseModel.fromJson(json as Map<String, dynamic>)).toList();
+      if (search == null || search.isEmpty) _cachedExercises = exercises;
+      return exercises;
     } on DioException catch (e) {
       throw Exception('Lỗi API Bài tập: ${e.response?.data['message'] ?? e.message}');
     } catch (e) {
@@ -92,16 +114,21 @@ class AdminRepository {
   }
 
   // 3. Lấy danh sách Nguyên liệu (Ingredients)
-  Future<List<FoodModel>> getAllIngredients({bool forceRefresh = false}) async {
-    if (_cachedIngredients != null && !forceRefresh) return _cachedIngredients!;
+  Future<List<FoodModel>> getAllIngredients({String? search, bool forceRefresh = false}) async {
+    if (_cachedIngredients != null && !forceRefresh && (search == null || search.isEmpty)) return _cachedIngredients!;
 
     try {
-      final response = await apiClient.get('api/v1/foods/ingredients', queryParameters: {'size': 100});
+      final String path = (search != null && search.isNotEmpty) ? 'api/v1/foods/search' : 'api/v1/foods/ingredients';
+      final Map<String, dynamic> params = {'size': 100};
+      if (search != null && search.isNotEmpty) params['query'] = search;
+
+      final response = await apiClient.get(path, queryParameters: params);
       final dynamic rawData = response.data['data'] ?? response.data;
       
       List<dynamic> content = (rawData is Map) ? (rawData['content'] ?? []) : (rawData as List);
-      _cachedIngredients = content.map((json) => FoodModel.fromJson(json as Map<String, dynamic>)).toList();
-      return _cachedIngredients!;
+      final ingredients = content.map((json) => FoodModel.fromJson(json as Map<String, dynamic>)).toList();
+      if (search == null || search.isEmpty) _cachedIngredients = ingredients;
+      return ingredients;
     } on DioException catch (e) {
       throw Exception('Lỗi API Nguyên liệu: ${e.response?.data['message'] ?? e.message}');
     } catch (e) {
@@ -110,16 +137,21 @@ class AdminRepository {
   }
 
   // 4. Lấy danh sách Món ăn (Dishes)
-  Future<List<FoodModel>> getAllDishes({bool forceRefresh = false}) async {
-    if (_cachedDishes != null && !forceRefresh) return _cachedDishes!;
+  Future<List<FoodModel>> getAllDishes({String? search, bool forceRefresh = false}) async {
+    if (_cachedDishes != null && !forceRefresh && (search == null || search.isEmpty)) return _cachedDishes!;
 
     try {
-      final response = await apiClient.get('api/v1/foods/dishes', queryParameters: {'size': 100});
+      final String path = (search != null && search.isNotEmpty) ? 'api/v1/foods/search' : 'api/v1/foods/dishes';
+      final Map<String, dynamic> params = {'size': 100};
+      if (search != null && search.isNotEmpty) params['query'] = search;
+
+      final response = await apiClient.get(path, queryParameters: params);
       final dynamic rawData = response.data['data'] ?? response.data;
       
       List<dynamic> content = (rawData is Map) ? (rawData['content'] ?? []) : (rawData as List);
-      _cachedDishes = content.map((json) => FoodModel.fromJson(json as Map<String, dynamic>)).toList();
-      return _cachedDishes!;
+      final dishes = content.map((json) => FoodModel.fromJson(json as Map<String, dynamic>)).toList();
+      if (search == null || search.isEmpty) _cachedDishes = dishes;
+      return dishes;
     } on DioException catch (e) {
       throw Exception('Lỗi API Món ăn: ${e.response?.data['message'] ?? e.message}');
     } catch (e) {

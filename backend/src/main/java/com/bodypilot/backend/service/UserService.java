@@ -12,5 +12,6 @@ public interface UserService {
     User getUserByEmail(String email);
     UserResponse getUserDetails(UUID userId);
     List<UserResponse> getAllUsers();
+    List<UserResponse> searchUsers(String query);
     boolean isProfileComplete(UUID userId);
 }

@@ -18,8 +18,8 @@ public class UserController {
     private final UserService userService;
 
     @GetMapping
-    public ApiResponse<List<UserResponse>> getAllUsers() {
-        return ApiResponse.ok("Users retrieved successfully", userService.getAllUsers());
+    public ApiResponse<List<UserResponse>> getAllUsers(@RequestParam(required = false) String search) {
+        return ApiResponse.ok("Users retrieved successfully", userService.searchUsers(search));
     }
 
     @GetMapping("/{userId}")

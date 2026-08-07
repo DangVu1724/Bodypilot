@@ -5,6 +5,7 @@ import com.bodypilot.backend.model.enums.ActivityLevel;
 import com.bodypilot.backend.model.enums.Gender;
 import com.bodypilot.backend.model.enums.Goal;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -19,6 +20,7 @@ class CalorieCalculatorServiceTest {
     }
 
     @Test
+    @DisplayName("TC01: Tính chỉ số sinh học cho Nam, vận động vừa, giữ cân (Biên chuẩn)")
     void calculateMetrics_Male_Moderate_Maintain() {
         double weight = 70.0;
         double height = 175.0;
@@ -42,6 +44,7 @@ class CalorieCalculatorServiceTest {
     }
 
     @Test
+    @DisplayName("TC02: Tính chỉ số sinh học cho Nữ, vận động ít, giảm 0.5kg/tuần")
     void calculateMetrics_Female_Sedentary_Lose05() {
         double weight = 60.0;
         double height = 160.0;
@@ -65,6 +68,7 @@ class CalorieCalculatorServiceTest {
     }
 
     @Test
+    @DisplayName("TC03: Tính chỉ số sinh học cho Nam, tập luyện nhiều, tăng cơ")
     void calculateMetrics_Male_GainMuscle_Active() {
         double weight = 65.0;
         double height = 180.0;
@@ -88,6 +92,7 @@ class CalorieCalculatorServiceTest {
     }
 
     @Test
+    @DisplayName("TC04 & TC05: Kiểm thử dữ liệu biên không hợp lệ - Cân nặng âm (<0) ném ngoại lệ")
     void calculateMetrics_InvalidInput_NegativeWeight_ThrowsException() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             service.calculateMetrics(-10, 170, 25, Gender.MALE, ActivityLevel.ACTIVE, Goal.MAINTAIN);
@@ -97,6 +102,7 @@ class CalorieCalculatorServiceTest {
     }
 
     @Test
+    @DisplayName("TC05: Kiểm thử tham số Enum bị null - Ném ngoại lệ an toàn")
     void calculateMetrics_InvalidInput_NullEnum_ThrowsException() {
         Exception exception = assertThrows(IllegalArgumentException.class, () -> {
             service.calculateMetrics(70, 170, 25, null, ActivityLevel.ACTIVE, Goal.MAINTAIN);
