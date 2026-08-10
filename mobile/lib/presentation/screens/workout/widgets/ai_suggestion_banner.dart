@@ -9,18 +9,17 @@ import 'package:mobile/data/repositories/workout_diary_repository.dart';
 class AiSuggestionBanner extends StatelessWidget {
   const AiSuggestionBanner({super.key});
 
-  Future<void> _proceedToAiWorkoutScreen(BuildContext context, int days) async {
+  Future<void> _proceedToAiWorkoutScreen(BuildContext context, int days, bool startTomorrow) async {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final monday = today.subtract(Duration(days: today.weekday - 1));
-    final endDate = monday.add(Duration(days: days - 1));
+    final startDate = DateTime(now.year, now.month, now.day).add(Duration(days: startTomorrow ? 1 : 0));
+    final endDate = startDate.add(Duration(days: days - 1));
 
     try {
-      final rangeList = await workoutDiaryRepository.getDailyWorkoutRange(monday, endDate);
+      final rangeList = await workoutDiaryRepository.getDailyWorkoutRange(startDate, endDate);
       final daysWithWorkout = rangeList.where((day) => day.workoutItems.isNotEmpty).toList();
 
       if (daysWithWorkout.isNotEmpty && context.mounted) {
-        final dateStr = "${DateFormat('dd/MM').format(monday)} - ${DateFormat('dd/MM').format(endDate)}";
+        final dateStr = "${DateFormat('dd/MM').format(startDate)} - ${DateFormat('dd/MM').format(endDate)}";
         final bool? shouldProceed = await showDialog<bool>(
           context: context,
           builder: (dialogContext) => AlertDialog(
@@ -76,7 +75,7 @@ class AiSuggestionBanner extends StatelessWidget {
     if (context.mounted) {
       Navigator.of(context, rootNavigator: true).push(
         MaterialPageRoute(
-          builder: (context) => AiWorkoutSuggestionScreen(days: days),
+          builder: (context) => AiWorkoutSuggestionScreen(days: days, startTomorrow: startTomorrow),
         ),
       );
     }
@@ -85,7 +84,8 @@ class AiSuggestionBanner extends StatelessWidget {
   void _showAiOptionsBottomSheet(BuildContext context) {
     final parentContext = context;
     int selectedDays = 7;
-    bool isCompleted = TokenService.isAssessmentCompleted();
+    bool startTomorrow = false;
+    bool isCompleted = TokenService.isWorkoutSurveyCompleted();
 
     showModalBottomSheet(
       context: parentContext,
@@ -142,7 +142,7 @@ class AiSuggestionBanner extends StatelessWidget {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
-                                    'Khảo sát thể trạng',
+                                    'Khảo sát sở thích tập luyện',
                                     style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: const Color(0xFF1E293B)),
                                   ),
                                   const SizedBox(height: 2),
@@ -162,7 +162,7 @@ class AiSuggestionBanner extends StatelessWidget {
                                 );
                                 if (result == true) {
                                   setModalState(() {
-                                    isCompleted = TokenService.isAssessmentCompleted();
+                                    isCompleted = TokenService.isWorkoutSurveyCompleted();
                                   });
                                 }
                               },
@@ -219,6 +219,69 @@ class AiSuggestionBanner extends StatelessWidget {
                         );
                       }).toList(),
                     ),
+                    const SizedBox(height: 20),
+                    Text(
+                      'Thời điểm bắt đầu',
+                      style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: const Color(0xFF1E293B)),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                startTomorrow = false;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: !startTomorrow ? AppTheme.primary : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: !startTomorrow ? AppTheme.primary : const Color(0xFFE2E8F0)),
+                              ),
+                              child: Text(
+                                'Hôm nay',
+                                style: AppTheme.semiboldStyle.copyWith(
+                                  fontSize: 14,
+                                  color: !startTomorrow ? Colors.white : const Color(0xFF475569),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              setModalState(() {
+                                startTomorrow = true;
+                              });
+                            },
+                            borderRadius: BorderRadius.circular(12),
+                            child: Container(
+                              alignment: Alignment.center,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              decoration: BoxDecoration(
+                                color: startTomorrow ? AppTheme.primary : const Color(0xFFF8FAFC),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: startTomorrow ? AppTheme.primary : const Color(0xFFE2E8F0)),
+                              ),
+                              child: Text(
+                                'Ngày mai',
+                                style: AppTheme.semiboldStyle.copyWith(
+                                  fontSize: 14,
+                                  color: startTomorrow ? Colors.white : const Color(0xFF475569),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
@@ -227,9 +290,9 @@ class AiSuggestionBanner extends StatelessWidget {
                         onPressed: () {
                           Navigator.pop(modalContext);
                           if (!isCompleted) {
-                            _startSurveyFlow(parentContext, selectedDays);
+                            _startSurveyFlow(parentContext, selectedDays, startTomorrow);
                           } else {
-                            _proceedToAiWorkoutScreen(parentContext, selectedDays);
+                            _proceedToAiWorkoutScreen(parentContext, selectedDays, startTomorrow);
                           }
                         },
                         style: ElevatedButton.styleFrom(
@@ -256,15 +319,23 @@ class AiSuggestionBanner extends StatelessWidget {
     );
   }
 
-  void _startSurveyFlow(BuildContext context, int days) async {
-    final result = await Navigator.of(context, rootNavigator: true).push<bool>(
+  void _startSurveyFlow(BuildContext context, int days, bool startTomorrow) {
+    Navigator.of(context, rootNavigator: true).push(
       MaterialPageRoute(
-        builder: (context) => const WorkoutPreferenceSurveyScreen(),
+        builder: (surveyContext) => WorkoutPreferenceSurveyScreen(
+          onCompleted: () {
+            Navigator.of(surveyContext).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => AiWorkoutSuggestionScreen(
+                  days: days,
+                  startTomorrow: startTomorrow,
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
-    if (result == true && context.mounted) {
-      _proceedToAiWorkoutScreen(context, days);
-    }
   }
 
   @override
@@ -276,7 +347,7 @@ class AiSuggestionBanner extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'AI Suggestion',
+              'Gợi Ý Từ AI',
               style: AppTheme.semiboldStyle.copyWith(fontSize: 16, color: const Color(0xFF1E293B)),
             ),
             GestureDetector(
@@ -284,7 +355,7 @@ class AiSuggestionBanner extends StatelessWidget {
                 _showAiOptionsBottomSheet(context);
               },
               child: Text(
-                'See All',
+                'Xem tất cả',
                 style: AppTheme.semiboldStyle.copyWith(fontSize: 13, color: const Color(0xFFFF7A30)),
               ),
             ),

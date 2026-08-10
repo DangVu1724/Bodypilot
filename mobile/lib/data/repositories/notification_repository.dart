@@ -11,10 +11,15 @@ class NotificationRepository {
 
   Box get _box => Hive.box(_hiveBoxName);
 
-  /// Load cached notifications from local Hive Box
-  List<NotificationItemModel> loadLocalNotifications() {
+  /// Load cached notifications from local Hive Box per user
+  List<NotificationItemModel> loadLocalNotifications([String? userId]) {
     try {
-      final rawList = _box.get('items');
+      final key = (userId != null && userId.isNotEmpty) ? 'items_$userId' : 'items_anonymous';
+      var rawList = _box.get(key);
+      // Fallback to legacy 'items' key if user key not initialized yet
+      if (rawList == null && _box.containsKey('items')) {
+        rawList = _box.get('items');
+      }
       if (rawList != null && rawList is List) {
         return rawList.map((e) => NotificationItemModel.fromJson(Map<String, dynamic>.from(e))).toList();
       }
@@ -24,11 +29,12 @@ class NotificationRepository {
     return [];
   }
 
-  /// Save notification list into local Hive Box
-  Future<void> saveLocalNotifications(List<NotificationItemModel> list) async {
+  /// Save notification list into local Hive Box per user
+  Future<void> saveLocalNotifications(List<NotificationItemModel> list, [String? userId]) async {
     try {
+      final key = (userId != null && userId.isNotEmpty) ? 'items_$userId' : 'items_anonymous';
       final jsonList = list.map((item) => item.toJson()).toList();
-      await _box.put('items', jsonList);
+      await _box.put(key, jsonList);
     } catch (e) {
       _logger.e('Error saving notifications to Hive: $e');
     }

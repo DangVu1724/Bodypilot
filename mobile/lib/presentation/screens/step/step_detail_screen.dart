@@ -43,7 +43,7 @@ class StepDetailScreen extends StatelessWidget {
                     Expanded(
                       child: Text(
                         'Nhật Ký Bước Chân',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.beVietnamPro(
                           fontSize: 20,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
@@ -94,7 +94,7 @@ class StepDetailScreen extends StatelessWidget {
                               padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
                               child: Text(
                                 'Lịch Sử Các Ngày Trước',
-                                style: GoogleFonts.outfit(
+                                style: GoogleFonts.beVietnamPro(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                   color: const Color(0xFF1E293B),
@@ -126,7 +126,7 @@ class StepDetailScreen extends StatelessWidget {
                                     const SizedBox(height: 12),
                                     Text(
                                       'Chưa có lịch sử bước chân',
-                                      style: GoogleFonts.outfit(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF334155)),
+                                      style: GoogleFonts.beVietnamPro(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF334155)),
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
@@ -251,7 +251,7 @@ class StepDetailScreen extends StatelessWidget {
                   children: [
                     Text(
                       stepStr,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.beVietnamPro(
                         fontSize: 34,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -324,7 +324,7 @@ class StepDetailScreen extends StatelessWidget {
         children: [
           Text(
             '7 Ngày Gần Nhất',
-            style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+            style: GoogleFonts.beVietnamPro(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
           ),
           const SizedBox(height: 16),
           Row(
@@ -437,7 +437,7 @@ class StepDetailScreen extends StatelessWidget {
               children: [
                 Text(
                   dateStr,
-                  style: GoogleFonts.outfit(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                  style: GoogleFonts.beVietnamPro(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
                 ),
                 const SizedBox(height: 2),
                 Row(
@@ -461,7 +461,7 @@ class StepDetailScreen extends StatelessWidget {
             children: [
               Text(
                 stepStr,
-                style: GoogleFonts.outfit(
+                style: GoogleFonts.beVietnamPro(
                   fontSize: 16,
                   fontWeight: FontWeight.bold,
                   color: isReached ? Colors.green[600] : const Color(0xFF334155),

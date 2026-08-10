@@ -108,7 +108,7 @@ class _CalorieDashboardCardState extends State<CalorieDashboardCard> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'Calories Today',
+                    'Calo Hôm Nay',
                     style: AppTheme.headlineStyle.copyWith(fontSize: 20, fontWeight: FontWeight.bold, color: darkBrown),
                   ),
                   const SizedBox(height: 20),
@@ -120,10 +120,10 @@ class _CalorieDashboardCardState extends State<CalorieDashboardCard> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text('Goal', style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade500, fontSize: 13)),
+                            Text('Mục tiêu', style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade500, fontSize: 13)),
                             const SizedBox(height: 4),
                             Text(
-                              '${targetCalories.toStringAsFixed(1)} calories',
+                              '${targetCalories.round()} calo',
                               style: AppTheme.semiboldStyle.copyWith(color: darkBrown, fontSize: 15),
                             ),
                           ],
@@ -137,12 +137,12 @@ class _CalorieDashboardCardState extends State<CalorieDashboardCard> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Eaten',
+                                'Đã nạp',
                                 style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade500, fontSize: 13),
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '${eatenCalories.toStringAsFixed(1)} calories',
+                                '${eatenCalories.round()} calo',
                                 style: AppTheme.semiboldStyle.copyWith(color: darkBrown, fontSize: 15),
                               ),
                             ],
@@ -181,7 +181,7 @@ class _CalorieDashboardCardState extends State<CalorieDashboardCard> {
                                 remainingCalories.toStringAsFixed(1),
                                 style: AppTheme.headlineStyle.copyWith(fontSize: 38, color: darkBrown, height: 1.1),
                               ),
-                              Text('kcal left', style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade500)),
+                              Text('kcal còn lại', style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade500)),
                             ],
                           ),
                         ],

@@ -64,7 +64,7 @@ class _SmoothLoadingOverlayState extends State<SmoothLoadingOverlay> {
               Expanded(
                 child: Text(
                   _randomTip,
-                  style: GoogleFonts.outfit(
+                  style: GoogleFonts.beVietnamPro(
                     color: const Color(0xFF1E293B),
                     fontSize: 13,
                     fontWeight: FontWeight.w500,

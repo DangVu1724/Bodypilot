@@ -128,6 +128,9 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
         setState(() {
           _suggestions = suggestions;
         });
+        if (suggestions.any((e) => !e.isAiGenerated)) {
+          _showAiBusyFallbackDialog();
+        }
       }
     } catch (e, stackTrace) {
       print("🚨 [AiMealSuggestionScreen Error]: $e");
@@ -145,6 +148,77 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
         });
       }
     }
+  }
+
+  void _showAiBusyFallbackDialog() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('🤖', style: TextStyle(fontSize: 22)),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'AI Hiện Đang Bận',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Kết nối với AI tạm thời bị gián đoạn hoặc bận.',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Hệ thống đã tự động thiết lập cho bạn Thực đơn Chuẩn Dinh Dưỡng cá nhân hóa phù hợp với mục tiêu calo & thể trạng của bạn.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
+              ),
+            ],
+          ),
+          actions: [
+            OutlinedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _fetchAiSuggestion();
+              },
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFF07025)),
+                foregroundColor: const Color(0xFFF07025),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Thử lại với AI', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E293B),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: const Text('Dùng Thực Đơn Này', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
   void _toggleStartDate(bool startTomorrow) {
@@ -613,6 +687,42 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (!currentDay.isAiGenerated) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.smart_toy_outlined, color: Color(0xFF475569), size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Thực đơn chuẩn do Hệ thống tự động thiết lập (kết nối AI gián đoạn).',
+                            style: GoogleFonts.workSans(
+                              fontSize: 12.5,
+                              color: const Color(0xFF334155),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _fetchAiSuggestion,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('Thử lại AI', style: TextStyle(color: Color(0xFFF07025), fontWeight: FontWeight.bold, fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 Container(
                   margin: const EdgeInsets.only(bottom: 14),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -627,7 +737,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Khuyến cáo: Đề xuất từ AI chỉ mang tính chất tham khảo cá nhân, không đảm bảo chính xác tuyệt đối và không thay thế chẩn đoán y khoa.',
+                          'Khuyến cáo: Đề xuất từ AI/Hệ thống chỉ mang tính chất tham khảo cá nhân, không đảm bảo chính xác tuyệt đối và không thay thế chẩn đoán y khoa.',
                           style: GoogleFonts.workSans(
                             fontSize: 12,
                             color: const Color(0xFF92400E),

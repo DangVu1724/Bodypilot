@@ -2,6 +2,7 @@ import 'package:core_shared/models/daily_eating_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
+import 'package:mobile/data/services/push_notification_service.dart';
 import 'package:mobile/presentation/bloc/meal/meal_state.dart';
 
 class MealCubit extends Cubit<MealState> {
@@ -31,6 +32,15 @@ class MealCubit extends Cubit<MealState> {
         status: MealStatus.success,
         dailyEatings: updatedDailyEatings,
       ));
+
+      // If checking today's eating log and no food items recorded yet, schedule reminder
+      final now = DateTime.now();
+      if (date.year == now.year && date.month == now.month && date.day == now.day) {
+        final totalItems = dailyEating.mealSlots.fold<int>(0, (sum, slot) => sum + slot.items.length);
+        if (totalItems == 0) {
+          PushNotificationService.scheduleUnloggedMealReminder();
+        }
+      }
     } catch (e) {
       emit(state.copyWith(
         status: MealStatus.failure,

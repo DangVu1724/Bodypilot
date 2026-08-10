@@ -57,14 +57,14 @@ class HomeScreen extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const CheckInCard(),
                       const HomeCalendarSection(),
                       const SizedBox(height: 32),
 
-                      SectionHeader(title: 'Fitness Metrics', onSeeAll: () {}),
+                      SectionHeader(title: 'Chỉ Số Thể Hình', onSeeAll: () {}),
                       const SizedBox(height: 16),
                       const MetricSection(),
                       const SizedBox(height: 24),
+                      const CheckInCard(),
                       const AiCoachCard(),
                       const WorkoutPlansSection(),
                       const SizedBox(height: 32),

@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/data/services/token_service.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_cubit.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_state.dart';
 import 'package:mobile/presentation/screens/assessment/steps/goal_step.dart';
 import 'package:mobile/presentation/screens/assessment/steps/activity_level_step.dart';
 import 'package:mobile/presentation/screens/assessment/steps/condition_step.dart';
 import 'package:mobile/presentation/screens/assessment/steps/injury_step.dart';
+import 'package:mobile/presentation/screens/assessment/steps/focus_body_part_step.dart';
 
 class WorkoutPreferenceSurveyScreen extends StatefulWidget {
-  const WorkoutPreferenceSurveyScreen({super.key});
+  final VoidCallback? onCompleted;
+  const WorkoutPreferenceSurveyScreen({super.key, this.onCompleted});
 
   @override
   State<WorkoutPreferenceSurveyScreen> createState() => _WorkoutPreferenceSurveyScreenState();
@@ -51,13 +54,18 @@ class _WorkoutPreferenceSurveyScreenState extends State<WorkoutPreferenceSurveyS
       child: BlocListener<AssessmentCubit, AssessmentState>(
         listener: (context, state) {
           if (state.status == AssessmentStatus.success) {
+            TokenService.setWorkoutSurveyCompleted(true);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Đã cập nhật sở thích tập luyện thành công!'),
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.of(context).pop(true);
+            if (widget.onCompleted != null) {
+              widget.onCompleted!();
+            } else {
+              Navigator.of(context).pop(true);
+            }
           } else if (state.status == AssessmentStatus.failure) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
@@ -76,6 +84,7 @@ class _WorkoutPreferenceSurveyScreenState extends State<WorkoutPreferenceSurveyS
               ActivityLevelStep(onNext: () => nextPage(steps.length)),
               ConditionStep(onNext: () => nextPage(steps.length)),
               InjuryStep(onNext: () => nextPage(steps.length)),
+              FocusBodyPartStep(onNext: () => nextPage(steps.length)),
             ];
 
             return WillPopScope(

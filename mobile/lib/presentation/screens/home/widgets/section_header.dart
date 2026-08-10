@@ -23,7 +23,7 @@ class SectionHeader extends StatelessWidget {
         TextButton(
           onPressed: onSeeAll,
           child: Text(
-            'See All',
+            'Xem tất cả',
             style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary, fontSize: 13),
           ),
         ),

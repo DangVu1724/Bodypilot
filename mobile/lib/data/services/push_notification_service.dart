@@ -5,6 +5,9 @@ import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:logger/logger.dart';
+import 'package:mobile/data/models/notification_model.dart';
+import 'package:mobile/data/repositories/notification_repository.dart';
+import 'package:mobile/data/services/token_service.dart';
 
 final _logger = Logger();
 
@@ -12,6 +15,7 @@ final _logger = Logger();
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   await Firebase.initializeApp();
   _logger.i("FCM Background message: ${message.messageId}");
+  await PushNotificationService._saveIncomingNotificationToHive(message);
 }
 
 class PushNotificationService {
@@ -32,6 +36,12 @@ class PushNotificationService {
 
     _logger.i('FCM authorization status: ${settings.authorizationStatus}');
 
+    await _firebaseMessaging.setForegroundNotificationPresentationOptions(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
+
     String? fcmToken = await _firebaseMessaging.getToken();
     _logger.i("FCM TOKEN: $fcmToken");
 
@@ -51,14 +61,55 @@ class PushNotificationService {
     await _initLocalNotifications();
     await setupScheduledReminders();
 
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       _logger.i("FCM Foreground message received: ${message.notification?.title}");
+      await _saveIncomingNotificationToHive(message);
       _showLocalNotification(message);
     });
 
-    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) async {
       _logger.i("FCM Message opened app: ${message.data}");
+      await _saveIncomingNotificationToHive(message);
     });
+  }
+
+  static Future<void> _saveIncomingNotificationToHive(RemoteMessage message) async {
+    try {
+      final title = message.notification?.title ?? message.data['title'];
+      final body = message.notification?.body ?? message.data['body'];
+      if (title == null || title.toString().isEmpty) return;
+
+      final userId = TokenService.getUserId();
+      final repo = NotificationRepository();
+      final currentList = repo.loadLocalNotifications(userId);
+
+      NotificationCategory category = NotificationCategory.system;
+      final catStr = (message.data['category'] ?? '').toString().toUpperCase();
+      if (catStr == 'WORKOUT') {
+        category = NotificationCategory.workout;
+      } else if (catStr == 'MEAL') {
+        category = NotificationCategory.meal;
+      } else if (catStr == 'CHECKIN') {
+        category = NotificationCategory.checkin;
+      }
+
+      final newItem = NotificationItemModel(
+        id: message.messageId ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        title: title.toString(),
+        body: (body ?? '').toString(),
+        timestamp: DateTime.now(),
+        isRead: false,
+        category: category,
+        routeToPush: message.data['routeToPush'] as String?,
+      );
+
+      if (!currentList.any((item) => item.id == newItem.id)) {
+        final updated = [newItem, ...currentList];
+        await repo.saveLocalNotifications(updated, userId);
+      }
+    } catch (e) {
+      _logger.e("Error saving incoming FCM notification to Hive: $e");
+    }
   }
 
   static Future<void> _initLocalNotifications() async {
@@ -93,8 +144,11 @@ class PushNotificationService {
     } catch (e) {
       _logger.e("Notification Service timezone error: $e. Fallback to Asia/Ho_Chi_Minh");
       try {
+        tz.initializeTimeZones();
         tz.setLocalLocation(tz.getLocation('Asia/Ho_Chi_Minh'));
-      } catch (_) {}
+      } catch (err) {
+        _logger.e("Failed fallback timezone: $err");
+      }
     }
   }
 
@@ -135,15 +189,28 @@ class PushNotificationService {
       iOS: iosDetails,
     );
 
-    await _localNotificationsPlugin.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: scheduledDate,
-      notificationDetails: platformDetails,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.time,
-    );
+    try {
+      await _localNotificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: platformDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    } catch (e) {
+      _logger.w("Exact schedule failed for ID $id: $e. Retrying with inexact schedule.");
+      await _localNotificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: platformDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.time,
+      );
+    }
     _logger.i('Daily notification scheduled (ID $id) at $hour:$minute');
   }
 
@@ -188,15 +255,28 @@ class PushNotificationService {
       iOS: iosDetails,
     );
 
-    await _localNotificationsPlugin.zonedSchedule(
-      id: id,
-      title: title,
-      body: body,
-      scheduledDate: scheduledDate,
-      notificationDetails: platformDetails,
-      androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-      matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
-    );
+    try {
+      await _localNotificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: platformDetails,
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      );
+    } catch (e) {
+      _logger.w("Exact weekly schedule failed for ID $id: $e. Retrying with inexact schedule.");
+      await _localNotificationsPlugin.zonedSchedule(
+        id: id,
+        title: title,
+        body: body,
+        scheduledDate: scheduledDate,
+        notificationDetails: platformDetails,
+        androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
+        matchDateTimeComponents: DateTimeComponents.dayOfWeekAndTime,
+      );
+    }
     _logger.i('Weekly notification scheduled (ID $id) on Day $dayOfWeek at $hour:$minute');
   }
 
@@ -251,9 +331,48 @@ class PushNotificationService {
     }
   }
 
+  /// Nhắc nhở khi chưa lập thực đơn trong ngày
+  static Future<void> scheduleUnloggedMealReminder({int hour = 11, int minute = 30}) async {
+    const id = 1010;
+    const title = 'Bạn chưa lên thực đơn hôm nay! 🥗';
+    const body = 'Dành 1 phút ghi nhận món ăn hoặc nhờ Gemini AI gợi ý thực đơn chuẩn TDEE giúp bạn nhé.';
+
+    await scheduleDailyNotification(
+      id: id,
+      title: title,
+      body: body,
+      hour: hour,
+      minute: minute,
+    );
+  }
+
+  /// Nhắc nhở bài tập cá nhân hóa theo nhóm cơ / bài tập hôm nay
+  static Future<void> scheduleTodayWorkoutReminder({
+    required String workoutName,
+    String? targetMuscle,
+    int hour = 17,
+    int minute = 0,
+  }) async {
+    const id = 1011;
+    final title = 'Hôm nay bạn có lịch tập: $workoutName! 💪';
+    final targetText = (targetMuscle != null && targetMuscle.isNotEmpty) ? ' (Nhóm cơ: $targetMuscle)' : '';
+    final body = 'Buổi tập $workoutName$targetText đã sẵn sàng. Chuẩn bị năng lượng và hoàn thành bài tập ngay thôi!';
+
+    await scheduleDailyNotification(
+      id: id,
+      title: title,
+      body: body,
+      hour: hour,
+      minute: minute,
+    );
+  }
+
   static Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
-    if (notification == null) return;
+    final title = notification?.title ?? message.data['title'];
+    final body = notification?.body ?? message.data['body'];
+
+    if (title == null || title.toString().isEmpty) return;
 
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'bodypilot_channel',
@@ -272,9 +391,9 @@ class PushNotificationService {
     );
 
     await _localNotificationsPlugin.show(
-      id: notification.hashCode,
-      title: notification.title,
-      body: notification.body,
+      id: message.hashCode,
+      title: title.toString(),
+      body: (body ?? '').toString(),
       notificationDetails: platformDetails,
       payload: message.data.toString(),
     );

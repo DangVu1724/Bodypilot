@@ -16,6 +16,7 @@ import 'package:mobile/presentation/screens/profile/privacy_screen.dart';
 import 'package:mobile/presentation/screens/profile/help_center_screen.dart';
 import 'package:mobile/presentation/screens/profile/about_screen.dart';
 import 'package:mobile/presentation/screens/profile/scientific_basis_screen.dart';
+import 'package:mobile/presentation/screens/assessment/assessment_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -98,6 +99,11 @@ class ProfileScreen extends StatelessWidget {
                   _buildSettingsTile(Icons.person_outline, 'Edit Profile', () {
                     Navigator.of(context, rootNavigator: true).push(
                       MaterialPageRoute(builder: (context) => EditProfileScreen(user: user)),
+                    );
+                  }),
+                  _buildSettingsTile(Icons.assignment_outlined, 'Làm Lại Khảo Sát Thể Trạng', () {
+                    Navigator.of(context, rootNavigator: true).push(
+                      MaterialPageRoute(builder: (context) => const AssessmentScreen()),
                     );
                   }),
                   _buildSettingsTile(Icons.notifications_none, 'Notifications', () => context.push(AppRoutes.notifications)),

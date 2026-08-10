@@ -11,7 +11,8 @@ import 'package:core_shared/models/daily_workout_model.dart';
 
 class AiWorkoutSuggestionScreen extends StatefulWidget {
   final int days;
-  const AiWorkoutSuggestionScreen({super.key, this.days = 7});
+  final bool startTomorrow;
+  const AiWorkoutSuggestionScreen({super.key, this.days = 7, this.startTomorrow = false});
 
   @override
   State<AiWorkoutSuggestionScreen> createState() => _AiWorkoutSuggestionScreenState();
@@ -96,9 +97,9 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _showFocusSurveyBottomSheet();
-    });
+    _startTomorrow = widget.startTomorrow;
+    _selectedFocusBodyPart = TokenService.getFocusBodyPart();
+    _fetchAiSuggestion();
   }
 
   void _showFocusSurveyBottomSheet() {
@@ -242,6 +243,9 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
         setState(() {
           _suggestions = suggestions;
         });
+        if (suggestions.any((e) => !e.isAiGenerated)) {
+          _showAiBusyFallbackDialog();
+        }
       }
     } catch (e, stackTrace) {
       print("🚨 [AiWorkoutSuggestionScreen Error]: $e");
@@ -259,6 +263,77 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
         });
       }
     }
+  }
+
+  void _showAiBusyFallbackDialog() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (dialogContext) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          title: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Text('🤖', style: TextStyle(fontSize: 22)),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Text(
+                  'AI Hiện Đang Bận',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Kết nối với AI tạm thời bị gián đoạn hoặc bận.',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFF334155)),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Hệ thống đã tự động thiết lập cho bạn Lịch Tập Chuẩn Thể Hình được cá nhân hóa phù hợp với mục tiêu & thể trạng của bạn.',
+                style: TextStyle(fontSize: 13, color: Color(0xFF64748B), height: 1.4),
+              ),
+            ],
+          ),
+          actions: [
+            OutlinedButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                _fetchAiSuggestion();
+              },
+              style: OutlinedButton.styleFrom(
+                side: const BorderSide(color: Color(0xFFF07025)),
+                foregroundColor: const Color(0xFFF07025),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Thử lại với AI', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E293B),
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 0,
+              ),
+              child: const Text('Dùng Lịch Tập Này', style: TextStyle(fontWeight: FontWeight.bold)),
+            ),
+          ],
+        ),
+      );
+    });
   }
 
 
@@ -675,6 +750,42 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (!currentDay.isAiGenerated) ...[
+                  Container(
+                    margin: const EdgeInsets.only(bottom: 14),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: const Color(0xFFCBD5E1)),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(Icons.smart_toy_outlined, color: Color(0xFF475569), size: 20),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Lịch tập chuẩn do Hệ thống tự động thiết lập (kết nối AI gián đoạn).',
+                            style: GoogleFonts.workSans(
+                              fontSize: 12.5,
+                              color: const Color(0xFF334155),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _fetchAiSuggestion,
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text('Thử lại AI', style: TextStyle(color: Color(0xFFF07025), fontWeight: FontWeight.bold, fontSize: 12)),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 Container(
                   margin: const EdgeInsets.only(bottom: 14),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -689,7 +800,7 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          'Khuyến cáo: Lịch tập từ AI chỉ mang tính chất tham khảo cá nhân, không đảm bảo chính xác tuyệt đối và không thay thế tư vấn huấn luyện viên/bác sĩ.',
+                          'Khuyến cáo: Lịch tập từ AI/Hệ thống chỉ mang tính chất tham khảo cá nhân, không đảm bảo chính xác tuyệt đối và không thay thế tư vấn huấn luyện viên/bác sĩ.',
                           style: GoogleFonts.workSans(
                             fontSize: 12,
                             color: const Color(0xFF92400E),

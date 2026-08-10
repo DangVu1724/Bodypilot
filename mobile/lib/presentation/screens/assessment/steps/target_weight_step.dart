@@ -72,10 +72,9 @@ class TargetWeightStep extends StatelessWidget {
         ),
         const Spacer(),
         Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 20, offset: const Offset(0, -5))],
+          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+          decoration: const BoxDecoration(
+            color: Colors.transparent,
           ),
           child: Column(
             children: [

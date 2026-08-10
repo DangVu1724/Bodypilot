@@ -32,7 +32,7 @@ class _WorkoutPlanSectionState extends State<WorkoutPlanSection> {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Text(
-              'Daily Schedule',
+              'Lịch Tập Hàng Ngày',
               style: AppTheme.headlineStyle.copyWith(fontSize: 20, color: const Color(0xFF1E293B)),
             ),
             TextButton(
@@ -40,7 +40,7 @@ class _WorkoutPlanSectionState extends State<WorkoutPlanSection> {
                 context.push(AppRoutes.workoutDiary);
               },
               child: Text(
-                'See All',
+                'Xem tất cả',
                 style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary, fontSize: 14),
               ),
             ),

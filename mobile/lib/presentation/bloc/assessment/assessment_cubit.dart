@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:mobile/data/repositories/user_repository.dart';
 import 'package:mobile/data/services/token_service.dart';
+import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'assessment_state.dart';
 import 'package:logger/logger.dart';
 
@@ -53,7 +54,7 @@ class AssessmentCubit extends Cubit<AssessmentState> {
     }
   }
 
-  Future<void> submitAssessment() async {
+  Future<void> submitAssessment({UserCubit? userCubit}) async {
     final userId = TokenService.getUserId();
     if (userId == null) return;
 
@@ -61,11 +62,21 @@ class AssessmentCubit extends Cubit<AssessmentState> {
 
     try {
       await userRepository.submitAssessment(userId, state.toJson());
+      await TokenService.saveFocusBodyPart(state.selectedFocusBodyPart);
       await _box.delete('current_assessment');
+
+      if (userCubit != null) {
+        await userCubit.fetchUserProfile();
+      }
+
       emit(state.copyWith(status: AssessmentStatus.success));
     } catch (e) {
       emit(state.copyWith(status: AssessmentStatus.failure));
     }
+  }
+
+  void selectFocusBodyPart(String bodyPart) {
+    emit(state.copyWith(selectedFocusBodyPart: bodyPart));
   }
 
   void selectGoal(String goal) {
@@ -184,7 +195,7 @@ class AssessmentCubit extends Cubit<AssessmentState> {
       final requestData = {
         'selectedAllergies': state.selectedAllergies,
         'allergyNote': state.allergyNote,
-        'selectedDietTagId': state.selectedDietTagId,
+        'selectedDietTagId': state.selectedDietTagId == 'none' ? null : state.selectedDietTagId,
         'dislikedFoodGroups': state.dislikedFoodGroups,
         'dislikedFoodsNote': state.dislikedFoodsNote,
         'foodBudget': state.selectedBudget,

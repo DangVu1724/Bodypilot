@@ -27,7 +27,7 @@ class StrengthSection extends StatelessWidget {
 
           return Column(
             children: [
-              SectionTitle(title: 'Strength', subtitle: '(${state.totalElements})', actionText: 'See All'),
+              SectionTitle(title: 'Sức Mạnh & Cơ Bắp', subtitle: '(${state.totalElements})', actionText: 'Xem tất cả'),
               const SizedBox(height: 12),
               SizedBox(
                 height: 180,
@@ -105,7 +105,7 @@ class StrengthSection extends StatelessWidget {
                                             const Icon(Icons.local_fire_department, color: Colors.orange, size: 12),
                                             const SizedBox(width: 2),
                                             Text(
-                                              '${((exercise.metValue ?? 5) * 20).round()}kcal',
+                                              '${((exercise.metValue ?? 5.0) * 3.5 * 70 / 200 * 30).round()}kcal',
                                               style: AppTheme.bodyStyle.copyWith(color: Colors.grey, fontSize: 10),
                                             ),
                                           ],

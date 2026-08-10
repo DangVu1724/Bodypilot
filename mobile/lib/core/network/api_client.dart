@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/data/services/token_service.dart';
@@ -7,17 +9,28 @@ class ApiClient {
   late final Dio dio;
 
   // --- SERVER URL CONFIGURATION ---
-  // 1. Real Physical Device (Wi-Fi): 'http://192.168.100.20:8080/api/v1'
-  // 2. Android Emulator: 'http://10.0.2.2:8080/api/v1'
-  // 3. Windows App / iOS Simulator / Web: 'http://localhost:8080/api/v1'
+  // 1. Máy thật cùng Wi-Fi với máy tính: 'http://192.168.100.20:8080/api/v1'
+  // 2. Android Emulator (Giả lập): 'http://10.0.2.2:8080/api/v1'
+  // 3. iOS Simulator / Web / Windows: 'http://localhost:8080/api/v1'
   // 4. Render Cloud Production: 'https://bodypilot-to4y.onrender.com/api/v1'
 
-  static const String serverUrl = 'https://bodypilot-to4y.onrender.com/api/v1';
+  static const String physicalDeviceUrl = 'http://192.168.100.20:8080/api/v1';
+  static const String localAndroidUrl = 'http://10.0.2.2:8080/api/v1';
+  static const String localIosUrl = 'http://localhost:8080/api/v1';
+  static const String renderCloudUrl = 'https://bodypilot-to4y.onrender.com/api/v1';
+
+  // Chọn URL backend phù hợp:
+  // - Nếu dùng máy thật kết nối Backend local trên PC: trả về physicalDeviceUrl
+  // - Nếu dùng Render Cloud: trả về renderCloudUrl
+  // - Nếu dùng máy giả lập: chọn localAndroidUrl hoặc localIosUrl
+  static String get baseUrl {
+    return renderCloudUrl;
+  }
 
   ApiClient() {
     dio = Dio(
       BaseOptions(
-        baseUrl: serverUrl,
+        baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 10),
         receiveTimeout: const Duration(seconds: 300),
         headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},

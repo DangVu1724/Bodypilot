@@ -32,6 +32,20 @@ class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
         status: WorkoutDiaryStatus.success,
         dailyWorkouts: updatedDailyWorkouts,
       ));
+
+      // If checking today's workout and there are pending exercise items, schedule dynamic reminder
+      final now = DateTime.now();
+      if (date.year == now.year && date.month == now.month && date.day == now.day) {
+        if (dailyWorkout.workoutItems.isNotEmpty && !dailyWorkout.isCompleted) {
+          final workoutName = dailyWorkout.note ?? 
+              dailyWorkout.workoutItems.map((e) => e.exerciseNameSnapshot).where((name) => name.isNotEmpty).take(2).join(', ');
+          if (workoutName.isNotEmpty) {
+            PushNotificationService.scheduleTodayWorkoutReminder(
+              workoutName: workoutName,
+            );
+          }
+        }
+      }
     } catch (e) {
       emit(state.copyWith(
         status: WorkoutDiaryStatus.failure,

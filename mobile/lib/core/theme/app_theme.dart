@@ -13,23 +13,26 @@ class AppTheme {
   static const Color darkBackground = Color(0xFF0F172A);
   static const Color darkSurface = Color(0xFF111827);
 
-  static TextStyle get headlineStyle => GoogleFonts.outfit(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: -0.5);
-  static TextStyle get semiboldStyle => GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.w600, height: 1.3);
-  static TextStyle get bodyStyle => GoogleFonts.inter(fontSize: 14, fontWeight: FontWeight.w400, height: 1.4);
+  static TextStyle get headlineStyle => GoogleFonts.beVietnamPro(fontSize: 32, fontWeight: FontWeight.bold, letterSpacing: -0.5);
+  static TextStyle get semiboldStyle => GoogleFonts.beVietnamPro(fontSize: 15, fontWeight: FontWeight.w600, height: 1.3);
+  static TextStyle get bodyStyle => GoogleFonts.beVietnamPro(fontSize: 14, fontWeight: FontWeight.w400, height: 1.4);
 
   static ThemeData get lightTheme {
-    final textTheme = GoogleFonts.interTextTheme(
+    final textTheme = GoogleFonts.beVietnamProTextTheme(
       Typography.material2018().black,
     ).copyWith(
-      displayLarge: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      displayMedium: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      displaySmall: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      headlineLarge: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      headlineMedium: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      headlineSmall: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      titleLarge: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-      titleMedium: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-      titleSmall: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+      displayLarge: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      displayMedium: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      displaySmall: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      headlineLarge: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      headlineMedium: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      headlineSmall: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      titleLarge: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
+      titleMedium: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
+      titleSmall: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
+      labelLarge: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
+      labelMedium: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
+      labelSmall: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
     ).apply(bodyColor: textPrimary, displayColor: textPrimary);
 
     final colorScheme =
@@ -53,7 +56,7 @@ class AppTheme {
       scaffoldBackgroundColor: const Color(0xFFE5E5E5),
       canvasColor: const Color(0xFFE5E5E5),
       cardColor: Colors.white,
-      fontFamily: GoogleFonts.inter().fontFamily,
+      fontFamily: GoogleFonts.beVietnamPro().fontFamily,
       textTheme: textTheme,
       primaryTextTheme: textTheme,
       appBarTheme: const AppBarTheme(
@@ -68,7 +71,7 @@ class AppTheme {
           backgroundColor: primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16),
+          textStyle: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600, fontSize: 16),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           elevation: 0,
         ),
@@ -76,7 +79,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primary,
-          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16),
+          textStyle: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600, fontSize: 16),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         ),
       ),
@@ -93,18 +96,21 @@ class AppTheme {
   }
 
   static ThemeData get darkTheme {
-    final textTheme = GoogleFonts.interTextTheme(
+    final textTheme = GoogleFonts.beVietnamProTextTheme(
       Typography.material2018().white,
     ).copyWith(
-      displayLarge: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      displayMedium: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      displaySmall: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      headlineLarge: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      headlineMedium: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      headlineSmall: GoogleFonts.outfit(fontWeight: FontWeight.bold),
-      titleLarge: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-      titleMedium: GoogleFonts.outfit(fontWeight: FontWeight.w600),
-      titleSmall: GoogleFonts.outfit(fontWeight: FontWeight.w600),
+      displayLarge: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      displayMedium: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      displaySmall: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      headlineLarge: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      headlineMedium: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      headlineSmall: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold),
+      titleLarge: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
+      titleMedium: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
+      titleSmall: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
+      labelLarge: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
+      labelMedium: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
+      labelSmall: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600),
     ).apply(bodyColor: Colors.white, displayColor: Colors.white);
 
     final colorScheme =
@@ -128,7 +134,7 @@ class AppTheme {
       scaffoldBackgroundColor: darkBackground,
       canvasColor: darkBackground,
       cardColor: darkSurface,
-      fontFamily: GoogleFonts.inter().fontFamily,
+      fontFamily: GoogleFonts.beVietnamPro().fontFamily,
       textTheme: textTheme,
       primaryTextTheme: textTheme,
       appBarTheme: const AppBarTheme(
@@ -143,7 +149,7 @@ class AppTheme {
           backgroundColor: primary,
           foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16),
+          textStyle: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600, fontSize: 16),
           padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           elevation: 0,
         ),
@@ -151,7 +157,7 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primary,
-          textStyle: GoogleFonts.outfit(fontWeight: FontWeight.w600, fontSize: 16),
+          textStyle: GoogleFonts.beVietnamPro(fontWeight: FontWeight.w600, fontSize: 16),
           padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
         ),
       ),

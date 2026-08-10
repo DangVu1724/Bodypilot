@@ -6,6 +6,8 @@ class TokenService {
   static const String _tokenKey = 'jwt_token';
   static const String _userIdKey = 'user_id';
   static const String _isAssessmentCompletedKey = 'is_assessment_completed';
+  static const String _isMealSurveyCompletedKey = 'is_meal_survey_completed';
+  static const String _isWorkoutSurveyCompletedKey = 'is_workout_survey_completed';
   static const String _lastActivityKey = 'last_activity_at';
   static const String _cachedUserKey = 'cached_user';
   static SharedPreferences? _prefs;
@@ -37,6 +39,22 @@ class TokenService {
     await _prefs?.setBool(_isAssessmentCompletedKey, isCompleted);
   }
 
+  static bool isMealSurveyCompleted() {
+    return _prefs?.getBool(_isMealSurveyCompletedKey) ?? false;
+  }
+
+  static Future<void> setMealSurveyCompleted(bool isCompleted) async {
+    await _prefs?.setBool(_isMealSurveyCompletedKey, isCompleted);
+  }
+
+  static bool isWorkoutSurveyCompleted() {
+    return _prefs?.getBool(_isWorkoutSurveyCompletedKey) ?? false;
+  }
+
+  static Future<void> setWorkoutSurveyCompleted(bool isCompleted) async {
+    await _prefs?.setBool(_isWorkoutSurveyCompletedKey, isCompleted);
+  }
+
   static Future<void> updateLastActivity() async {
     await _prefs?.setInt(_lastActivityKey, DateTime.now().millisecondsSinceEpoch);
   }
@@ -56,6 +74,8 @@ class TokenService {
     await _prefs?.remove(_tokenKey);
     await _prefs?.remove(_userIdKey);
     await _prefs?.remove(_isAssessmentCompletedKey);
+    await _prefs?.remove(_isMealSurveyCompletedKey);
+    await _prefs?.remove(_isWorkoutSurveyCompletedKey);
     await _prefs?.remove(_lastActivityKey);
     await _prefs?.remove(_cachedUserKey);
   }
@@ -107,5 +127,13 @@ class TokenService {
 
   static String? getSelectedModel() {
     return _prefs?.getString('selected_chat_model');
+  }
+
+  static Future<void> saveFocusBodyPart(String bodyPart) async {
+    await _prefs?.setString('focus_body_part', bodyPart);
+  }
+
+  static String getFocusBodyPart() {
+    return _prefs?.getString('focus_body_part') ?? 'NONE';
   }
 }

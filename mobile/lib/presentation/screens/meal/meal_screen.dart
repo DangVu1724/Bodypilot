@@ -64,24 +64,10 @@ class _MealScreenState extends State<MealScreen> {
     return NumberFormat('#,###').format(target);
   }
 
-  String _getWaterAmount(String goal, double weight) {
+  String _getWaterAmount(double weight) {
     if (weight <= 0) return '0';
-    switch (goal) {
-      case 'LOSE_1KG':
-      case 'GAIN_MUSCLE':
-        return '${(weight * 45).round()}';
-      case 'LOSE_0_5KG':
-        return '${(weight * 40).round()}';
-      case 'HEALTHY_LIFESTYLE':
-      case 'MAINTAIN':
-        return '${(weight * 35).round()}';
-      case 'GAIN_0_5KG':
-        return '${(weight * 35).round()}';
-      case 'GAIN_1KG':
-        return '${(weight * 30).round()}';
-      default:
-        return '${(weight * 35).round()}';
-    }
+    final waterInMl = weight * 0.03 * 1000;
+    return '${waterInMl.round()}';
   }
 
   @override
@@ -119,7 +105,7 @@ class _MealScreenState extends State<MealScreen> {
             String targetStepsStr = _getStepsAmount(goal, gender);
             String currentStepsStr = NumberFormat('#,###').format(stepState.steps);
             String stepsDisplay = '$currentStepsStr / $targetStepsStr';
-            String waterStr = _getWaterAmount(goal, weight);
+            String waterStr = _getWaterAmount(weight);
 
             return CustomScrollView(
               physics: const BouncingScrollPhysics(),
@@ -150,14 +136,14 @@ class _MealScreenState extends State<MealScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Daily Intake',
+                                  'Hàng Ngày',
                                   style: AppTheme.bodyStyle.copyWith(
                                     color: Colors.grey.shade600,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                                 Text(
-                                  'Nutrition Plan',
+                                  'Kế Hoạch Dinh Dưỡng',
                                   style: AppTheme.headlineStyle.copyWith(color: const Color(0xFF1E293B), fontSize: 20),
                                 ),
                               ],
@@ -180,16 +166,16 @@ class _MealScreenState extends State<MealScreen> {
                           children: [
                             Expanded(
                               child: _buildStatCard(
-                                title: 'Steps',
+                                title: 'Bước chân',
                                 value: stepsDisplay,
-                                unit: 'steps',
+                                unit: 'bước',
                                 icon: FontAwesomeIcons.shoePrints,
                               ),
                             ),
                             const SizedBox(width: 12),
                             Expanded(
                               child: _buildStatCard(
-                                title: 'Water',
+                                title: 'Nước uống',
                                 value: waterStr,
                                 unit: 'ml',
                                 icon: FontAwesomeIcons.glassWater,

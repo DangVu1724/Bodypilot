@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/data/models/notification_model.dart';
 import 'package:mobile/data/repositories/notification_repository.dart';
+import 'package:mobile/data/services/token_service.dart';
 import 'package:mobile/presentation/bloc/notification/notification_state.dart';
 
 class NotificationCubit extends Cubit<NotificationState> {
@@ -10,15 +11,15 @@ class NotificationCubit extends Cubit<NotificationState> {
   NotificationCubit({NotificationRepository? repository})
       : _repository = repository ?? NotificationRepository(),
         super(const NotificationState()) {
-    _loadInitialNotifications();
+    loadNotificationsForUser(TokenService.getUserId());
   }
 
-  void _loadInitialNotifications() {
-    // 1. Try loading cached notifications from Hive DB
-    List<NotificationItemModel> localItems = _repository.loadLocalNotifications();
+  void loadNotificationsForUser([String? userId]) {
+    final effectiveUserId = userId ?? TokenService.getUserId();
+    List<NotificationItemModel> localItems = _repository.loadLocalNotifications(effectiveUserId);
 
     if (localItems.isEmpty) {
-      // Create initial seed notifications if Hive is empty
+      // Create initial seed notifications if Hive is empty for this user
       final now = DateTime.now();
       localItems = [
         NotificationItemModel(
@@ -74,10 +75,14 @@ class NotificationCubit extends Cubit<NotificationState> {
       ];
 
       // Save initial list into Hive
-      _repository.saveLocalNotifications(localItems);
+      _repository.saveLocalNotifications(localItems, effectiveUserId);
     }
 
     emit(state.copyWith(notifications: localItems));
+
+    if (effectiveUserId != null && effectiveUserId.isNotEmpty) {
+      fetchRemoteNotifications(effectiveUserId);
+    }
   }
 
   Future<void> fetchRemoteNotifications(String userId) async {
@@ -90,7 +95,7 @@ class NotificationCubit extends Cubit<NotificationState> {
       final updatedList = [...newRemoteOnly, ...state.notifications];
       updatedList.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
-      _repository.saveLocalNotifications(updatedList);
+      _repository.saveLocalNotifications(updatedList, userId);
       emit(state.copyWith(notifications: updatedList));
     }
   }
@@ -100,6 +105,7 @@ class NotificationCubit extends Cubit<NotificationState> {
   }
 
   void markAsRead(String id, {String? userId}) {
+    final effectiveUserId = userId ?? TokenService.getUserId();
     final updated = state.notifications.map((item) {
       if (item.id == id) {
         return item.copyWith(isRead: true);
@@ -107,38 +113,41 @@ class NotificationCubit extends Cubit<NotificationState> {
       return item;
     }).toList();
 
-    _repository.saveLocalNotifications(updated);
+    _repository.saveLocalNotifications(updated, effectiveUserId);
     emit(state.copyWith(notifications: updated));
 
-    if (userId != null) {
-      _repository.markRemoteAsRead(userId, id);
+    if (effectiveUserId != null && effectiveUserId.isNotEmpty) {
+      _repository.markRemoteAsRead(effectiveUserId, id);
     }
   }
 
   void markAllAsRead({String? userId}) {
+    final effectiveUserId = userId ?? TokenService.getUserId();
     final updated = state.notifications.map((item) => item.copyWith(isRead: true)).toList();
 
-    _repository.saveLocalNotifications(updated);
+    _repository.saveLocalNotifications(updated, effectiveUserId);
     emit(state.copyWith(notifications: updated));
 
-    if (userId != null) {
-      _repository.markAllRemoteAsRead(userId);
+    if (effectiveUserId != null && effectiveUserId.isNotEmpty) {
+      _repository.markAllRemoteAsRead(effectiveUserId);
     }
   }
 
   void deleteNotification(String id, {String? userId}) {
+    final effectiveUserId = userId ?? TokenService.getUserId();
     final updated = state.notifications.where((item) => item.id != id).toList();
 
-    _repository.saveLocalNotifications(updated);
+    _repository.saveLocalNotifications(updated, effectiveUserId);
     emit(state.copyWith(notifications: updated));
 
-    if (userId != null) {
-      _repository.deleteRemoteNotification(userId, id);
+    if (effectiveUserId != null && effectiveUserId.isNotEmpty) {
+      _repository.deleteRemoteNotification(effectiveUserId, id);
     }
   }
 
-  void clearAll() {
-    _repository.saveLocalNotifications([]);
+  void clearAll({String? userId}) {
+    final effectiveUserId = userId ?? TokenService.getUserId();
+    _repository.saveLocalNotifications([], effectiveUserId);
     emit(state.copyWith(notifications: []));
   }
 
@@ -147,7 +156,9 @@ class NotificationCubit extends Cubit<NotificationState> {
     required String body,
     NotificationCategory category = NotificationCategory.system,
     String? routeToPush,
+    String? userId,
   }) {
+    final effectiveUserId = userId ?? TokenService.getUserId();
     final newItem = NotificationItemModel(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       title: title,
@@ -159,7 +170,20 @@ class NotificationCubit extends Cubit<NotificationState> {
     );
 
     final updated = [newItem, ...state.notifications];
-    _repository.saveLocalNotifications(updated);
+    _repository.saveLocalNotifications(updated, effectiveUserId);
+    emit(state.copyWith(notifications: updated));
+  }
+
+  void addNotificationItem(NotificationItemModel item, {String? userId}) {
+    final effectiveUserId = userId ?? TokenService.getUserId();
+    // Prevent duplicate entries
+    final exists = state.notifications.any((n) => n.id == item.id);
+    if (exists) return;
+
+    final updated = [item, ...state.notifications];
+    updated.sort((a, b) => b.timestamp.compareTo(a.timestamp));
+
+    _repository.saveLocalNotifications(updated, effectiveUserId);
     emit(state.copyWith(notifications: updated));
   }
 }

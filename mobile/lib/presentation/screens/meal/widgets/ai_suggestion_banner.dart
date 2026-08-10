@@ -86,7 +86,7 @@ class AiSuggestionBanner extends StatelessWidget {
     final parentContext = context;
     int selectedDays = 7;
     bool startTomorrow = false;
-    bool isCompleted = TokenService.isAssessmentCompleted();
+    bool isCompleted = TokenService.isMealSurveyCompleted();
 
     showModalBottomSheet(
       context: parentContext,
@@ -159,7 +159,7 @@ class AiSuggestionBanner extends StatelessWidget {
                                 );
                                 if (result == true) {
                                   setModalState(() {
-                                    isCompleted = TokenService.isAssessmentCompleted();
+                                    isCompleted = TokenService.isMealSurveyCompleted();
                                   });
                                 }
                               },
@@ -174,6 +174,47 @@ class AiSuggestionBanner extends StatelessWidget {
                       ),
                       const SizedBox(height: 24),
                     ],
+                    Text(
+                      'Thời gian lập lịch',
+                      style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: const Color(0xFF1E293B)),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [4, 5, 6, 7].map((days) {
+                        final isSelected = selectedDays == days;
+                        return Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                            child: InkWell(
+                              onTap: () {
+                                setModalState(() {
+                                  selectedDays = days;
+                                });
+                              },
+                              borderRadius: BorderRadius.circular(12),
+                              child: Container(
+                                alignment: Alignment.center,
+                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                decoration: BoxDecoration(
+                                  color: isSelected ? AppTheme.primary : const Color(0xFFF8FAFC),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(color: isSelected ? AppTheme.primary : const Color(0xFFE2E8F0)),
+                                ),
+                                child: Text(
+                                  '$days Ngày',
+                                  style: AppTheme.semiboldStyle.copyWith(
+                                    fontSize: 14,
+                                    color: isSelected ? Colors.white : const Color(0xFF475569),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                    const SizedBox(height: 20),
                     Text(
                       'Thời điểm bắt đầu',
                       style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: const Color(0xFF1E293B)),
@@ -236,47 +277,6 @@ class AiSuggestionBanner extends StatelessWidget {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
-                    Text(
-                      'Thời gian lập lịch',
-                      style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: const Color(0xFF1E293B)),
-                    ),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [4, 5, 6, 7].map((days) {
-                        final isSelected = selectedDays == days;
-                        return Expanded(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 4.0),
-                            child: InkWell(
-                              onTap: () {
-                                setModalState(() {
-                                  selectedDays = days;
-                                });
-                              },
-                              borderRadius: BorderRadius.circular(12),
-                              child: Container(
-                                alignment: Alignment.center,
-                                padding: const EdgeInsets.symmetric(vertical: 12),
-                                decoration: BoxDecoration(
-                                  color: isSelected ? AppTheme.primary : const Color(0xFFF8FAFC),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(color: isSelected ? AppTheme.primary : const Color(0xFFE2E8F0)),
-                                ),
-                                child: Text(
-                                  '$days Ngày',
-                                  style: AppTheme.semiboldStyle.copyWith(
-                                    fontSize: 14,
-                                    color: isSelected ? Colors.white : const Color(0xFF475569),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      }).toList(),
-                    ),
                     const SizedBox(height: 32),
                     SizedBox(
                       width: double.infinity,
@@ -312,14 +312,23 @@ class AiSuggestionBanner extends StatelessWidget {
     );
   }
 
-  void _startSurveyFlow(BuildContext context, int days, bool startTomorrow) async {
-    final result = await Navigator.of(
-      context,
-      rootNavigator: true,
-    ).push<bool>(MaterialPageRoute(builder: (context) => const MealPreferenceSurveyScreen()));
-    if (result == true && context.mounted) {
-      _proceedToAiMealScreen(context, days, startTomorrow);
-    }
+  void _startSurveyFlow(BuildContext context, int days, bool startTomorrow) {
+    Navigator.of(context, rootNavigator: true).push(
+      MaterialPageRoute(
+        builder: (surveyContext) => MealPreferenceSurveyScreen(
+          onCompleted: () {
+            Navigator.of(surveyContext).pushReplacement(
+              MaterialPageRoute(
+                builder: (context) => AiMealSuggestionScreen(
+                  days: days,
+                  startTomorrow: startTomorrow,
+                ),
+              ),
+            );
+          },
+        ),
+      ),
+    );
   }
 
   @override
@@ -330,13 +339,13 @@ class AiSuggestionBanner extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('AI Suggestion', style: AppTheme.semiboldStyle.copyWith(fontSize: 16)),
+            Text('Gợi Ý Từ AI', style: AppTheme.semiboldStyle.copyWith(fontSize: 16)),
             GestureDetector(
               onTap: () {
                 _showAiOptionsBottomSheet(context);
               },
               child: Text(
-                'See All',
+                'Xem tất cả',
                 style: AppTheme.semiboldStyle.copyWith(fontSize: 13, color: const Color(0xFFF07025)),
               ),
             ),

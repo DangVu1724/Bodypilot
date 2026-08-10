@@ -223,16 +223,9 @@ class _InjuryStepState extends State<InjuryStep> {
 
   Widget _buildBottomSection(List<String> selectedInjuries) {
     return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade100,
-            blurRadius: 20,
-            offset: const Offset(0, -5),
-          ),
-        ],
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: const BoxDecoration(
+        color: Colors.transparent,
       ),
       child: Column(
         children: [
@@ -258,8 +251,9 @@ class _InjuryStepState extends State<InjuryStep> {
               builder: (context, state) {
                 final isLoading = state.status == AssessmentStatus.loading;
                 return BlackButton2(
-                  label: isLoading ? 'Đang lưu...' : 'Hoàn tất',
-                  onPressed: isLoading ? null : () => context.read<AssessmentCubit>().submitAssessment(),
+                  label: isLoading ? 'Đang phân tích...' : 'Xem kết quả phân tích',
+                  backgroundColor: AppTheme.primary,
+                  onPressed: isLoading ? null : widget.onNext,
                   borderRadius: 16,
                   padding: const EdgeInsets.symmetric(vertical: 16),
                 );

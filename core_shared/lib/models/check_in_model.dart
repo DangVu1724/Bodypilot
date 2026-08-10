@@ -1,5 +1,6 @@
 class CheckInStatusModel {
   final bool isCheckInDue;
+  final bool onboardingNeeded;
   final String? lastCheckInDate;
   final int daysSinceLastCheckIn;
   final double currentWeight;
@@ -9,6 +10,7 @@ class CheckInStatusModel {
 
   CheckInStatusModel({
     required this.isCheckInDue,
+    this.onboardingNeeded = false,
     this.lastCheckInDate,
     required this.daysSinceLastCheckIn,
     required this.currentWeight,
@@ -20,6 +22,7 @@ class CheckInStatusModel {
   factory CheckInStatusModel.fromJson(Map<String, dynamic> json) {
     return CheckInStatusModel(
       isCheckInDue: json['checkInDue'] ?? json['isCheckInDue'] ?? false,
+      onboardingNeeded: json['onboardingNeeded'] ?? false,
       lastCheckInDate: json['lastCheckInDate'],
       daysSinceLastCheckIn: (json['daysSinceLastCheckIn'] as num?)?.toInt() ?? 0,
       currentWeight: (json['currentWeight'] as num?)?.toDouble() ?? 60.0,

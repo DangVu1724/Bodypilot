@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 
 class AiCoachCard extends StatelessWidget {
   const AiCoachCard({super.key});
@@ -50,10 +51,9 @@ class AiCoachCard extends StatelessWidget {
               children: [
                 Text(
                   '🤖 Trợ Lý BodyPilot AI',
-                  style: GoogleFonts.outfit(
+                  style: AppTheme.headlineStyle.copyWith(
                     color: Colors.white,
                     fontSize: 18,
-                    fontWeight: FontWeight.bold,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -69,7 +69,12 @@ class AiCoachCard extends StatelessWidget {
                 ElevatedButton.icon(
                   onPressed: () => context.push(AppRoutes.aiChat),
                   icon: const Icon(Icons.chat_bubble_outline_rounded, size: 16),
-                  label: const Text('Hỏi AI Ngay'),
+                  label: Text(
+                    'Hỏi AI Ngay',
+                    style: AppTheme.headlineStyle.copyWith(
+                      fontSize: 13,
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
                     foregroundColor: const Color(0xFF6366F1),
@@ -77,10 +82,6 @@ class AiCoachCard extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
-                    ),
-                    textStyle: GoogleFonts.outfit(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 13,
                     ),
                   ),
                 ),

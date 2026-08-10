@@ -100,7 +100,7 @@ class _WorkoutScreenState extends State<WorkoutScreen> {
                                     ),
                                   ),
                                   Text(
-                                    'Training Center',
+                                    'Trung Tâm Luyện Tập',
                                     style: AppTheme.headlineStyle.copyWith(
                                       color: const Color(0xFF1E293B),
                                       fontSize: 20,

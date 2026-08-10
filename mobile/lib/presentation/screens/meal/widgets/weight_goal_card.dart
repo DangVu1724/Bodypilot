@@ -38,7 +38,7 @@ class WeightGoalCard extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text('Weight Goal', style: AppTheme.semiboldStyle.copyWith(fontSize: 18)),
+                  Text('Mục Tiêu Cân Nặng', style: AppTheme.semiboldStyle.copyWith(fontSize: 18)),
                   const Icon(Icons.insights_rounded, color: Colors.grey, size: 22),
                 ],
               ),
@@ -72,7 +72,7 @@ class WeightGoalCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'TARGET WEIGHT',
+                            'MỤC TIÊU CÂN NẶNG',
                             style: AppTheme.bodyStyle.copyWith(
                               color: Colors.white.withOpacity(0.7),
                               fontSize: 11,
@@ -140,8 +140,8 @@ class WeightGoalCard extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          _buildWeightLabel("Current", "$currentWeight kg"),
-                          _buildWeightLabel("Left", "${(targetWeight - currentWeight).abs().toStringAsFixed(1)} kg"),
+                          _buildWeightLabel("Hiện tại", "$currentWeight kg"),
+                          _buildWeightLabel("Còn lại", "${(targetWeight - currentWeight).abs().toStringAsFixed(1)} kg"),
                         ],
                       ),
                     ],

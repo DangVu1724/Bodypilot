@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/data/services/token_service.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_cubit.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_state.dart';
 import 'package:mobile/presentation/widgets/black_button_2.dart';
@@ -11,7 +12,8 @@ import 'package:mobile/presentation/screens/assessment/steps/budget_step.dart';
 import 'package:core_shared/models/allergy_model.dart';
 
 class MealPreferenceSurveyScreen extends StatefulWidget {
-  const MealPreferenceSurveyScreen({super.key});
+  final VoidCallback? onCompleted;
+  const MealPreferenceSurveyScreen({super.key, this.onCompleted});
 
   @override
   State<MealPreferenceSurveyScreen> createState() => _MealPreferenceSurveyScreenState();
@@ -52,13 +54,18 @@ class _MealPreferenceSurveyScreenState extends State<MealPreferenceSurveyScreen>
       child: BlocListener<AssessmentCubit, AssessmentState>(
         listener: (context, state) {
           if (state.status == AssessmentStatus.success) {
+            TokenService.setMealSurveyCompleted(true);
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text('Đã cập nhật sở thích ăn uống thành công!'),
                 backgroundColor: Colors.green,
               ),
             );
-            Navigator.of(context).pop(true);
+            if (widget.onCompleted != null) {
+              widget.onCompleted!();
+            } else {
+              Navigator.of(context).pop(true);
+            }
           } else if (state.status == AssessmentStatus.failure) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(

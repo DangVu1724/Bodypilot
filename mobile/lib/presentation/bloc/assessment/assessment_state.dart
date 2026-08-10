@@ -73,6 +73,23 @@ class ActivityLevelOption extends Equatable {
   List<Object?> get props => [title, value, icon, description];
 }
 
+class FocusBodyPartOption extends Equatable {
+  final String title;
+  final String value;
+  final IconData icon;
+  final String description;
+
+  const FocusBodyPartOption({
+    required this.title,
+    required this.value,
+    required this.icon,
+    required this.description,
+  });
+
+  @override
+  List<Object?> get props => [title, value, icon, description];
+}
+
 class SleepOption extends Equatable {
   final String title;
   final IconData icon;
@@ -189,6 +206,57 @@ class AssessmentState extends Equatable {
     ),
   ];
 
+  static const List<FocusBodyPartOption> focusBodyPartOptions = [
+    FocusBodyPartOption(
+      title: 'Tập đều các nhóm cơ',
+      value: 'NONE',
+      icon: Icons.balance,
+      description: 'Cân bằng, đồng đều toàn bộ cơ thể',
+    ),
+    FocusBodyPartOption(
+      title: 'Tập trung Cơ Ngực',
+      value: 'CHEST',
+      icon: Icons.fitness_center,
+      description: 'Phát triển độ dày và sức mạnh cơ ngực',
+    ),
+    FocusBodyPartOption(
+      title: 'Tập trung Cơ Lưng',
+      value: 'BACK',
+      icon: Icons.accessibility_new,
+      description: 'Cải thiện độ rộng xô và sức mạnh cơ lưng',
+    ),
+    FocusBodyPartOption(
+      title: 'Tập trung Cơ Chân',
+      value: 'LEGS',
+      icon: Icons.directions_run,
+      description: 'Sức mạnh đùi, bắp chân & mông săn chắc',
+    ),
+    FocusBodyPartOption(
+      title: 'Tập trung Cơ Vai',
+      value: 'SHOULDERS',
+      icon: Icons.boy,
+      description: 'Phát triển vai rộng và khỏe khoắn',
+    ),
+    FocusBodyPartOption(
+      title: 'Tập trung Cơ Tay',
+      value: 'ARMS',
+      icon: Icons.sports_gymnastics,
+      description: 'Tăng kích thước bắp tay trước & tay sau',
+    ),
+    FocusBodyPartOption(
+      title: 'Tập trung Bụng / Core',
+      value: 'CORE',
+      icon: Icons.straighten,
+      description: 'Tăng sức mạnh vùng cơ lõi & săn chắc bụng',
+    ),
+    FocusBodyPartOption(
+      title: 'Tập trung Toàn thân',
+      value: 'FULL_BODY',
+      icon: Icons.emoji_events,
+      description: 'Kích hoạt tối đa năng lượng toàn cơ thể',
+    ),
+  ];
+
   static const String experienceImage = 'assets/images/gym_workout.png';
 
   static IconData getConditionIcon(String code) {
@@ -281,6 +349,7 @@ class AssessmentState extends Equatable {
   final int targetWeight;
   final bool? hasExperience;
   final String? selectedActivityLevel;
+  final String selectedFocusBodyPart;
   final AssessmentStatus status;
 
   const AssessmentState({
@@ -304,6 +373,7 @@ class AssessmentState extends Equatable {
     this.targetWeight = 65,
     this.hasExperience,
     this.selectedActivityLevel,
+    this.selectedFocusBodyPart = 'NONE',
     this.status = AssessmentStatus.initial,
   });
 
@@ -328,6 +398,7 @@ class AssessmentState extends Equatable {
     int? targetWeight,
     bool? hasExperience,
     String? selectedActivityLevel,
+    String? selectedFocusBodyPart,
     AssessmentStatus? status,
   }) {
     return AssessmentState(
@@ -351,6 +422,7 @@ class AssessmentState extends Equatable {
       targetWeight: targetWeight ?? this.targetWeight,
       hasExperience: hasExperience ?? this.hasExperience,
       selectedActivityLevel: selectedActivityLevel ?? this.selectedActivityLevel,
+      selectedFocusBodyPart: selectedFocusBodyPart ?? this.selectedFocusBodyPart,
       status: status ?? this.status,
     );
   }
@@ -366,13 +438,14 @@ class AssessmentState extends Equatable {
       'selectedInjuries': selectedInjuries,
       'selectedAllergies': selectedAllergies,
       'allergyNote': allergyNote,
-      'selectedDietTagId': selectedDietTagId,
+      'selectedDietTagId': selectedDietTagId == 'none' ? null : selectedDietTagId,
       'dislikedFoodGroups': dislikedFoodGroups,
       'dislikedFoodsNote': dislikedFoodsNote,
       'foodBudget': selectedBudget,
       'targetWeight': targetWeight,
       'hasExperience': hasExperience,
       'activityLevel': selectedActivityLevel,
+      'selectedFocusBodyPart': selectedFocusBodyPart,
       // Status is transient, don't persist it to avoid jumping to Home on reload
     };
   }
@@ -397,6 +470,7 @@ class AssessmentState extends Equatable {
       targetWeight: (json['targetWeight'] as num?)?.toInt() ?? 65,
       hasExperience: json['hasExperience'] as bool?,
       selectedActivityLevel: json['activityLevel'] as String?,
+      selectedFocusBodyPart: json['selectedFocusBodyPart'] as String? ?? 'NONE',
       status: AssessmentStatus.initial, // Always start as initial when loading from cache
     );
   }
@@ -423,6 +497,7 @@ class AssessmentState extends Equatable {
     targetWeight,
     hasExperience,
     selectedActivityLevel,
+    selectedFocusBodyPart,
     status,
   ];
 }

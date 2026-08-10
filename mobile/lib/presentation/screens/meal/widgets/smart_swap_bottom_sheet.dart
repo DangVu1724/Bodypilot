@@ -87,7 +87,7 @@ class SmartSwapBottomSheet extends StatelessWidget {
                     children: [
                       Text(
                         'Smart Swap Thông Minh',
-                        style: GoogleFonts.outfit(
+                        style: GoogleFonts.beVietnamPro(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
                           color: const Color(0xFF1E293B),
@@ -204,7 +204,7 @@ class SmartSwapBottomSheet extends StatelessWidget {
                   children: [
                     Text(
                       candidate.foodName,
-                      style: GoogleFonts.outfit(
+                      style: GoogleFonts.beVietnamPro(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1E293B),
@@ -259,7 +259,7 @@ class SmartSwapBottomSheet extends StatelessWidget {
                 },
                 child: Text(
                   'Chọn đổi món',
-                  style: GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.bold),
+                  style: GoogleFonts.beVietnamPro(fontSize: 12, fontWeight: FontWeight.bold),
                 ),
               ),
             ),

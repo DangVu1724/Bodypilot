@@ -8,7 +8,7 @@ class BlackButton2 extends StatelessWidget {
     required this.label,
     required this.onPressed, // Đổi thành VoidCallback
     this.textColor = Colors.white,
-    this.backgroundColor = Colors.black,
+    this.backgroundColor = AppTheme.primary,
     this.borderRadius = 16,
     this.padding = const EdgeInsets.symmetric(vertical: 16),
     this.icon,
@@ -47,6 +47,8 @@ class BlackButton2 extends StatelessWidget {
       style: ElevatedButton.styleFrom(
         backgroundColor: backgroundColor,
         foregroundColor: textColor,
+        disabledBackgroundColor: AppTheme.primary.withOpacity(0.35),
+        disabledForegroundColor: Colors.white.withOpacity(0.8),
         padding: padding,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(borderRadius)),
         elevation: 0,

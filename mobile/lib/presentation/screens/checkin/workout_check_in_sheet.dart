@@ -127,7 +127,7 @@ class _WorkoutCheckInSheetState extends State<WorkoutCheckInSheet> {
                     children: [
                       Text(
                         'Check-in Luyện Tập Chủ Nhật',
-                        style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                        style: GoogleFonts.beVietnamPro(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
                       ),
                       Text(
                         'Khảo sát chấn thương & thể lực tuần mới',
@@ -141,7 +141,7 @@ class _WorkoutCheckInSheetState extends State<WorkoutCheckInSheet> {
             const SizedBox(height: 24),
 
             // Step 1: Workout state
-            Text('1. Đánh giá tuần tập vừa qua của bạn:', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
+            Text('1. Đánh giá tuần tập vừa qua của bạn:', style: GoogleFonts.beVietnamPro(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
             const SizedBox(height: 10),
             Column(
               children: _workoutStates.map((opt) {
@@ -161,7 +161,7 @@ class _WorkoutCheckInSheetState extends State<WorkoutCheckInSheet> {
             const SizedBox(height: 20),
 
             // Step 2: Injury & Health check (Crucial requirement)
-            Text('2. Khảo sát Chấn Thương & Bệnh Tật:', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
+            Text('2. Khảo sát Chấn Thương & Bệnh Tật:', style: GoogleFonts.beVietnamPro(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
             const SizedBox(height: 8),
             Text(
               'Nếu bạn gặp chấn thương mới hoặc bị đau khớp, AI sẽ tự động loại bỏ các bài tập nguy hiểm.',
@@ -210,7 +210,7 @@ class _WorkoutCheckInSheetState extends State<WorkoutCheckInSheet> {
                 ),
                 child: _isSubmitting
                     ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                    : Text('Hoàn Tất Check-in', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15)),
+                    : Text('Hoàn Tất Check-in', style: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold, fontSize: 15)),
               ),
             ),
           ],

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/presentation/bloc/splash/splash_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
@@ -44,63 +45,67 @@ class _SplashScreenState extends State<SplashScreen> {
           }
         },
         child: Scaffold(
-          body: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [Color(0xFF0F172A), Color(0xFF1E293B)],
-              ),
-            ),
-            child: SafeArea(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Spacer(flex: 3),
-                    Container(
-                      width: 140,
-                      height: 140,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.05),
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white.withOpacity(0.1), width: 1.5),
-                        boxShadow: [
-                          BoxShadow(color: const Color(0xFFF97316).withOpacity(0.2), blurRadius: 30, spreadRadius: 2),
-                        ],
-                      ),
-                      padding: const EdgeInsets.all(24),
-                      child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+          body: Stack(
+            children: [
+              Positioned.fill(
+                child: Container(
+                  decoration: const BoxDecoration(
+                    image: DecorationImage(
+                      image: AssetImage('assets/images/logo.png'),
+                      fit: BoxFit.cover,
                     ),
-                    const SizedBox(height: 24),
-                    Text(
-                      'BodyPilot',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 38,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Trợ lý Sức khỏe & Dinh dưỡng AI',
-                      style: GoogleFonts.plusJakartaSans(fontSize: 15, color: Colors.white70, letterSpacing: 0.2),
-                    ),
-                    const Spacer(flex: 2),
-                    const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF97316)),
-                      ),
-                    ),
-                    const SizedBox(height: 40),
-                  ],
+                  ),
                 ),
               ),
-            ),
+              Positioned.fill(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.black.withOpacity(0.3),
+                        const Color(0xFF0F172A).withOpacity(0.85),
+                        const Color(0xFF0F172A),
+                      ],
+                      stops: const [0.0, 0.6, 1.0],
+                    ),
+                  ),
+                ),
+              ),
+              SafeArea(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Spacer(flex: 3),
+                      Text(
+                        'BodyPilot',
+                        style: AppTheme.headlineStyle.copyWith(
+                          fontSize: 40,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Trợ lý Sức khỏe & Dinh dưỡng AI',
+                        style: GoogleFonts.inter(fontSize: 16, color: Colors.white.withOpacity(0.85), letterSpacing: 0.2),
+                      ),
+                      const Spacer(flex: 2),
+                      const SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2.5,
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFF97316)),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

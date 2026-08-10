@@ -9,7 +9,7 @@ class FeaturedCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const SectionTitle(title: 'Featured', actionText: 'See All'),
+        const SectionTitle(title: 'Nổi Bật', actionText: 'Xem tất cả'),
         const SizedBox(height: 12),
         Container(
           height: 200,

@@ -16,7 +16,7 @@ class WorkoutPlansSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionTitle(title: 'Workout Plans', actionText: 'See All'),
+        const SectionTitle(title: 'Lịch Tập Gợi Ý', actionText: 'Xem tất cả'),
         const SizedBox(height: 12),
         BlocBuilder<WorkoutPlanCubit, WorkoutPlanState>(
           builder: (context, state) {
@@ -24,7 +24,7 @@ class WorkoutPlansSection extends StatelessWidget {
               return const WorkoutPlanSkeleton();
             } else if (state is WorkoutPlanLoaded) {
               if (state.plans.isEmpty) {
-                return const Center(child: Text('No workout plans available.'));
+                return const Center(child: Text('Chưa có lịch tập nào.'));
               }
               return SizedBox(
                 height: 220,
@@ -37,7 +37,7 @@ class WorkoutPlansSection extends StatelessWidget {
                 ),
               );
             } else if (state is WorkoutPlanError) {
-              return Center(child: Text('Error: ${state.message}'));
+              return Center(child: Text('Lỗi: ${state.message}'));
             }
             return const SizedBox.shrink();
           },
@@ -117,7 +117,7 @@ class _PlanCard extends StatelessWidget {
                       const Icon(Icons.calendar_today, color: Colors.blue, size: 14),
                       const SizedBox(width: 4),
                       Text(
-                        '${plan.totalDays} Days',
+                        '${plan.totalDays} Ngày',
                         style: AppTheme.bodyStyle.copyWith(color: Colors.white70, fontSize: 12),
                       ),
                       const SizedBox(width: 12),

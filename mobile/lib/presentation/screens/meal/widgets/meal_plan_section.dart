@@ -16,8 +16,8 @@ class MealPlanSection extends StatefulWidget {
 }
 
 class _MealPlanSectionState extends State<MealPlanSection> {
-  String selectedMeal = 'Breakfast';
-  final List<String> meals = ['Breakfast', 'Lunch', 'Dinner'];
+  String selectedMeal = 'Bữa Sáng';
+  final List<String> meals = ['Bữa Sáng', 'Bữa Trưa', 'Bữa Tối'];
 
   @override
   void initState() {
@@ -35,7 +35,7 @@ class _MealPlanSectionState extends State<MealPlanSection> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text('Your Meal Plan', style: AppTheme.headlineStyle.copyWith(fontSize: 20, color: AppTheme.textPrimary)),
+            Text('Thực Đơn Hàng Ngày', style: AppTheme.headlineStyle.copyWith(fontSize: 20, color: AppTheme.textPrimary)),
             TextButton(
               onPressed: () {
                 Navigator.of(
@@ -43,7 +43,7 @@ class _MealPlanSectionState extends State<MealPlanSection> {
                   rootNavigator: true,
                 ).push(MaterialPageRoute(builder: (context) => const MealPlanScreen()));
               },
-              child: Text('See All', style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary, fontSize: 14)),
+              child: Text('Xem tất cả', style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary, fontSize: 14)),
             ),
           ],
         ),
@@ -60,32 +60,36 @@ class _MealPlanSectionState extends State<MealPlanSection> {
   }
 
   Widget _buildMealTabs() {
-    return Row(
-      children: meals.map((meal) {
-        bool isSelected = selectedMeal == meal;
-        return GestureDetector(
-          onTap: () => setState(() => selectedMeal = meal),
-          child: Container(
-            margin: const EdgeInsets.only(right: 12),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected ? const Color(0xFF4A3728) : Colors.white,
-              borderRadius: BorderRadius.circular(30),
-              boxShadow: [
-                if (!isSelected)
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
-              ],
-            ),
-            child: Text(
-              meal,
-              style: AppTheme.semiboldStyle.copyWith(
-                color: isSelected ? Colors.white : AppTheme.textSecondary,
-                fontSize: 14,
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children: meals.map((meal) {
+          bool isSelected = selectedMeal == meal;
+          return GestureDetector(
+            onTap: () => setState(() => selectedMeal = meal),
+            child: Container(
+              margin: const EdgeInsets.only(right: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF4A3728) : Colors.white,
+                borderRadius: BorderRadius.circular(30),
+                boxShadow: [
+                  if (!isSelected)
+                    BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 4)),
+                ],
+              ),
+              child: Text(
+                meal,
+                style: AppTheme.semiboldStyle.copyWith(
+                  color: isSelected ? Colors.white : AppTheme.textSecondary,
+                  fontSize: 14,
+                ),
               ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -200,10 +204,13 @@ class _MealPlanSectionState extends State<MealPlanSection> {
   MealType _mealTypeFromLabel(String label) {
     switch (label) {
       case 'Breakfast':
+      case 'Bữa Sáng':
         return MealType.BREAKFAST;
       case 'Lunch':
+      case 'Bữa Trưa':
         return MealType.LUNCH;
       case 'Dinner':
+      case 'Bữa Tối':
         return MealType.DINNER;
       default:
         return MealType.BREAKFAST;
@@ -219,7 +226,7 @@ class _MealPlanSectionState extends State<MealPlanSection> {
       ),
       padding: const EdgeInsets.all(20),
       child: Center(
-        child: Text('No meals added for today yet.', style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary)),
+        child: Text('Chưa có món ăn nào cho hôm nay.', style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary)),
       ),
     );
   }

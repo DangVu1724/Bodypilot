@@ -7,8 +7,23 @@ import 'package:mobile/data/models/notification_model.dart';
 import 'package:mobile/presentation/bloc/notification/notification_cubit.dart';
 import 'package:mobile/presentation/bloc/notification/notification_state.dart';
 
-class NotificationScreen extends StatelessWidget {
+class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
+
+  @override
+  State<NotificationScreen> createState() => _NotificationScreenState();
+}
+
+class _NotificationScreenState extends State<NotificationScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        context.read<NotificationCubit>().loadNotificationsForUser();
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {

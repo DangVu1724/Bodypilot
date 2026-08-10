@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/presentation/bloc/onboarding/onboarding_cubit.dart';
 
@@ -101,9 +102,8 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                               ),
                               child: Text(
                                 'Bỏ qua',
-                                style: GoogleFonts.plusJakartaSans(
+                                style: AppTheme.headlineStyle.copyWith(
                                   fontSize: 14,
-                                  fontWeight: FontWeight.bold,
                                   color: Colors.white,
                                 ),
                               ),
@@ -148,28 +148,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                     ),
                                     const SizedBox(height: 24),
 
-                                    SizedBox(
-                                      height: 120,
+                                    ConstrainedBox(
+                                      constraints: const BoxConstraints(minHeight: 110),
                                       child: AnimatedSwitcher(
                                         duration: const Duration(milliseconds: 300),
                                         child: Column(
                                           key: ValueKey<int>(currentPage),
                                           mainAxisAlignment: MainAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
                                               OnboardingCubit.pages[currentPage].title,
-                                              style: GoogleFonts.plusJakartaSans(
+                                              style: AppTheme.headlineStyle.copyWith(
                                                 fontSize: 22,
-                                                fontWeight: FontWeight.bold,
                                                 color: Colors.white,
-                                                letterSpacing: -0.5,
                                               ),
                                               textAlign: TextAlign.center,
                                             ),
                                             const SizedBox(height: 12),
                                             Text(
                                               OnboardingCubit.pages[currentPage].description,
-                                              style: GoogleFonts.plusJakartaSans(
+                                              style: GoogleFonts.inter(
                                                 fontSize: 14.5,
                                                 color: Colors.white.withOpacity(0.85),
                                                 height: 1.4,
@@ -198,8 +197,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                                           ),
                                           child: Text(
                                             'Bắt đầu ngay',
-                                            style: GoogleFonts.plusJakartaSans(
-                                              fontWeight: FontWeight.bold,
+                                            style: AppTheme.headlineStyle.copyWith(
                                               fontSize: 16,
                                             ),
                                           ),

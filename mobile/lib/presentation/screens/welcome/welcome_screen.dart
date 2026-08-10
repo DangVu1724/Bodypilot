@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
+import 'package:mobile/core/theme/app_theme.dart';
 import 'package:go_router/go_router.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -38,110 +39,103 @@ class WelcomeScreen extends StatelessWidget {
             ),
           ),
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  const Spacer(flex: 2),
-                  Container(
-                    width: 90,
-                    height: 90,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.1),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white.withOpacity(0.2), width: 1.5),
-                    ),
-                    padding: const EdgeInsets.all(16),
-                    child: Image.asset(
-                      'assets/images/logo.png',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Chào mừng đến với\nBodyPilot',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                      height: 1.25,
-                      letterSpacing: -0.5,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Trợ lý sức khỏe và luyện tập AI cá nhân của bạn',
-                    style: GoogleFonts.plusJakartaSans(
-                      fontSize: 16,
-                      color: Colors.white.withOpacity(0.75),
-                      height: 1.4,
-                    ),
-                    textAlign: TextAlign.center,
-                  ),
-                  const Spacer(flex: 3),
-                  
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        context.push(AppRoutes.onboarding);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF97316),
-                        foregroundColor: Colors.white,
-                        shadowColor: const Color(0xFFF97316).withOpacity(0.3),
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                      ),
-                      child: Text(
-                        'Bắt đầu ngay',
-                        style: GoogleFonts.plusJakartaSans(
-                          fontSize: 17,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        'Đã có tài khoản?',
-                        style: GoogleFonts.plusJakartaSans(
-                          color: Colors.white.withOpacity(0.7),
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      TextButton(
-                        onPressed: () {
-                          context.push(AppRoutes.login);
-                        },
-                        style: TextButton.styleFrom(
-                          foregroundColor: const Color(0xFFF97316),
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: Text(
-                          'Đăng nhập',
-                          style: GoogleFonts.plusJakartaSans(
-                            fontSize: 15,
-                            fontWeight: FontWeight.bold,
-                          ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+                      child: IntrinsicHeight(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            const Spacer(flex: 2),
+
+                            Text(
+                              'Chào mừng đến với\nBodyPilot',
+                              style: AppTheme.headlineStyle.copyWith(
+                                fontSize: 32,
+                                color: Colors.white,
+                                height: 1.25,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 12),
+                            Text(
+                              'Ứng dụng hỗ trợ thiết lập chế độ dinh dưỡng và lộ trình tập luyện',
+                              style: GoogleFonts.inter(
+                                fontSize: 16,
+                                color: Colors.white.withOpacity(0.75),
+                                height: 1.4,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const Spacer(flex: 3),
+                            
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  context.push(AppRoutes.onboarding);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: const Color(0xFFF97316),
+                                  foregroundColor: Colors.white,
+                                  shadowColor: const Color(0xFFF97316).withOpacity(0.3),
+                                  elevation: 5,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(16),
+                                  ),
+                                  padding: const EdgeInsets.symmetric(vertical: 18),
+                                ),
+                                child: Text(
+                                  'Bắt đầu ngay',
+                                  style: AppTheme.headlineStyle.copyWith(
+                                    fontSize: 17,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+                            
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  'Đã có tài khoản?',
+                                  style: GoogleFonts.inter(
+                                    color: Colors.white.withOpacity(0.7),
+                                    fontSize: 15,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                TextButton(
+                                  onPressed: () {
+                                    context.push(AppRoutes.login);
+                                  },
+                                  style: TextButton.styleFrom(
+                                    foregroundColor: const Color(0xFFF97316),
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                  ),
+                                  child: Text(
+                                    'Đăng nhập',
+                                    style: AppTheme.headlineStyle.copyWith(
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                          ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
-                  const SizedBox(height: 10),
-                ],
-              ),
+                );
+              },
             ),
           ),
         ],

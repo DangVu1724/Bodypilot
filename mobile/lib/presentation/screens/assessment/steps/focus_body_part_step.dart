@@ -5,21 +5,21 @@ import 'package:mobile/presentation/bloc/assessment/assessment_cubit.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_state.dart';
 import 'package:mobile/presentation/widgets/black_button_2.dart';
 
-class GoalStep extends StatefulWidget {
+class FocusBodyPartStep extends StatefulWidget {
   final VoidCallback onNext;
 
-  const GoalStep({super.key, required this.onNext});
+  const FocusBodyPartStep({super.key, required this.onNext});
 
   @override
-  State<GoalStep> createState() => _GoalStepState();
+  State<FocusBodyPartStep> createState() => _FocusBodyPartStepState();
 }
 
-class _GoalStepState extends State<GoalStep> {
+class _FocusBodyPartStepState extends State<FocusBodyPartStep> {
   @override
   Widget build(BuildContext context) {
     final assessmentState = context.watch<AssessmentCubit>().state;
-    final selectedGoal = assessmentState.selectedGoal;
-    final options = AssessmentState.goalOptions;
+    final selectedFocus = assessmentState.selectedFocusBodyPart;
+    final options = AssessmentState.focusBodyPartOptions;
 
     return Column(
       children: [
@@ -33,28 +33,26 @@ class _GoalStepState extends State<GoalStep> {
                 end: Alignment.bottomRight,
               ).createShader(bounds),
               child: Text(
-                'Mục tiêu',
+                'Nhu cầu tập luyện',
                 style: AppTheme.headlineStyle.copyWith(color: Colors.white),
                 textAlign: TextAlign.center,
               ),
             ),
             const SizedBox(height: 12),
             Text(
-              'Mục tiêu tập luyện của bạn là gì?',
+              'Bạn muốn ưu tiên tập trung nhóm cơ nào nhất?',
               style: AppTheme.semiboldStyle.copyWith(fontSize: 18, color: Colors.black87),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
-              'Chọn mục tiêu giúp chúng tôi đề xuất kế hoạch phù hợp',
+              'AI sẽ tối ưu các bài tập chuyên sâu hơn cho bộ phận này',
               style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600),
               textAlign: TextAlign.center,
             ),
           ],
         ),
-        
         const SizedBox(height: 24),
-        
         Expanded(
           child: ListView.separated(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
@@ -62,11 +60,10 @@ class _GoalStepState extends State<GoalStep> {
             separatorBuilder: (context, index) => const SizedBox(height: 12),
             itemBuilder: (context, index) {
               final option = options[index];
-              return _buildOption(context, option, selectedGoal == option.value);
+              return _buildOption(context, option, selectedFocus == option.value);
             },
           ),
         ),
-
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
           decoration: const BoxDecoration(
@@ -74,26 +71,30 @@ class _GoalStepState extends State<GoalStep> {
           ),
           child: Column(
             children: [
-              if (selectedGoal != null)
-                Container(
-                  margin: const EdgeInsets.only(bottom: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primary.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                  child: Text(
-                    'Đã chọn: ${options.firstWhere((o) => o.value == selectedGoal).title}',
-                    style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: AppTheme.primary),
-                  ),
+              Container(
+                margin: const EdgeInsets.only(bottom: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: AppTheme.primary.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
                 ),
+                child: Text(
+                  'Đã chọn: ${options.firstWhere((o) => o.value == selectedFocus, orElse: () => options.first).title}',
+                  style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: AppTheme.primary),
+                ),
+              ),
               SizedBox(
                 width: double.infinity,
-                child: BlackButton2(
-                  label: 'Tiếp tục',
-                  onPressed: selectedGoal != null ? widget.onNext : null,
-                  borderRadius: 16,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
+                child: BlocBuilder<AssessmentCubit, AssessmentState>(
+                  builder: (context, state) {
+                    final isLoading = state.status == AssessmentStatus.loading;
+                    return BlackButton2(
+                      label: isLoading ? 'Đang lưu...' : 'Hoàn tất',
+                      onPressed: isLoading ? null : () => context.read<AssessmentCubit>().submitAssessment(),
+                      borderRadius: 16,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                    );
+                  },
                 ),
               ),
             ],
@@ -103,10 +104,10 @@ class _GoalStepState extends State<GoalStep> {
     );
   }
 
-  Widget _buildOption(BuildContext context, GoalOption option, bool isSelected) {
+  Widget _buildOption(BuildContext context, FocusBodyPartOption option, bool isSelected) {
     return GestureDetector(
       onTap: () {
-        context.read<AssessmentCubit>().selectGoal(option.value);
+        context.read<AssessmentCubit>().selectFocusBodyPart(option.value);
       },
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),

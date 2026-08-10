@@ -133,7 +133,7 @@ class _MealCheckInSheetState extends State<MealCheckInSheet> {
                   children: [
                     Text(
                       'Check-in Dinh Dưỡng Chủ Nhật',
-                      style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                      style: GoogleFonts.beVietnamPro(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
                     ),
                     Text(
                       'Tổng kết & Điều chỉnh calo tuần mới',
@@ -147,7 +147,7 @@ class _MealCheckInSheetState extends State<MealCheckInSheet> {
           const SizedBox(height: 24),
 
           // Step 1: Weight input
-          Text('1. Cân nặng hiện tại của bạn:', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
+          Text('1. Cân nặng hiện tại của bạn:', style: GoogleFonts.beVietnamPro(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
           const SizedBox(height: 8),
           TextField(
             controller: _weightController,
@@ -162,7 +162,7 @@ class _MealCheckInSheetState extends State<MealCheckInSheet> {
           const SizedBox(height: 20),
 
           // Step 2: Goal Completion check
-          Text('2. Bạn đã hoàn thành mục tiêu cân nặng chưa?', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
+          Text('2. Bạn đã hoàn thành mục tiêu cân nặng chưa?', style: GoogleFonts.beVietnamPro(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
           const SizedBox(height: 10),
           Row(
             children: [
@@ -213,7 +213,7 @@ class _MealCheckInSheetState extends State<MealCheckInSheet> {
 
           // Conditional step 3
           if (_isGoalCompleted == true) ...[
-            Text('3. Chọn mục tiêu mới của bạn:', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
+            Text('3. Chọn mục tiêu mới của bạn:', style: GoogleFonts.beVietnamPro(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
             const SizedBox(height: 10),
             Column(
               children: _newGoalOptions.map((opt) {
@@ -231,7 +231,7 @@ class _MealCheckInSheetState extends State<MealCheckInSheet> {
               }).toList(),
             ),
           ] else if (_isGoalCompleted == false) ...[
-            Text('3. Thể trạng tuần qua của bạn:', style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
+            Text('3. Thể trạng tuần qua của bạn:', style: GoogleFonts.beVietnamPro(fontSize: 15, fontWeight: FontWeight.bold, color: const Color(0xFF334155))),
             const SizedBox(height: 10),
             Column(
               children: _energyOptions.map((opt) {
@@ -264,7 +264,7 @@ class _MealCheckInSheetState extends State<MealCheckInSheet> {
               ),
               child: _isSubmitting
                   ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, valueColor: AlwaysStoppedAnimation<Color>(Colors.white)))
-                  : Text('Hoàn Tất Check-in', style: GoogleFonts.outfit(fontWeight: FontWeight.bold, fontSize: 15)),
+                  : Text('Hoàn Tất Check-in', style: GoogleFonts.beVietnamPro(fontWeight: FontWeight.bold, fontSize: 15)),
             ),
           ),
         ],

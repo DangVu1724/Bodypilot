@@ -81,7 +81,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                     children: [
                       Text(
                         'BodyPilot AI Coach',
-                        style: GoogleFonts.outfit(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+                        style: GoogleFonts.beVietnamPro(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                         overflow: TextOverflow.ellipsis,
                       ),
                       GestureDetector(
@@ -394,7 +394,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                 const SizedBox(height: 16),
                 Text(
                   'Chọn Model AI Chatbot',
-                  style: GoogleFonts.outfit(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+                  style: GoogleFonts.beVietnamPro(fontSize: 18, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
                 ),
                 const SizedBox(height: 4),
                 Text(
@@ -443,7 +443,7 @@ class _AiChatScreenState extends State<AiChatScreen> {
                                       children: [
                                         Text(
                                           item['name']!,
-                                          style: GoogleFonts.outfit(
+                                          style: GoogleFonts.beVietnamPro(
                                             fontSize: 14,
                                             fontWeight: FontWeight.bold,
                                             color: isSelected ? AppTheme.primary : const Color(0xFF1E293B),
