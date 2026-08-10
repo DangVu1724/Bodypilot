@@ -13,6 +13,7 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class CheckInStatusResponse {
     private boolean isCheckInDue;
+    private boolean onboardingNeeded;
     private LocalDate lastCheckInDate;
     private long daysSinceLastCheckIn;
     private Double currentWeight;

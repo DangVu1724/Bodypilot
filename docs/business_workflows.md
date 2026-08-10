@@ -1,177 +1,301 @@
 # QUY TRÌNH NGHIỆP VỤ HỆ THỐNG BODYPILOT
 
-Tài liệu này mô tả các **Quy trình nghiệp vụ cốt lõi** của hệ thống **BodyPilot**. Quy trình nghiệp vụ là luồng hoạt động kết hợp nhiều Use Case khác nhau theo thời gian để hoàn thành một mục đích cụ thể của người dùng và hệ thống.
+Tài liệu này mô tả 5 **Quy trình nghiệp vụ cốt lõi** của hệ thống **BodyPilot**. Mỗi quy trình nghiệp vụ là một chuỗi luồng hoạt động liên kết nhiều Use Case khác nhau theo thời gian để hoàn thành một mục tiêu toàn vẹn của người dùng và hệ thống.
 
 ---
 
-## 1. Quy trình 1: Đăng ký, Đánh giá Thể trạng và Khởi tạo Lộ trình Cá nhân hóa
+## 1. Quy trình 1: Đăng ký, Đánh giá Thể trạng Onboarding và Khởi tạo Lộ trình AI Cá nhân hóa
 
 ### 1.1. Mô tả quy trình
+Quy trình này diễn ra khi người dùng lần đầu gia nhập hệ thống BodyPilot. Kết hợp các Use Case: **UC01 (Xác thực tài khoản)**, **UC02 (Khảo sát thể trạng Onboarding)**, **UC02.3 (Tính toán chỉ số sinh học BMR/TDEE)**, **UC05 (Tạo thực đơn AI)** và **UC10 (Tạo lịch tập AI)**.
 
-Quy trình này diễn ra khi người dùng lần đầu gia nhập hệ thống BodyPilot. Quy trình kết hợp các Use Case: **Xác thực tài khoản (UC01)**, **Khảo sát chỉ số thể trạng (UC02)**, **Tính toán chỉ số sinh học (UC02.3)**, **Tạo thực đơn AI (UC05)** và **Tạo lịch tập AI (UC10)**.
+1. **Bước 1:** Người dùng đăng ký tài khoản (qua Email/Password hoặc Google OAuth2).
+2. **Bước 2:** Người dùng thực hiện bộ khảo sát thể trạng Onboarding 12 bước (chiều cao, cân nặng, độ tuổi, mục tiêu, chấn thương, dị ứng thực phẩm, mức độ vận động, ngân sách).
+3. **Bước 3:** Backend tính toán chỉ số sinh học BMR (Mifflin-St Jeor), TDEE, BMI và phân bổ hạn mức Calo & tỷ lệ Carbs/Protein/Fat mục tiêu.
+4. **Bước 4:** Backend thực hiện lọc y tế triệt để, rút trích 90-150 món ăn ứng viên theo thuật toán Category Round-Robin và đóng gói Dynamic Context Prompt gửi tới **Google Gemini AI API**.
+5. **Bước 5:** Gemini AI phân tích suy luận ngữ cảnh và trả về chuỗi JSON thực đơn 7 ngày thuần Việt cùng lộ trình luyện tập phù hợp.
+6. **Bước 6:** Backend tự vá JSON ngắt dở bằng Stack (`repairTruncatedJsonNode`), ánh xạ UUID thực phẩm 3 tầng (`Fuzzy Matching`), co giãn Gram theo `Macro Scaler` chuẩn 100% TDEE và lưu vào PostgreSQL Database.
+7. **Bước 7:** Mobile App hiển thị Bảng điều khiển & Lộ trình cá nhân hóa cho người dùng.
 
-1. **Bước 1:** Người dùng đăng ký tài khoản (qua Email hoặc Google OAuth2).
-2. **Bước 2:** Người dùng thực hiện bộ khảo sát thể trạng Onboarding 12 bước (chiều cao, cân nặng, độ tuổi, mục tiêu, chấn thương, dị ứng thực phẩm, mức độ vận động).
-3. **Bước 3:** Hệ thống tự động tính toán chỉ số sinh học BMR (Mifflin-St Jeor), TDEE, BMI và phân bổ hạn mức Calo & tỷ lệ Carbs/Protein/Fat mục tiêu.
-4. **Bước 4:** Backend thu thập toàn bộ dữ liệu chỉ số và điều kiện lọc, đóng gói thành prompt gửi tới **Google Gemini AI**.
-5. **Bước 5:** Gemini AI phân tích suy luận và trả về thực đơn 7 ngày thuần Việt cùng lộ trình luyện tập phù hợp.
-6. **Bước 6:** Hệ thống lưu lộ trình vào cơ sở dữ liệu và hiển thị bảng điều khiển cá nhân hóa cho người dùng.
+### 1.2. Biểu đồ hoạt động (PlantUML Activity Diagram)
 
-### 1.2. Biểu đồ hoạt động (Activity Diagram)
+```plantuml
+@startuml
+skinparam ActivityFontSize 12
+skinparam ActivityDiamondFontSize 12
+skinparam ArrowColor #1565C0
+skinparam ActivityBorderColor #1565C0
+skinparam ActivityBackgroundColor #E3F2FD
 
-```mermaid
-flowchart TD
-    subgraph Client["👤 Màn hình Người dùng (Mobile App)"]
-        A1([Bắt đầu]) --> A2[Nhập thông tin Đăng ký / OAuth2]
-        A2 --> A3[Thực hiện Onboarding 12 bước khảo sát]
-        A3 --> A4[Xác nhận gửi thông tin thể trạng]
-        A7[Hiển thị Dashboard & Lộ trình Cá nhân hóa] --> A8([Kết thúc])
-    end
+|👤 Người dùng (Mobile App)|
+start
+:Đăng ký tài khoản (Email / Google OAuth2);
+:Thực hiện khảo sát Onboarding (12 bước);
+note right
+  - Chỉ số sinh học (Chiều cao, Cân nặng, Tuổi...)
+  - Mục tiêu thể hình & Ngân sách ăn uống
+  - Ràng buộc y tế (Dị ứng, Chấn thương, Món ghét)
+end note
+:Xác nhận gửi hồ sơ thể trạng;
 
-    subgraph Backend["⚙️ Backend Server & Database"]
-        A4 --> B1[Xác thực & Tạo tài khoản JWT]
-        B1 --> B2["Tính toán BMR, TDEE, BMI & Calo mục tiêu"]
-        B2 --> B3[Đóng gói Context thông tin thành AI Prompt]
-        B3 --> B4[Gửi yêu cầu khởi tạo sang Gemini AI API]
-        B5[Nhận kết quả JSON thực đơn & lịch tập] --> B6[Lưu Lộ trình vào PostgreSQL Database]
-        B6 --> A7
-    end
+|⚙️ Backend Server (Spring Boot)|
+:Xác thực người dùng & Khởi tạo mã JWT Token;
+:Tính toán chỉ số sinh học (BMR, TDEE, BMI & Target Calo);
+:Tiền lọc y tế triệt để (Loại bỏ dị ứng, chấn thương);
+:Rút trích tập ứng viên cân bằng (Category Round-Robin 90-150 món);
+:Đóng gói Dynamic Prompt chứa ngữ cảnh người dùng;
 
-    subgraph AIService["🤖 Gemini AI Service"]
-        B4 --> C1["Phân tích chỉ số, bệnh lý, dị ứng & chấn thương"]
-        C1 --> C2[Sinh Thực đơn 7 ngày Việt Nam & Lịch tập]
-        C2 --> B5
-    end
+|🤖 Google Gemini AI API|
+:Phân tích suy luận ngữ cảnh & dinh dưỡng;
+:Sinh chuỗi JSON Thực đơn 7 ngày & Lịch tập luyện;
+
+|⚙️ Backend Server (Spring Boot)|
+if (Chuỗi JSON bị ngắt dở chừng?) then (có)
+  :Kích hoạt Stack-based JSON Auto-Repair Engine;
+  :Tự đóng ngoặc kép & Pop ngược Stack đóng nhọn/vuông;
+else (không)
+endif
+:Ánh xạ UUID mờ 3 tầng (Fuzzy Food/Exercise Matching);
+:Co giãn Gram khẩu phần (Exact Macro Scaler chuẩn 100% TDEE);
+:Lưu Lộ trình cá nhân hóa vào CSDL PostgreSQL;
+
+|👤 Người dùng (Mobile App)|
+:Hiển thị Dashboard & Lộ trình Thực đơn/Lịch tập;
+stop
+@enduml
 ```
 
 ---
 
-## 2. Quy trình 2: Theo dõi Dinh dưỡng Hàng ngày và Đổi món Thông minh (Smart Swap)
+## 2. Quy trình 2: Theo dõi Dinh dưỡng Hàng ngày, Ghi Nhật ký và Đổi món Thông minh (AI Smart Swap)
 
 ### 2.1. Mô tả quy trình
+Quy trình mô tả luồng làm việc hàng ngày của người dùng khi ghi nhận nhật ký ăn uống và linh hoạt điều chỉnh món ăn thông qua AI. Kết hợp các Use Case: **UC03 (Ghi nhật ký ăn uống)**, **UC04 (Tìm kiếm thực phẩm Meilisearch)**, **UC06 (Đổi món thông minh Smart Swap AI)** và **UC12 (Check-in dinh dưỡng)**.
 
-Quy trình này mô tả luồng làm việc hàng ngày của người dùng khi ghi nhận nhật ký ăn uống và linh hoạt điều chỉnh món ăn thông qua AI. Quy trình kết hợp các Use Case: **Ghi nhật ký ăn uống (UC03)**, **Tìm kiếm thực phẩm (UC04)**, **Đề xuất món ăn thay thế Smart Swap AI (UC06)** và **Điểm danh Check-in (UC12)**.
+1. **Bước 1:** Người dùng mở nhật ký dinh dưỡng và nạp các món ăn đã tiêu thụ vào bữa Sáng, Bữa Trưa (tìm kiếm qua Meilisearch Engine).
+2. **Bước 2:** Hệ thống tính tổng Calo nạp lũy kế và phản hồi tiến độ TDEE về ứng dụng di động.
+3. **Bước 3:** Đến bữa Tối, người dùng không muốn ăn món ăn gợi ý sẵn trong thực đơn nên bấm chọn **Smart Swap (Đổi món)**.
+4. **Bước 4:** Backend tính toán Calo/Macro còn thiếu trong ngày và gửi yêu cầu đổi món tới Gemini AI API.
+5. **Bước 5:** Gemini AI tìm kiếm và trả về danh sách 5 món ăn Việt Nam thay thế có dinh dưỡng tương đồng.
+6. **Bước 6:** Người dùng chọn món thay thế ưa thích; hệ thống tự động cập nhật lại thực đơn bữa Tối và ghi nhận nhật ký ăn uống.
+7. **Bước 7:** Hệ thống ghi nhận trạng thái Check-in dinh dưỡng hoàn thành cho ngày hôm đó.
 
-1. **Bước 1:** Người dùng mở nhật ký dinh dưỡng và thêm món ăn thực tế đã tiêu thụ vào các bữa (Sáng, Trưa).
-2. **Bước 2:** Hệ thống tính tổng lượng Calo nạp vào và hiển thị thanh tiến độ so với hạn mức TDEE.
-3. **Bước 3:** Đến bữa tối, người dùng không muốn ăn món ăn trong thực đơn mặc định nên nhấn chọn nút **Smart Swap (Đổi món)**.
-4. **Bước 4:** Backend gửi thông tin món ăn cần thay thế cùng định mức Calo/Macros còn lại sang Gemini AI.
-5. **Bước 5:** Gemini AI tìm kiếm và gợi ý các món ăn Việt Nam thay thế có giá trị dinh dưỡng tương đương.
-6. **Bước 6:** Người dùng chọn món thay thế ưa thích; hệ thống tự động cập nhật lại thực đơn bữa tối và ghi nhận nhật ký ăn uống.
-7. **Bước 7:** Hệ thống ghi nhận trạng thái **Check-in dinh dưỡng** ngày hôm đó cho người dùng.
+### 2.2. Biểu đồ hoạt động (PlantUML Activity Diagram)
 
-### 2.2. Biểu đồ hoạt động (Activity Diagram)
+```plantuml
+@startuml
+skinparam ArrowColor #2E7D32
+skinparam ActivityBorderColor #2E7D32
+skinparam ActivityBackgroundColor #E8F5E9
 
-```mermaid
-flowchart TD
-    subgraph Client["👤 Màn hình Dinh dưỡng (Mobile App)"]
-        D1([Bắt đầu ngày mới]) --> D2[Ghi nhật ký ăn uống các bữa]
-        D2 --> D3{Muốn đổi món bữa ăn?}
-        D3 -- Không --> D4[Ăn theo thực đơn gợi ý]
-        D3 -- Có --> D5[Nhấn chọn Smart Swap trên món ăn]
-        D5 --> D6[Xem danh sách món thay thế từ AI]
-        D6 --> D7[Xác nhận chọn món thay thế mới]
-        D7 --> D8[Cập nhật Nhật ký ăn uống]
-        D4 --> D8
-        D8 --> D9[Thực hiện Check-in dinh dưỡng ngày] --> D10([Kết thúc])
-    end
+|👤 Người dùng (Mobile App)|
+start
+:Mở Nhật ký Dinh dưỡng trong ngày;
+:Tìm kiếm món ăn (Meilisearch) & Ghi nạp bữa Sáng / Trưa;
 
-    subgraph Backend["⚙️ Backend Server"]
-        D5 --> E1[Truy vấn Calo & Macros của món gốc]
-        E1 --> E2[Gửi Prompt yêu cầu Smart Swap tới AI]
-        E3[Nhận kết quả danh sách món thay thế] --> D6
-        D7 --> E4[Lưu lại món mới vào Daily Log]
-        E4 --> D8
-    end
+|⚙️ Backend Server|
+:Cập nhật Calo nạp lũy kế & Phản hồi thanh tiến độ TDEE;
 
-    subgraph AIService["🤖 Gemini AI Service"]
-        E2 --> F1[Tìm kiếm món ăn Việt tương đồng Calo/Macro]
-        F1 --> E3
-    end
+|👤 Người dùng (Mobile App)|
+if (Muốn thay đổi món ăn bữa Tối?) then (có (Smart Swap))
+  :Nhấn chọn nút "Smart Swap" trên món ăn gốc;
+  
+  |⚙️ Backend Server|
+  :Lấy thông tin món gốc (Calo, Protein, Fat, Carbs, Category);
+  :Tính toán khoảng bù trừ Calo/Macro còn thiếu;
+  :Gửi Prompt tìm kiếm món thay thế tới Gemini AI API;
+  
+  |🤖 Google Gemini AI API|
+  :Tìm kiếm 5 món ăn Việt Nam có dinh dưỡng tương đồng;
+  
+  |⚙️ Backend Server|
+  :Ánh xạ UUID & Phản hồi danh sách món gợi ý;
+  
+  |👤 Người dùng (Mobile App)|
+  :Xem danh sách & Chọn món ăn thay thế ưa thích;
+  :Xác nhận thay đổi món;
+  
+  |⚙️ Backend Server|
+  :Cập nhật món mới vào Thực đơn & Nhật ký ăn uống;
+else (không (Ăn theo thực đơn))
+  :Giữ nguyên thực đơn sẵn có;
+endif
+
+|👤 Người dùng (Mobile App)|
+:Tự động tính tổng Calo nạp cuối ngày;
+:Bấm Check-in dinh dưỡng ngày hoàn thành;
+
+|⚙️ Backend Server|
+:Lưu dữ liệu Check-in Dinh dưỡng vào PostgreSQL;
+stop
+@enduml
 ```
 
 ---
 
-## 3. Quy trình 3: Theo dõi Vận động, Đếm bước chân và Điểm danh Kiên trì (Daily Fitness Loop)
+## 3. Quy trình 3: Theo dõi Luyện tập, Đếm bước chân Pedometer và Điểm danh Kiên trì (Daily Fitness Loop)
 
 ### 3.1. Mô tả quy trình
+Quy trình phối hợp các hoạt động thể chất giữa phần cứng cảm biến di động, bài tập thể hình và hệ thống duy trì động lực. Kết hợp các Use Case: **UC13 (Thông báo Firebase FCM)**, **UC09 (Đếm bước chân Pedometer)**, **UC07 (Ghi nhật ký luyện tập)** và **UC12 (Thống kê Chuỗi Streak)**.
 
-Quy trình này kết hợp các hoạt động thể chất trong ngày giữa phần cứng thiết bị di động, bài tập và hệ thống duy trì động lực. Quy trình kết hợp các Use Case: **Nhận thông báo nhắc nhở FCM (UC13)**, **Đếm bước chân tự động (UC09)**, **Ghi nhật ký luyện tập (UC07)** và **Thống kê Chuỗi Check-in Streak (UC12)**.
+1. **Bước 1:** Firebase FCM gửi thông báo nhắc nhở tập luyện vào khung giờ cố định.
+2. **Bước 2:** Cảm biến Pedometer trên điện thoại đếm số bước chân vận động liên tục trong ngày và đồng bộ ngầm lên ứng dụng.
+3. **Bước 3:** Người dùng mở màn hình Luyện tập, thực hiện các bài tập thể hình (xem video hướng dẫn, nhập số Sets/Reps/Mức tạ).
+4. **Bước 4:** Backend tính Calo đốt cháy bài tập dựa trên thời gian và chỉ số chuyển hóa MET ($Calories = Duration \times MET \times Weight / 200$), sau đó cộng dồn với Calo tiêu hao từ bước chân.
+5. **Bước 5:** Người dùng nhấn bấm **Hoàn thành Buổi tập & Check-in**.
+6. **Bước 6:** Backend kiểm tra điều kiện hoàn thành cả Dinh dưỡng & Luyện tập trong ngày để tự động tăng chuỗi kiên trì (**Streak Count +1**).
 
-1. **Bước 1:** Nhận thông báo nhắc nhở vận động/tập luyện từ **Firebase FCM** vào khung giờ cố định.
-2. **Bước 2:** Cảm biến phần cứng Pedometer trên điện thoại tự động ghi nhận số bước chân vận động liên tục trong ngày và đồng bộ lên ứng dụng.
-3. **Bước 3:** Người dùng mở phân hệ Luyện tập, chọn bài tập trong giáo án và hoàn thành các hiệp tập (Sets/Reps/Tạ).
-4. **Bước 4:** Hệ thống tính lượng calo đốt cháy dựa trên thời gian và chỉ số chuyển hóa **MET** của từng bài tập, sau đó cộng dồn vào tổng calo tiêu hao trong ngày.
-5. **Bước 5:** Người dùng nhấn **Check-in hoàn thành luyện tập**.
-6. **Bước 6:** Hệ thống kiểm tra điều kiện hoàn thành cả Dinh dưỡng & Luyện tập trong ngày, tự động cộng số ngày kiên trì liên tục (**Streak Count +1**).
+### 3.2. Biểu đồ hoạt động (PlantUML Activity Diagram)
 
-### 3.2. Biểu đồ hoạt động (Activity Diagram)
+```plantuml
+@startuml
+skinparam ArrowColor #C62828
+skinparam ActivityBorderColor #C62828
+skinparam ActivityBackgroundColor #FFEBEE
 
-```mermaid
-flowchart TD
-    subgraph Devices["📱 Thiết bị & Cảm biến Phần cứng"]
-        G1[Cảm biến Pedometer đếm bước chân] -->|Realtime Stream| G2[Đồng bộ số bước lên Mobile App]
-        G3[Firebase FCM Service] -->|Đẩy thông báo| G4[Hiển thị Thông báo nhắc nhở tập luyện]
-    end
+|📱 Cảm biến & Firebase Service|
+start
+:Firebase FCM gửi thông báo nhắc nhở tập luyện;
+:Cảm biến Pedometer tự động đếm bước chân liên tục;
 
-    subgraph Client["👤 Màn hình Luyện tập (Mobile App)"]
-        G4 --> H1[Mở phân hệ Luyện tập]
-        H1 --> H2[Thực hiện bài tập theo hướng dẫn]
-        H2 --> H3[Ghi nhận số Sets/Reps/Mức tạ]
-        H3 --> H4[Nhấn hoàn thành buổi tập & Check-in]
-        H6[Hiển thị Chuỗi ngày Streak +1 & Huy hiệu] --> H7([Kết thúc])
-    end
+|👤 Người dùng (Mobile App)|
+:Mở phân hệ Luyện tập từ Thông báo / Dashboard;
+:Xem danh sách bài tập & Video hướng dẫn kỹ thuật;
+:Thực hiện bài tập & Nhập số Sets, Reps, Mức tạ thực tế;
+:Bấm "Hoàn thành Buổi tập";
 
-    subgraph Backend["⚙️ Backend Server & Database"]
-        H3 --> I1["Tính Calo tiêu thụ = Duration * MET * Weight"]
-        I1 --> I2[Cập nhật Lịch sử buổi tập & Calo tiêu hao]
-        H4 --> I3{Đã hoàn thành mục tiêu ngày?}
-        I3 -- Có --> I4[Cập nhật UserCheckInHistory & Tang Streak +1]
-        I3 -- Chưa --> I5[Lưu trạng thái Check-in một phần]
-        I4 --> H6
-        I5 --> H7
-    end
+|⚙️ Backend Server|
+:Đồng bộ dữ liệu số bước chân Pedometer;
+:Tính Calo đốt cháy bài tập = (Duration * MET * Weight) / 200;
+:Cộng dồn Calo tiêu hao từ Bước chân + Bài tập thể hình;
+:Lưu thông tin Nhật ký Luyện tập (Daily Workout Log);
+
+if (Đã đạt mục tiêu Dinh dưỡng AND Luyện tập trong ngày?) then (đạt cả hai)
+  :Tăng số ngày kiên trì liên tục (Streak Count = Streak + 1);
+  :Kiểm tra cấp Huy hiệu vinh danh (Milestone Badges);
+  
+  |👤 Người dùng (Mobile App)|
+  :Hiển thị Popup chúc mừng Streak +1 & Hiệu ứng Huy hiệu;
+else (chưa đạt đủ)
+  |⚙️ Backend Server|
+  :Lưu tiến trình Check-in một phần;
+  
+  |👤 Người dùng (Mobile App)|
+  :Hiển thị tiến độ luyện tập trong ngày;
+endif
+stop
+@enduml
 ```
-
-hunn
 
 ---
 
-## 4. Quy trình 4: Trợ lý AI Coach Tư vấn & Điều chỉnh Thực đơn theo Phản hồi người dùng
+## 4. Quy trình 4: Trợ lý AI Coach Tư vấn & Điều chỉnh Thực đơn theo Phản hồi Người dùng (AI Coach Feedback Loop)
 
 ### 4.1. Mô tả quy trình
-
-Quy trình này thể hiện vòng phản hồi thông minh (*Feedback Loop*) giữa người dùng và Trợ lý AI khi có nhu cầu tư vấn thắc mắc hoặc điều chỉnh kế hoạch ăn uống. Quy trình kết hợp các Use Case: **Trò chuyện AI Coach (UC11)** và **Điều chỉnh thực đơn gợi ý theo phản hồi (UC05.2)**.
+Quy trình thể hiện vòng phản hồi thông minh (*Feedback Loop*) giữa người dùng và Trợ lý AI khi có nhu cầu tư vấn hoặc điều chỉnh kế hoạch ăn uống. Kết hợp các Use Case: **UC11 (Trò chuyện AI Coach)** và **UC05.2 (Tái tạo thực đơn theo phản hồi)**.
 
 1. **Bước 1:** Người dùng mở màn hình Trợ lý AI Coach hoặc màn hình Thực đơn gợi ý.
-2. **Bước 2:** Người dùng nhập câu hỏi thắc mắc (ví dụ: *"Hôm nay tôi bị đau bụng thì nên ăn gì?"*) hoặc gửi phản hồi điều chỉnh (ví dụ: *"Tôi không thích ăn cá ngừ, hãy đổi sang thịt lợn"*).
-3. **Bước 3:** Mobile App gửi tin nhắn kèm lịch sử trò chuyện cục bộ hoặc bối cảnh thực đơn hiện tại lên Backend Server.
-4. **Bước 4:** Backend xây dựng Prompt nâng cao kết hợp chỉ số sinh học (TDEE, BMR, dị ứng) gửi tới Gemini AI.
-5. **Bước 5:** Gemini AI đưa ra phản hồi tư vấn tự nhiên hoặc tái tạo lại danh sách món ăn mới tương thích.
-6. **Bước 6:** Backend phản hồi kết quả về Mobile App; người dùng có thể trò chuyện tiếp hoặc nhấn **Đồng ý áp dụng thực đơn mới**.
+2. **Bước 2:** Người dùng nhập câu hỏi tư vấn sức khỏe hoặc gửi phản hồi điều chỉnh thực đơn.
+3. **Bước 3:** Mobile App gửi tin nhắn kèm lịch sử hội thoại và bối cảnh thực đơn hiện tại lên Backend Server.
+4. **Bước 4:** Backend đóng gói System Context Prompt (chỉ số TDEE, BMR, dị ứng) gửi tới Gemini AI API.
+5. **Bước 5:** Gemini AI phân tích suy luận. Nếu là câu hỏi tư vấn, AI trả về câu trả lời tự nhiên (Text). Nếu là yêu cầu đổi thực đơn, AI trả về mảng JSON thực đơn mới đã qua điều chỉnh.
+6. **Bước 6:** Mobile App hiển thị kết quả. Khi người dùng bấm **"Đồng ý áp dụng"**, Backend sẽ tiến hành ghi đè thực đơn mới vào CSDL PostgreSQL.
 
-### 4.2. Biểu đồ hoạt động (Activity Diagram)
+### 4.2. Biểu đồ hoạt động (PlantUML Activity Diagram)
 
-```mermaid
-flowchart TD
-    subgraph Client["👤 Giao diện AI Coach & Meal Suggestion"]
-        J1([Bắt đầu]) --> J2[Nhập câu hỏi tư vấn / Phản hồi thực đơn]
-        J2 --> J3[Gửi tin nhắn phản hồi tới AI]
-        J6[Hiển thị câu trả lời AI Coach / Thực đơn điều chỉnh] --> J7{Người dùng muốn áp dụng?}
-        J7 -- Có --> J8[Nhấn Áp dụng Thực đơn mới] --> J9([Hoàn thành])
-        J7 -- Không/Hỏi tiếp --> J2
-    end
+```plantuml
+@startuml
+skinparam ArrowColor #6A1B9A
+skinparam ActivityBorderColor #6A1B9A
+skinparam ActivityBackgroundColor #F3E5F5
 
-    subgraph Backend["⚙️ Backend Server"]
-        J3 --> K1[Truy vấn Hồ sơ cá nhân TDEE, Bệnh lý, Dị ứng]
-        K1 --> K2[Ghép Lịch sử chat + Context + Prompt]
-        K2 --> K3[Gửi API Request tới Gemini AI Model]
-        K4[Nhận phản hồi văn bản / JSON thực đơn] --> J6
-        J8 --> K5[Lưu thực đơn điều chỉnh vào Database] --> J9
-    end
+|👤 Người dùng (Mobile App)|
+start
+:Mở giao diện Trợ lý AI Coach / Thực đơn gợi ý;
+:Nhập tin nhắn tư vấn hoặc Yêu cầu điều chỉnh thực đơn;
+note right
+  Ví dụ: "Hôm nay tôi mệt, 
+  hãy đổi bữa trưa thành cháo nhẹ dễ tiêu"
+end note
+:Gửi tin nhắn phản hồi;
 
-    subgraph AIService["🤖 Gemini AI Service"]
-        K3 --> L1[Suy luận ngôn ngữ tự nhiên & Tính toán dinh dưỡng]
-        L1 --> K4
-    end
+|⚙️ Backend Server|
+:Truy vấn Hồ sơ cá nhân (Chỉ số TDEE, Dị ứng, Bệnh lý);
+:Đóng gói Lịch sử trò chuyện + Thực đơn hiện tại + Prompt nâng cao;
+:Gửi API Request tới Gemini AI Model;
+
+|🤖 Google Gemini AI API|
+:Suy luận xử lý ngôn ngữ tự nhiên (NLP);
+if (Loại yêu cầu là gì?) then (Tư vấn sức khỏe / Hỏi đáp)
+  :Sinh phản hồi trả lời dạng Văn bản tự nhiên (Text);
+else (Yêu cầu Điều chỉnh Thực đơn)
+  :Tạo cấu trúc mảng JSON Thực đơn mới đã qua điều chỉnh;
+endif
+
+|⚙️ Backend Server|
+:Hậu xử lý phản hồi & Phản hồi về Mobile App;
+
+|👤 Người dùng (Mobile App)|
+:Hiển thị tin nhắn tư vấn / Thực đơn điều chỉnh dự thảo;
+
+if (Có yêu cầu đổi thực đơn AND Người dùng bấm Đồng ý?) then (đồng ý)
+  |⚙️ Backend Server|
+  :Ghi đè Thực đơn điều chỉnh mới vào CSDL PostgreSQL;
+  
+  |👤 Người dùng (Mobile App)|
+  :Cập nhật Bảng điều khiển Thực đơn mới;
+else (chỉ hỏi đáp / từ chối)
+  |👤 Người dùng (Mobile App)|
+  :Tiếp tục cuộc trò chuyện hoặc đóng màn hình;
+endif
+stop
+@enduml
+```
+
+---
+
+## 5. Quy trình 5: Quản trị Nội dung Danh mục Thực phẩm / Bài tập và Kiểm duyệt Hệ thống (Admin Moderation Workflow)
+
+### 5.1. Mô tả quy trình
+Quy trình dành cho Quản trị viên (Admin) vận hành hệ thống trên trang **Admin Web Dashboard**. Kết hợp các Use Case: **UC14 (Quản lý danh mục thực phẩm)**, **UC15 (Quản lý danh mục bài tập)** và **UC16 (Báo cáo & Thống kê hệ thống)**.
+
+1. **Bước 1:** Quản trị viên đăng nhập vào Admin Web Dashboard bằng tài khoản có quyền `ROLE_ADMIN`.
+2. **Bước 2:** Admin thực hiện Thêm mới / Chỉnh sửa / Xóa thông tin món ăn hoặc bài tập thể hình.
+3. **Bước 3:** Backend cập nhật thông tin bản ghi vào CSDL PostgreSQL.
+4. **Bước 4:** Backend phát sự kiện đồng bộ bản ghi mới sang **Meilisearch Engine** để cập nhật chỉ mục tìm kiếm siêu tốc.
+5. **Bước 5:** Backend làm mới bộ nhớ Cache tạm (`cachedFoods` / `cachedExercises`) và ghi Nhật ký Quản trị (System Audit Log).
+6. **Bước 6:** Admin xem các báo cáo thống kê quy mô ứng dụng và hiệu năng hệ thống.
+
+### 5.2. Biểu đồ hoạt động (PlantUML Activity Diagram)
+
+```plantuml
+@startuml
+skinparam ArrowColor #E65100
+skinparam ActivityBorderColor #E65100
+skinparam ActivityBackgroundColor #FFF3E0
+
+|👨‍💼 Quản trị viên (Admin Web)|
+start
+:Đăng nhập hệ thống bằng tài khoản ROLE_ADMIN;
+:Mở Màn hình Quản lý Danh mục Thực phẩm / Bài tập;
+:Thực hiện Thêm mới / Chỉnh sửa / Xóa Thực phẩm (Bài tập);
+:Bấm "Lưu thay đổi";
+
+|⚙️ Backend Server (Spring Boot)|
+:Kiểm tra phân quyền JWT Token (ROLE_ADMIN);
+:Cập nhật thông tin bản ghi vào CSDL PostgreSQL;
+
+fork
+  :Phát sự kiện đồng bộ dữ liệu sang Meilisearch Engine;
+  :Cập nhật lại Chỉ mục tìm kiếm (Search Index);
+fork again
+  :Xóa bộ nhớ Cache tạm (cachedFoods / cachedExercises);
+  :Ghi Nhật ký Quản trị (System Audit Log);
+end fork
+
+|👨‍💼 Quản trị viên (Admin Web)|
+:Hiển thị thông báo Cập nhật thành công;
+:Xem Báo cáo Thống kê lưu lượng API & Người dùng mới;
+stop
+@enduml
 ```

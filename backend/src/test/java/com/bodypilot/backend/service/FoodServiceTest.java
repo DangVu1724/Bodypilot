@@ -75,7 +75,7 @@ class FoodServiceTest {
     }
 
     @Test
-    @DisplayName("TC_FOOD_01: Tìm kiếm món ăn hợp lệ - Trả về danh sách phân trang")
+    @DisplayName("TC06: Tìm kiếm thực phẩm hợp lệ - 'Ức gà' trả về danh sách phù hợp")
     void searchFoods_ValidQuery_ReturnsPageResponse() {
         // Arrange
         String query = "Ức gà";
@@ -92,6 +92,26 @@ class FoodServiceTest {
         assertEquals(1, response.getContent().size());
         assertEquals("Ức gà luộc", response.getContent().get(0).getName());
         assertEquals(BigDecimal.valueOf(165), response.getContent().get(0).getCaloriesPer100g());
+        verify(foodRepository, times(1)).searchFoods(eq(query), any(), eq(pageable));
+    }
+
+    @Test
+    @DisplayName("TC07: Tìm kiếm từ khóa không tồn tại - 'xyz123' trả về danh sách rỗng")
+    void searchFoods_NonExistingQuery_ReturnsEmptyPage() {
+        // Arrange
+        String query = "xyz123";
+        Pageable pageable = PageRequest.of(0, 10);
+        Page<Food> emptyPage = new PageImpl<>(Collections.emptyList(), pageable, 0);
+
+        when(foodRepository.searchFoods(eq(query), any(), eq(pageable))).thenReturn(emptyPage);
+
+        // Act
+        PageResponse<FoodSummaryResponse> response = foodService.searchFoods(query, null, pageable);
+
+        // Assert
+        assertNotNull(response);
+        assertTrue(response.getContent().isEmpty());
+        assertEquals(0, response.getTotalElements());
         verify(foodRepository, times(1)).searchFoods(eq(query), any(), eq(pageable));
     }
 

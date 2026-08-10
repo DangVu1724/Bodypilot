@@ -295,6 +295,110 @@ public class WorkoutSuggestionHelper {
         }
     }
 
+    public String generatePresetFallbackWorkoutPlan(UUID userId, LocalDate startDate, Integer days, String goalType, String focusBodyPart, String noteMessage) {
+        log.info("📋 [PRESET_WORKOUT_FALLBACK] Generating preset fallback workout plan for userId={}, startDate={}, days={}, goalType={}, focusBodyPart={}",
+                userId, startDate, days, goalType, focusBodyPart);
+        try {
+            List<UserInjury> injuries = (userId != null) ? userInjuryRepository.findAllByUserId(userId) : new ArrayList<>();
+            List<Exercise> availableExercises = getFilteredExercises(injuries);
+            Map<UUID, Exercise> exerciseMap = availableExercises.stream()
+                    .collect(Collectors.toMap(Exercise::getId, e -> e, (e1, e2) -> e1));
+            Map<String, Exercise> nameMap = availableExercises.stream()
+                    .collect(Collectors.toMap(e -> e.getName().toLowerCase().trim(), e -> e, (e1, e2) -> e1));
+
+            Map<String, List<Exercise>> bodyPartMap = new HashMap<>();
+            for (Exercise ex : availableExercises) {
+                if (ex.getBodyPart() != null && ex.getBodyPart().getCode() != null) {
+                    String code = ex.getBodyPart().getCode().toUpperCase().trim();
+                    bodyPartMap.computeIfAbsent(code, k -> new ArrayList<>()).add(ex);
+                }
+            }
+
+            List<PresetWorkoutPlanData.PresetWorkoutDay> presetDays = PresetWorkoutPlanData.getPresetForGoal(goalType, focusBodyPart);
+            List<DailyWorkoutDTO> dailyWorkoutList = new ArrayList<>();
+
+            for (int dayIdx = 0; dayIdx < days; dayIdx++) {
+                LocalDate date = startDate.plusDays(dayIdx);
+                PresetWorkoutPlanData.PresetWorkoutDay presetDay = presetDays.get(dayIdx % presetDays.size());
+
+                List<DailyWorkoutItemDTO> workoutItems = new ArrayList<>();
+                int itemOrder = 0;
+
+                for (PresetWorkoutPlanData.PresetExerciseItem presetItem : presetDay.getExerciseItems()) {
+                    Exercise matchedExercise = nameMap.get(presetItem.getExerciseName().toLowerCase().trim());
+                    if (matchedExercise == null) {
+                        String exName = presetItem.getExerciseName().toLowerCase();
+                        matchedExercise = availableExercises.stream()
+                                .filter(e -> e.getName().toLowerCase().contains(exName)
+                                        || exName.contains(e.getName().toLowerCase()))
+                                .findFirst()
+                                .orElse(null);
+                    }
+
+                    if (matchedExercise != null && isViolatingInjuries(matchedExercise, injuries)) {
+                        matchedExercise = null;
+                    }
+
+                    if (matchedExercise == null) {
+                        String bodyPartCode = presetItem.getBodyPartCode();
+                        List<Exercise> candidates = bodyPartMap.getOrDefault(bodyPartCode != null ? bodyPartCode.toUpperCase() : "CARDIO", availableExercises);
+                        if (candidates.isEmpty()) candidates = availableExercises;
+
+                        matchedExercise = candidates.stream()
+                                .filter(e -> !isViolatingInjuries(e, injuries))
+                                .findFirst()
+                                .orElse(!availableExercises.isEmpty() ? availableExercises.get(0) : null);
+                    }
+
+                    if (matchedExercise != null) {
+                        workoutItems.add(DailyWorkoutItemDTO.builder()
+                                .exerciseId(matchedExercise.getId())
+                                .exerciseName(matchedExercise.getName())
+                                .sets(presetItem.getSets())
+                                .reps(presetItem.getReps())
+                                .weightKg(presetItem.getWeightKg())
+                                .restSeconds(presetItem.getRestSeconds())
+                                .durationMinutes(presetItem.getDurationMinutes())
+                                .distanceKm(presetItem.getDistanceKm())
+                                .caloriesBurned(presetItem.getCaloriesBurned())
+                                .notes(presetItem.getNotes())
+                                .orderIndex(itemOrder++)
+                                .isCompleted(false)
+                                .build());
+                    }
+                }
+
+                dailyWorkoutList.add(DailyWorkoutDTO.builder()
+                        .date(date)
+                        .note(noteMessage != null ? noteMessage : presetDay.getNote())
+                        .isAiGenerated(false)
+                        .workoutItems(workoutItems)
+                        .build());
+            }
+
+            return objectMapper.writeValueAsString(dailyWorkoutList);
+        } catch (Exception e) {
+            log.error("❌ [PRESET_WORKOUT_FALLBACK_ERROR] Error generating preset fallback workout plan: ", e);
+            return getFallbackWorkoutJson(startDate, noteMessage, days);
+        }
+    }
+
+    private boolean isViolatingInjuries(Exercise e, List<UserInjury> injuries) {
+        if (e == null) return true;
+        if (injuries == null || injuries.isEmpty()) return false;
+        for (UserInjury userInjury : injuries) {
+            Injury injury = userInjury.getInjury();
+            if (injury == null) continue;
+            if (injury.getRestrictedExercises() != null && injury.getRestrictedExercises().contains(e.getCode())) {
+                return true;
+            }
+            if (injury.getBodyPart() != null && e.getBodyPart() != null && injury.getBodyPart().getId().equals(e.getBodyPart().getId())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public String getFallbackWorkoutJson(LocalDate startDate, String message, Integer days) {
         try {
             List<DailyWorkoutDTO> fallbackList = new ArrayList<>();
@@ -303,7 +407,7 @@ public class WorkoutSuggestionHelper {
                 fallbackList.add(DailyWorkoutDTO.builder()
                         .date(date)
                         .note(message)
-                        .isAiGenerated(true)
+                        .isAiGenerated(false)
                         .workoutItems(new ArrayList<>())
                         .build());
             }

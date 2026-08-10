@@ -79,7 +79,7 @@ public class CalorieCalculatorService {
 
     /**
      * Calculates the calories burned during an exercise based on MET value, duration, and user's weight.
-     * Formula: Calories = MET * Weight (kg) * (Duration in minutes / 60)
+     * Formula: Calories = (MET * 3.5 * Weight (kg) / 200.0) * Duration in minutes
      *
      * @param metValue         The Metabolic Equivalent of Task (MET) value for the exercise.
      * @param durationMinutes  The duration of the exercise in minutes.
@@ -95,7 +95,7 @@ public class CalorieCalculatorService {
             return 0.0;
         }
 
-        double caloriesRaw = metValue * weightKg * (duration / 60.0);
+        double caloriesRaw = (metValue * 3.5 * weightKg / 200.0) * duration;
         return round(caloriesRaw, 1);
     }
 

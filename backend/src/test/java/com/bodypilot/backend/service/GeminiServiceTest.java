@@ -117,13 +117,26 @@ class GeminiServiceTest {
     }
 
     @Test
-    @DisplayName("TC12: Sinh thực đơn khi AI Key chưa sẵn sàng - Trả về Fallback JSON thông báo")
-    void generateMealSuggestion_AiKeyMissing_ReturnsFallbackJson() throws Exception {
+    @DisplayName("TC12: Mất kết nối AI / Timeout - Trả về thông báo lỗi hoặc Fallback JSON")
+    void generateMealSuggestion_Timeout_ReturnsErrorMessage() throws Exception {
         // Arrange
         when(userRepository.findById(userId)).thenReturn(Optional.of(sampleUser));
-        when(llmRouterService.isAiReady()).thenReturn(false);
-        String expectedFallback = "{\"error\": \"AI Key Chưa Sẵn Sàng\"}";
-        when(dietSuggestionHelper.getFallbackJson(eq(startDate), anyString(), eq(7))).thenReturn(expectedFallback);
+        when(llmRouterService.isAiReady()).thenReturn(true);
+        when(goalRepository.findByUserIdAndStatus(userId, "ACTIVE")).thenReturn(Collections.emptyList());
+        when(metricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)).thenReturn(Collections.emptyList());
+        when(allergyRepository.findAllByUserIdAndIsActiveTrue(userId)).thenReturn(Collections.emptyList());
+        when(dietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId)).thenReturn(Collections.emptyList());
+        when(foodPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId)).thenReturn(Collections.emptyList());
+        when(dietSuggestionHelper.getBalancedFoodCandidates(eq(userId), any())).thenReturn(Collections.emptyList());
+        when(dietSuggestionHelper.buildPrompt(any(), any(), any(), any(), any(), any(), any(), any(), anyInt(), any())).thenReturn("Generated Prompt");
+
+        // Mô phỏng timeout / lỗi kết nối từ AI service
+        when(llmRouterService.routeChatRequest(any(), anyString(), anyString(), eq(true)))
+                .thenThrow(new RuntimeException("AI API Timeout Error"));
+
+        String expectedFallback = "{\"error\": \"Connection Timeout\"}";
+        when(dietSuggestionHelper.generatePresetFallbackMealPlan(eq(userId), eq(startDate), eq(7), any(), any(), anyString()))
+                .thenReturn(expectedFallback);
 
         // Act
         String result = geminiService.generateMealSuggestion(userId, startDate, 7, null);
@@ -131,24 +144,47 @@ class GeminiServiceTest {
         // Assert
         assertNotNull(result);
         assertEquals(expectedFallback, result);
-        verify(llmRouterService, times(1)).isAiReady();
-        verify(dietSuggestionHelper, times(1)).getFallbackJson(eq(startDate), anyString(), eq(7));
+        verify(llmRouterService, times(1)).routeChatRequest(any(), anyString(), anyString(), eq(true));
+        verify(dietSuggestionHelper, times(1)).generatePresetFallbackMealPlan(eq(userId), eq(startDate), eq(7), any(), any(), anyString());
     }
 
     @Test
-    @DisplayName("TC13: Sinh thực đơn khi không tìm thấy người dùng - Trả về Fallback JSON xử lý ngoại lệ")
-    void generateMealSuggestion_UserNotFound_ReturnsFallbackJson() {
+    @DisplayName("TC13: Người dùng dị ứng hải sản - Thực đơn sinh ra không chứa món hải sản")
+    void generateMealSuggestion_SeafoodAllergy_ExcludesSeafood() throws Exception {
         // Arrange
-        when(userRepository.findById(userId)).thenReturn(Optional.empty());
-        String expectedFallback = "{\"error\": \"User not found\"}";
-        when(dietSuggestionHelper.getFallbackJson(eq(startDate), anyString(), eq(7))).thenReturn(expectedFallback);
+        com.bodypilot.backend.model.entity.health.AllergyMaster allergyMaster = com.bodypilot.backend.model.entity.health.AllergyMaster.builder()
+                .name("Hải sản")
+                .build();
+
+        com.bodypilot.backend.model.entity.user.UserAllergy allergy = com.bodypilot.backend.model.entity.user.UserAllergy.builder()
+                .allergyMaster(allergyMaster)
+                .severity(com.bodypilot.backend.model.enums.SeverityLevel.HIGH)
+                .isActive(true)
+                .build();
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(sampleUser));
+        when(llmRouterService.isAiReady()).thenReturn(true);
+        when(goalRepository.findByUserIdAndStatus(userId, "ACTIVE")).thenReturn(Collections.emptyList());
+        when(metricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)).thenReturn(Collections.emptyList());
+        when(allergyRepository.findAllByUserIdAndIsActiveTrue(userId)).thenReturn(Collections.singletonList(allergy));
+        when(dietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId)).thenReturn(Collections.emptyList());
+        when(foodPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId)).thenReturn(Collections.emptyList());
+        when(dietSuggestionHelper.getBalancedFoodCandidates(eq(userId), any())).thenReturn(Collections.emptyList());
+        when(dietSuggestionHelper.buildPrompt(any(), any(), any(), any(), any(), any(), any(), any(), anyInt(), any())).thenReturn("Generated Prompt with Seafood Allergy Exclusions");
+
+        String mockRawJson = "[{\"day\": 1, \"meal\": \"Bữa sáng: Ức gà nướng, Cơm lứt\"}]";
+        when(llmRouterService.routeChatRequest(any(), anyString(), anyString(), eq(true))).thenReturn(mockRawJson);
+        when(dietSuggestionHelper.processAndLinkFoods(mockRawJson, null)).thenReturn(mockRawJson);
 
         // Act
-        String result = geminiService.generateMealSuggestion(userId, startDate, 7, null);
+        String result = geminiService.generateMealSuggestion(userId, startDate, 7, "Dị ứng hải sản");
 
         // Assert
         assertNotNull(result);
-        assertEquals(expectedFallback, result);
-        verify(userRepository, times(1)).findById(userId);
+        assertFalse(result.contains("Tôm"));
+        assertFalse(result.contains("Cua"));
+        assertFalse(result.contains("Mực"));
+        assertTrue(result.contains("Ức gà nướng"));
+        verify(allergyRepository, times(1)).findAllByUserIdAndIsActiveTrue(userId);
     }
 }

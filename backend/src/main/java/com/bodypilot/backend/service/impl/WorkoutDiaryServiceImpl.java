@@ -10,6 +10,7 @@ import com.bodypilot.backend.model.entity.user.User;
 import com.bodypilot.backend.repository.DailyWorkoutItemRepository;
 import com.bodypilot.backend.repository.DailyWorkoutRepository;
 import com.bodypilot.backend.repository.ExerciseRepository;
+import com.bodypilot.backend.service.CalorieCalculatorService;
 import com.bodypilot.backend.service.WorkoutDiaryService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -27,6 +28,7 @@ public class WorkoutDiaryServiceImpl implements WorkoutDiaryService {
     private final DailyWorkoutRepository dailyWorkoutRepository;
     private final DailyWorkoutItemRepository dailyWorkoutItemRepository;
     private final ExerciseRepository exerciseRepository;
+    private final CalorieCalculatorService calorieCalculatorService;
 
     @Override
     @Transactional(readOnly = true)
@@ -81,7 +83,7 @@ public class WorkoutDiaryServiceImpl implements WorkoutDiaryService {
             }
             double met = exercise.getMetValue() != null ? exercise.getMetValue() : 3.0;
             double duration = itemDTO.getDurationMinutes() != null ? itemDTO.getDurationMinutes().doubleValue() : (exercise.getDefaultDuration() != null ? exercise.getDefaultDuration() : 10.0);
-            item.setCaloriesBurnedSnapshot(met * userWeight * (duration / 60.0));
+            item.setCaloriesBurnedSnapshot(calorieCalculatorService.calculateWorkoutCalories(met, duration, userWeight));
         } else {
             // Custom exercise
             item.setIsCustom(true);
@@ -125,7 +127,7 @@ public class WorkoutDiaryServiceImpl implements WorkoutDiaryService {
             }
             double met = item.getExercise().getMetValue() != null ? item.getExercise().getMetValue() : 3.0;
             double duration = itemDTO.getDurationMinutes() != null ? itemDTO.getDurationMinutes().doubleValue() : (item.getExercise().getDefaultDuration() != null ? item.getExercise().getDefaultDuration() : 10.0);
-            item.setCaloriesBurnedSnapshot(met * userWeight * (duration / 60.0));
+            item.setCaloriesBurnedSnapshot(calorieCalculatorService.calculateWorkoutCalories(met, duration, userWeight));
         }
 
         dailyWorkoutItemRepository.save(item);
@@ -220,7 +222,7 @@ public class WorkoutDiaryServiceImpl implements WorkoutDiaryService {
                             item.setExerciseNameSnapshot(exercise.getName());
                             double met = exercise.getMetValue() != null ? exercise.getMetValue() : 3.0;
                             double duration = itemDto.getDurationMinutes() != null ? itemDto.getDurationMinutes().doubleValue() : (exercise.getDefaultDuration() != null ? exercise.getDefaultDuration() : 10.0);
-                            item.setCaloriesBurnedSnapshot(met * finalUserWeight * (duration / 60.0));
+                            item.setCaloriesBurnedSnapshot(calorieCalculatorService.calculateWorkoutCalories(met, duration, finalUserWeight));
                         } else {
                             item.setExercise(null);
                             item.setExerciseNameSnapshot(itemDto.getExerciseName() != null ? itemDto.getExerciseName() : "Custom Exercise");

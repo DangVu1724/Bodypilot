@@ -666,6 +666,179 @@ public class DietSuggestionHelper {
         return current + suffix.toString();
     }
 
+    public String generatePresetFallbackMealPlan(UUID userId, LocalDate startDate, Integer days, String goalType, BigDecimal targetCalories, String noteMessage) {
+        log.info("📋 [PRESET_FALLBACK] Generating preset fallback meal plan for userId={}, startDate={}, days={}, goalType={}, targetCalories={}",
+                userId, startDate, days, goalType, targetCalories);
+        try {
+            List<UserAllergy> allergies = (userId != null) ? allergyRepository.findAllByUserIdAndIsActiveTrue(userId) : new ArrayList<>();
+            List<UserDietPreference> diets = (userId != null) ? dietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId) : new ArrayList<>();
+            List<UserFoodPreference> dislikes = (userId != null) ? foodPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId) : new ArrayList<>();
+
+            List<Food> availableFoods = getFilteredFoods(allergies, diets, dislikes);
+            Map<UUID, Food> foodMap = availableFoods.stream()
+                    .collect(Collectors.toMap(Food::getId, f -> f, (f1, f2) -> f1));
+            Map<String, Food> nameMap = availableFoods.stream()
+                    .collect(Collectors.toMap(f -> f.getName().toLowerCase().trim(), f -> f, (f1, f2) -> f1));
+
+            Map<String, List<Food>> catMap = new HashMap<>();
+            for (Food f : availableFoods) {
+                if (f.getCategory() != null && f.getCategory().getCode() != null) {
+                    String code = f.getCategory().getCode().toUpperCase().trim();
+                    catMap.computeIfAbsent(code, k -> new ArrayList<>()).add(f);
+                }
+            }
+
+            List<PresetMealPlanData.PresetDay> presetDays = PresetMealPlanData.getPresetForGoal(goalType);
+            List<DailyEatingDTO> dailyEatingList = new ArrayList<>();
+
+            for (int dayIdx = 0; dayIdx < days; dayIdx++) {
+                LocalDate date = startDate.plusDays(dayIdx);
+                PresetMealPlanData.PresetDay presetDay = presetDays.get(dayIdx % presetDays.size());
+
+                List<MealSlotDTO> mealSlots = new ArrayList<>();
+                int slotIndex = 0;
+
+                for (PresetMealPlanData.PresetSlot slot : presetDay.getSlots()) {
+                    List<MealItemDTO> items = new ArrayList<>();
+                    int itemIndex = 0;
+
+                    for (PresetMealPlanData.PresetItem presetItem : slot.getItems()) {
+                        Food matchedFood = nameMap.get(presetItem.getFoodName().toLowerCase().trim());
+                        if (matchedFood == null) {
+                            String pName = presetItem.getFoodName().toLowerCase();
+                            matchedFood = availableFoods.stream()
+                                    .filter(f -> f.getName().toLowerCase().contains(pName)
+                                            || pName.contains(f.getName().toLowerCase()))
+                                    .findFirst()
+                                    .orElse(null);
+                        }
+
+                        if (matchedFood != null && isViolatingAllergiesOrDislikes(matchedFood, allergies, dislikes)) {
+                            matchedFood = null;
+                        }
+
+                        if (matchedFood == null) {
+                            String catCode = presetItem.getCategoryCode();
+                            List<Food> candidates = catMap.getOrDefault(catCode != null ? catCode.toUpperCase() : "OTHERS", availableFoods);
+                            if (candidates.isEmpty()) candidates = availableFoods;
+
+                            matchedFood = candidates.stream()
+                                    .filter(f -> !isViolatingAllergiesOrDislikes(f, allergies, dislikes))
+                                    .findFirst()
+                                    .orElse(!availableFoods.isEmpty() ? availableFoods.get(0) : null);
+                        }
+
+                        if (matchedFood != null) {
+                            BigDecimal qty = BigDecimal.valueOf(presetItem.getDefaultServingGrams());
+                            BigDecimal factor = qty.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
+                            items.add(MealItemDTO.builder()
+                                    .foodId(matchedFood.getId())
+                                    .foodName(matchedFood.getName())
+                                    .servingQuantity(qty)
+                                    .servingUnit("g")
+                                    .orderIndex(itemIndex++)
+                                    .calories(matchedFood.getCaloriesPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP))
+                                    .protein(matchedFood.getProteinPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP))
+                                    .fat(matchedFood.getFatPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP))
+                                    .carbs(matchedFood.getCarbsPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP))
+                                    .fiber(matchedFood.getFiberPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP))
+                                    .imageUrl(matchedFood.getImageUrl())
+                                    .isCustom(false)
+                                    .isEaten(false)
+                                    .build());
+                        }
+                    }
+
+                    mealSlots.add(MealSlotDTO.builder()
+                            .mealType(slot.getMealType())
+                            .customName(slot.getCustomName())
+                            .orderIndex(slotIndex++)
+                            .isEaten(false)
+                            .items(items)
+                            .build());
+                }
+
+                scaleMealSlotsToTargetCalories(mealSlots, targetCalories, foodMap);
+
+                BigDecimal totalCal = mealSlots.stream()
+                        .flatMap(s -> s.getItems().stream())
+                        .map(i -> i.getCalories() != null ? i.getCalories() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                dailyEatingList.add(DailyEatingDTO.builder()
+                        .date(date)
+                        .note(noteMessage != null ? noteMessage : "Thực đơn chuẩn cân bằng dinh dưỡng theo mục tiêu (Do hệ thống tự động thiết lập)")
+                        .isAiGenerated(false)
+                        .totalCaloriesPlanned(totalCal)
+                        .totalCaloriesEaten(BigDecimal.ZERO)
+                        .mealSlots(mealSlots)
+                        .build());
+            }
+
+            return objectMapper.writeValueAsString(dailyEatingList);
+        } catch (Exception e) {
+            log.error("❌ [PRESET_FALLBACK_ERROR] Error generating preset fallback meal plan: ", e);
+            return getFallbackJson(startDate, noteMessage, days);
+        }
+    }
+
+    private boolean isViolatingAllergiesOrDislikes(Food f, List<UserAllergy> allergies, List<UserFoodPreference> dislikes) {
+        if (f == null) return true;
+        if (allergies != null && !allergies.isEmpty()) {
+            for (UserAllergy a : allergies) {
+                if (a.getAllergyMaster() == null) continue;
+                String allergyName = a.getAllergyMaster().getName().toLowerCase().trim();
+                String name = f.getName().toLowerCase();
+                String desc = f.getDescription() != null ? f.getDescription().toLowerCase() : "";
+                if (name.contains(allergyName) || desc.contains(allergyName)) return true;
+            }
+        }
+        if (dislikes != null && !dislikes.isEmpty()) {
+            for (UserFoodPreference preference : dislikes) {
+                if (preference.getDislikedFoodGroup() != null && isDislikedFood(f, preference.getDislikedFoodGroup())) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private void scaleMealSlotsToTargetCalories(List<MealSlotDTO> mealSlots, BigDecimal targetCalories, Map<UUID, Food> foodMap) {
+        if (targetCalories == null || targetCalories.compareTo(BigDecimal.ZERO) <= 0) return;
+        BigDecimal totalCal = mealSlots.stream()
+                .flatMap(slot -> slot.getItems().stream())
+                .map(item -> item.getCalories() != null ? item.getCalories() : BigDecimal.ZERO)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        if (totalCal.compareTo(BigDecimal.ZERO) <= 0) return;
+
+        BigDecimal scaleFactor = targetCalories.divide(totalCal, 4, RoundingMode.HALF_UP);
+        if (scaleFactor.compareTo(new BigDecimal("0.5")) < 0) scaleFactor = new BigDecimal("0.5");
+        if (scaleFactor.compareTo(new BigDecimal("2.0")) > 0) scaleFactor = new BigDecimal("2.0");
+
+        for (MealSlotDTO slot : mealSlots) {
+            for (MealItemDTO item : slot.getItems()) {
+                if (item.getFoodId() != null && foodMap.containsKey(item.getFoodId())) {
+                    Food food = foodMap.get(item.getFoodId());
+                    BigDecimal scaledQuantity = item.getServingQuantity().multiply(scaleFactor).setScale(1, RoundingMode.HALF_UP);
+                    BigDecimal minQty = getMinQuantityForCategory(food);
+                    BigDecimal maxQty = getMaxQuantityForCategory(food);
+
+                    if (scaledQuantity.compareTo(minQty) < 0) scaledQuantity = minQty;
+                    if (scaledQuantity.compareTo(maxQty) > 0) scaledQuantity = maxQty;
+
+                    BigDecimal factor = scaledQuantity.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
+                    item.setServingQuantity(scaledQuantity);
+                    item.setCalories(food.getCaloriesPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                    item.setProtein(food.getProteinPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                    item.setFat(food.getFatPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                    item.setCarbs(food.getCarbsPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                    item.setFiber(food.getFiberPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                }
+            }
+        }
+    }
+
     public String getFallbackJson(LocalDate startDate, String message, Integer days) {
         try {
             List<DailyEatingDTO> fallbackList = new ArrayList<>();
@@ -674,7 +847,7 @@ public class DietSuggestionHelper {
                 fallbackList.add(DailyEatingDTO.builder()
                         .date(date)
                         .note(message)
-                        .isAiGenerated(true)
+                        .isAiGenerated(false)
                         .mealSlots(new ArrayList<>())
                         .build());
             }

@@ -66,9 +66,16 @@ public class CheckInServiceImpl implements CheckInService {
         }
 
         boolean checkedInThisWeek = userCheckInHistoryRepository.existsByUserIdAndCheckInDateBetween(userId, sundayOfThisWeek, today);
-        boolean isDue = isSundayOrMonday && !checkedInThisWeek;
 
-        long daysSinceLastCheckIn = lastCheckInDate != null ? ChronoUnit.DAYS.between(lastCheckInDate, today) : 7;
+        // User is considered new if they have never checked in and registered within the last 7 days
+        boolean hasNeverCheckedIn = (lastCheckInDate == null);
+        LocalDate registrationDate = user.getCreatedAt() != null ? user.getCreatedAt().toLocalDate() : today;
+        long daysSinceRegistration = ChronoUnit.DAYS.between(registrationDate, today);
+
+        boolean onboardingNeeded = hasNeverCheckedIn && daysSinceRegistration < 7;
+        boolean isDue = !onboardingNeeded && isSundayOrMonday && !checkedInThisWeek;
+
+        long daysSinceLastCheckIn = lastCheckInDate != null ? ChronoUnit.DAYS.between(lastCheckInDate, today) : daysSinceRegistration;
 
         Double currentWeight = profile != null && profile.getWeight() != null ? profile.getWeight() : 60.0;
         Double currentHeight = profile != null && profile.getHeightCm() != null ? profile.getHeightCm() : 170.0;
@@ -79,6 +86,7 @@ public class CheckInServiceImpl implements CheckInService {
 
         return CheckInStatusResponse.builder()
                 .isCheckInDue(isDue)
+                .onboardingNeeded(onboardingNeeded)
                 .lastCheckInDate(lastCheckInDate)
                 .daysSinceLastCheckIn(daysSinceLastCheckIn)
                 .currentWeight(currentWeight)

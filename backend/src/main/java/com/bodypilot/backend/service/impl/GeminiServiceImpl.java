@@ -47,25 +47,12 @@ public class GeminiServiceImpl implements GeminiService {
             User user = userRepository.findById(userId)
                     .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
-            boolean apiKeyConfigured = llmRouterService.isAiReady();
-            log.info("AI API key configured for meal suggestion: {}", apiKeyConfigured);
-
-            if (!apiKeyConfigured) {
-                log.warn("AI API key is missing. Returning fallback JSON.");
-                return dietSuggestionHelper.getFallbackJson(startDate, "Cấu hình AI Key Chưa Sẵn Sàng. Vui lòng kiểm tra API Key trong application.properties.", days);
-            }
-
             log.info("Retrieving user profile, goals and metric history...");
             UserProfile profile = user.getProfile();
             UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
                     .stream().findFirst().orElse(null);
             UserMetricHistory latestMetric = metricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)
                     .stream().findFirst().orElse(null);
-
-            log.info("Retrieving user allergies, diets, and food preferences...");
-            List<UserAllergy> allergies = allergyRepository.findAllByUserIdAndIsActiveTrue(userId);
-            List<UserDietPreference> diets = dietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
-            List<UserFoodPreference> dislikedFoods = foodPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
 
             String goalType = null;
             if (activeGoal != null) {
@@ -74,6 +61,23 @@ public class GeminiServiceImpl implements GeminiService {
                 goalType = latestMetric.getGoal();
             }
             log.info("User goal type resolved to: {}", goalType);
+
+            java.math.BigDecimal targetCal = (latestMetric != null && latestMetric.getTargetCalories() != null) 
+                    ? java.math.BigDecimal.valueOf(latestMetric.getTargetCalories()) : null;
+
+            boolean apiKeyConfigured = llmRouterService.isAiReady();
+            log.info("AI API key configured for meal suggestion: {}", apiKeyConfigured);
+
+            if (!apiKeyConfigured) {
+                log.warn("AI API key is missing. Returning preset fallback JSON.");
+                return dietSuggestionHelper.generatePresetFallbackMealPlan(userId, startDate, days, goalType, targetCal,
+                        "Cấu hình AI Key Chưa Sẵn Sàng. Hệ thống đã tự động thiết lập thực đơn chuẩn phù hợp mục tiêu.");
+            }
+
+            log.info("Retrieving user allergies, diets, and food preferences...");
+            List<UserAllergy> allergies = allergyRepository.findAllByUserIdAndIsActiveTrue(userId);
+            List<UserDietPreference> diets = dietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
+            List<UserFoodPreference> dislikedFoods = foodPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
 
             log.info("Retrieving food candidates from database...");
             List<FoodCandidate> candidates = dietSuggestionHelper.getBalancedFoodCandidates(userId, goalType);
@@ -87,8 +91,6 @@ public class GeminiServiceImpl implements GeminiService {
             log.info("Received raw meal suggestion JSON from AI for user {}: \n{}", userId, rawJson);
             
             log.info("Processing food mappings, exact macro scaling and saving to DTOs...");
-            java.math.BigDecimal targetCal = (latestMetric != null && latestMetric.getTargetCalories() != null) 
-                    ? java.math.BigDecimal.valueOf(latestMetric.getTargetCalories()) : null;
             String result = dietSuggestionHelper.processAndLinkFoods(rawJson, targetCal);
 
             long elapsedTime = System.currentTimeMillis() - startTime;
@@ -97,7 +99,18 @@ public class GeminiServiceImpl implements GeminiService {
         } catch (Exception e) {
             long elapsedTime = System.currentTimeMillis() - startTime;
             log.error("❌ [MEAL_AI_ERROR] Thất bại sau {} ms ({} giây) khi tạo thực đơn: ", elapsedTime, String.format("%.2f", elapsedTime / 1000.0), e);
-            return dietSuggestionHelper.getFallbackJson(startDate, "❌ Đã xảy ra lỗi khi lập thực đơn: " + e.getMessage(), days);
+            try {
+                UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE").stream().findFirst().orElse(null);
+                UserMetricHistory latestMetric = metricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId).stream().findFirst().orElse(null);
+                String goalType = (activeGoal != null) ? activeGoal.getType() : ((latestMetric != null) ? latestMetric.getGoal() : null);
+                java.math.BigDecimal targetCal = (latestMetric != null && latestMetric.getTargetCalories() != null)
+                        ? java.math.BigDecimal.valueOf(latestMetric.getTargetCalories()) : null;
+                return dietSuggestionHelper.generatePresetFallbackMealPlan(userId, startDate, days, goalType, targetCal,
+                        "Kết nối AI gián đoạn. Hệ thống đã tự động tạo thực đơn chuẩn phù hợp mục tiêu.");
+            } catch (Exception ex) {
+                return dietSuggestionHelper.generatePresetFallbackMealPlan(userId, startDate, days, null, null,
+                        "Kết nối AI gián đoạn. Hệ thống đã tự động tạo thực đơn chuẩn.");
+            }
         }
     }
 
@@ -105,38 +118,39 @@ public class GeminiServiceImpl implements GeminiService {
     public String generateWorkoutSuggestion(UUID userId, LocalDate startDate, Integer days, String focusBodyPart) {
         long startTime = System.currentTimeMillis();
         log.info("🚀 [WORKOUT_AI_START] Bắt đầu tạo gợi ý lịch tập (Workout) cho userId={}, startDate={}, days={}, focusBodyPart={}", userId, startDate, days, focusBodyPart);
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
-
-        boolean apiKeyConfigured = llmRouterService.isAiReady();
-        log.info("AI API key configured for workout suggestion: {}", apiKeyConfigured);
-
-        if (!apiKeyConfigured) {
-            log.warn("AI API key is missing. Returning fallback JSON.");
-            return workoutSuggestionHelper.getFallbackWorkoutJson(startDate, "Cấu hình AI Key Chưa Sẵn Sàng. Vui lòng kiểm tra API Key trong application.properties.", days);
-        }
-
-        UserProfile profile = user.getProfile();
-        UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
-                .stream().findFirst().orElse(null);
-        UserMetricHistory latestMetric = metricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)
-                .stream().findFirst().orElse(null);
-
-        List<UserInjury> injuries = userInjuryRepository.findAllByUserId(userId);
-
-        String goalType = null;
-        if (activeGoal != null) {
-            goalType = activeGoal.getType();
-        } else if (latestMetric != null) {
-            goalType = latestMetric.getGoal();
-        }
-
-        List<ExerciseCandidate> candidates = workoutSuggestionHelper.getBalancedExerciseCandidates(userId, goalType, focusBodyPart);
-
-        String prompt = workoutSuggestionHelper.buildWorkoutPrompt(profile, activeGoal, latestMetric, injuries, candidates, startDate, days, focusBodyPart);
-        log.info("Sending workout suggestion prompt to AI for user {}: \n{}", userId, prompt);
-
         try {
+            User user = userRepository.findById(userId)
+                    .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+            UserProfile profile = user.getProfile();
+            UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
+                    .stream().findFirst().orElse(null);
+            UserMetricHistory latestMetric = metricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                    .stream().findFirst().orElse(null);
+
+            String goalType = null;
+            if (activeGoal != null) {
+                goalType = activeGoal.getType();
+            } else if (latestMetric != null) {
+                goalType = latestMetric.getGoal();
+            }
+
+            boolean apiKeyConfigured = llmRouterService.isAiReady();
+            log.info("AI API key configured for workout suggestion: {}", apiKeyConfigured);
+
+            if (!apiKeyConfigured) {
+                log.warn("AI API key is missing. Returning preset fallback workout JSON.");
+                return workoutSuggestionHelper.generatePresetFallbackWorkoutPlan(userId, startDate, days, goalType, focusBodyPart,
+                        "Cấu hình AI Key Chưa Sẵn Sàng. Hệ thống đã tự động thiết lập lịch tập chuẩn phù hợp mục tiêu.");
+            }
+
+            List<UserInjury> injuries = userInjuryRepository.findAllByUserId(userId);
+
+            List<ExerciseCandidate> candidates = workoutSuggestionHelper.getBalancedExerciseCandidates(userId, goalType, focusBodyPart);
+
+            String prompt = workoutSuggestionHelper.buildWorkoutPrompt(profile, activeGoal, latestMetric, injuries, candidates, startDate, days, focusBodyPart);
+            log.info("Sending workout suggestion prompt to AI for user {}: \n{}", userId, prompt);
+
             String rawJson = llmRouterService.routeChatRequest(null, prompt, "Bạn là một huấn luyện viên cá nhân (PT) chuyên nghiệp. Hãy lên lịch trình tập luyện thể hình cực kỳ chi tiết, khoa học, thực tế phù hợp với thể trạng người dùng dưới dạng JSON array hợp lệ phù hợp với danh sách bài tập được cung cấp.", true);
             log.info("Received raw workout suggestion JSON from Gemini AI for user {}: \n{}", userId, rawJson);
             String result = workoutSuggestionHelper.processAndLinkExercises(rawJson);
@@ -147,7 +161,16 @@ public class GeminiServiceImpl implements GeminiService {
         } catch (Exception e) {
             long elapsedTime = System.currentTimeMillis() - startTime;
             log.error("❌ [WORKOUT_AI_ERROR] Thất bại sau {} ms ({} giây) khi tạo lịch tập: ", elapsedTime, String.format("%.2f", elapsedTime / 1000.0), e);
-            return workoutSuggestionHelper.getFallbackWorkoutJson(startDate, "❌ Đã xảy ra lỗi khi gọi AI: " + e.getMessage(), days);
+            try {
+                UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE").stream().findFirst().orElse(null);
+                UserMetricHistory latestMetric = metricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId).stream().findFirst().orElse(null);
+                String goalType = (activeGoal != null) ? activeGoal.getType() : ((latestMetric != null) ? latestMetric.getGoal() : null);
+                return workoutSuggestionHelper.generatePresetFallbackWorkoutPlan(userId, startDate, days, goalType, focusBodyPart,
+                        "Kết nối AI gián đoạn. Hệ thống đã tự động tạo lịch tập chuẩn phù hợp mục tiêu.");
+            } catch (Exception ex) {
+                return workoutSuggestionHelper.generatePresetFallbackWorkoutPlan(userId, startDate, days, null, focusBodyPart,
+                        "Kết nối AI gián đoạn. Hệ thống đã tự động tạo lịch tập chuẩn.");
+            }
         }
     }
 

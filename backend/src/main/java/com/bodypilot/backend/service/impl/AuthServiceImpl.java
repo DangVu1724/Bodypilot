@@ -75,15 +75,20 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public AuthResponse login(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(
-                        request.getEmail(),
-                        request.getPassword()
-                )
-        );
-
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow();
+                .orElseThrow(() -> new com.bodypilot.backend.exception.ResourceNotFoundException("Tài khoản này chưa tồn tại trên hệ thống. Vui lòng kiểm tra lại Email hoặc Đăng ký!"));
+
+        try {
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            request.getEmail(),
+                            request.getPassword()
+                    )
+            );
+        } catch (org.springframework.security.authentication.BadCredentialsException e) {
+            throw new IllegalArgumentException("Mật khẩu không chính xác. Vui lòng kiểm tra lại!");
+        }
+
         UserDetails userDetails = userDetailsService.loadUserByUsername(user.getEmail());
         String token = jwtService.generateToken(userDetails);
 

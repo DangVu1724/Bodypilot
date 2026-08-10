@@ -79,18 +79,34 @@ public class FcmService {
      * @return String ID tin nhắn từ Firebase
      */
     public String sendNotificationToTopic(String topic, String title, String body) {
+        return sendNotificationToTopicWithData(topic, title, body, Map.of());
+    }
+
+    /**
+     * Gửi thông báo tới Topic kèm theo dữ liệu tùy biến (Data Payload)
+     *
+     * @param topic tên Topic (ví dụ: "all_users")
+     * @param title Tiêu đề
+     * @param body  Nội dung
+     * @param data  Dữ liệu kèm theo (category, routeToPush...)
+     * @return String ID tin nhắn từ Firebase
+     */
+    public String sendNotificationToTopicWithData(String topic, String title, String body, Map<String, String> data) {
         try {
             Notification notification = Notification.builder()
                     .setTitle(title)
                     .setBody(body)
                     .build();
 
-            Message message = Message.builder()
+            Message.Builder messageBuilder = Message.builder()
                     .setTopic(topic)
-                    .setNotification(notification)
-                    .build();
+                    .setNotification(notification);
 
-            String response = FirebaseMessaging.getInstance().send(message);
+            if (data != null && !data.isEmpty()) {
+                messageBuilder.putAllData(data);
+            }
+
+            String response = FirebaseMessaging.getInstance().send(messageBuilder.build());
             System.out.println(">>> [FCM Topic] Gửi thông báo thành công tới topic '" + topic + "': " + response);
             return response;
         } catch (Exception e) {

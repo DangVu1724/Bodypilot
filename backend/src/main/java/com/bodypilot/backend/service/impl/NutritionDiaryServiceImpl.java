@@ -55,6 +55,10 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
     @Override
     @Transactional
     public DailyEatingDTO addFoodToDiary(User user, LocalDate date, MealType mealType, MealItemDTO itemDTO) {
+        if (itemDTO.getServingQuantity() == null || itemDTO.getServingQuantity().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Khối lượng món ăn phải lớn hơn 0");
+        }
+
         DailyEating dailyEating = dailyEatingRepository.findByUserAndDate(user, date)
                 .orElseGet(() -> dailyEatingRepository.save(DailyEating.builder()
                         .user(user)
