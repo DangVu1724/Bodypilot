@@ -1,15 +1,33 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/repositories/step_repository.dart';
 import 'package:mobile/data/services/step_tracker_service.dart';
 import 'package:mobile/data/services/token_service.dart';
 import 'step_state.dart';
 
-class StepCubit extends Cubit<StepState> {
+class StepCubit extends Cubit<StepState> with WidgetsBindingObserver {
   final StepTrackerService _stepTrackerService = StepTrackerService();
   int _lastSyncedSteps = -1;
 
   StepCubit() : super(const StepState()) {
+    WidgetsBinding.instance.addObserver(this);
     init();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      refreshOnAppResumed();
+    }
+  }
+
+  Future<void> refreshOnAppResumed() async {
+    final savedSteps = await _stepTrackerService.getSavedTodaySteps();
+    if (savedSteps > state.steps) {
+      emit(state.copyWith(steps: savedSteps));
+    }
+    syncTodayStepsToBackend(state.steps);
+    fetchStepHistory();
   }
 
   Future<void> init() async {
@@ -77,6 +95,7 @@ class StepCubit extends Cubit<StepState> {
 
   @override
   Future<void> close() {
+    WidgetsBinding.instance.removeObserver(this);
     _stepTrackerService.dispose();
     return super.close();
   }

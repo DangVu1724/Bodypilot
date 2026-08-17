@@ -8,6 +8,7 @@ class StepTrackerService {
   static const String _baselineStepsKey = 'step_baseline_steps';
   static const String _baselineDateKey = 'step_baseline_date';
   static const String _todayStepsKey = 'step_today_steps';
+  static const String _lastRawStepsKey = 'step_last_raw_steps';
 
   StreamSubscription<StepCount>? _stepSubscription;
   StreamSubscription<PedestrianStatus>? _statusSubscription;
@@ -61,13 +62,42 @@ class StepTrackerService {
     final String todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final String? savedDate = prefs.getString(_baselineDateKey);
     int baseline = prefs.getInt(_baselineStepsKey) ?? -1;
+    int lastRaw = prefs.getInt(_lastRawStepsKey) ?? -1;
+    int savedTodaySteps = prefs.getInt(_todayStepsKey) ?? 0;
 
-    // Reset baseline if new day or new installation
-    if (savedDate != todayStr || baseline < 0 || rawHardwareSteps < baseline) {
+    // Case 1: First time app initialization
+    if (baseline < 0 || lastRaw < 0) {
       baseline = rawHardwareSteps;
       await prefs.setString(_baselineDateKey, todayStr);
       await prefs.setInt(_baselineStepsKey, baseline);
+      await prefs.setInt(_lastRawStepsKey, rawHardwareSteps);
+      await prefs.setInt(_todayStepsKey, 0);
+      return 0;
     }
+
+    // Case 2: Device reboot detected (raw hardware counter reset to smaller number)
+    if (rawHardwareSteps < baseline || rawHardwareSteps < lastRaw) {
+      if (savedDate == todayStr) {
+        baseline = (rawHardwareSteps - savedTodaySteps).clamp(0, rawHardwareSteps);
+      } else {
+        baseline = rawHardwareSteps;
+        await prefs.setString(_baselineDateKey, todayStr);
+      }
+      await prefs.setInt(_baselineStepsKey, baseline);
+    }
+    // Case 3: New day (Date changed)
+    else if (savedDate != todayStr) {
+      if (lastRaw >= 0 && rawHardwareSteps >= lastRaw) {
+        baseline = lastRaw;
+      } else {
+        baseline = rawHardwareSteps;
+      }
+      await prefs.setString(_baselineDateKey, todayStr);
+      await prefs.setInt(_baselineStepsKey, baseline);
+    }
+
+    // Always update last known raw steps
+    await prefs.setInt(_lastRawStepsKey, rawHardwareSteps);
 
     final int todaySteps = (rawHardwareSteps - baseline).clamp(0, 1000000);
     await prefs.setInt(_todayStepsKey, todaySteps);
