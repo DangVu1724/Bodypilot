@@ -1,5 +1,3 @@
-import 'dart:io' show Platform;
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:dio/dio.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/data/services/token_service.dart';
@@ -60,12 +58,16 @@ class ApiClient {
             print("   No response received from server.");
           }
           if (e.response?.statusCode == 401) {
-            print("🚨 [ApiClient] 401 Unauthorized received. Logging out and redirecting to welcome screen...");
-            // Handle token expiration - Logout and redirect to login
+            print("🚨 [ApiClient] 401 Unauthorized received. Logging out...");
             TokenService.removeToken();
-
-            // Redirect to welcome screen
             AppPages.router.go(AppRoutes.welcome);
+          } else if (e.response?.statusCode == 502 ||
+              e.response?.statusCode == 503 ||
+              e.response?.statusCode == 504) {
+            print("🛠️ [ApiClient] Server maintenance / busy status (${e.response?.statusCode}). Switching to offline mode.");
+          } else if (e.type == DioExceptionType.connectionTimeout ||
+              e.type == DioExceptionType.connectionError) {
+            print("⚡ [ApiClient] Network connection timeout/error. Fallback to offline mode.");
           }
           return handler.next(e);
         },

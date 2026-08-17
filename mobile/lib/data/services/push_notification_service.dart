@@ -335,7 +335,7 @@ class PushNotificationService {
   static Future<void> scheduleUnloggedMealReminder({int hour = 11, int minute = 30}) async {
     const id = 1010;
     const title = 'Bạn chưa lên thực đơn hôm nay! 🥗';
-    const body = 'Dành 1 phút ghi nhận món ăn hoặc nhờ Gemini AI gợi ý thực đơn chuẩn TDEE giúp bạn nhé.';
+    const body = 'Dành 1 phút ghi nhận món ăn hoặc dùng tính năng Gợi ý Thực đơn thông minh để đạt chuẩn TDEE giúp bạn nhé!';
 
     await scheduleDailyNotification(
       id: id,

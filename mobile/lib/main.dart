@@ -25,6 +25,9 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:mobile/data/services/push_notification_service.dart';
 import 'package:logger/logger.dart';
 
+import 'package:mobile/core/network/network_connectivity_service.dart';
+import 'package:mobile/data/services/offline_sync_manager.dart';
+import 'package:mobile/presentation/widgets/offline_banner_widget.dart';
 import 'package:mobile/presentation/bloc/notification/notification_cubit.dart';
 import 'package:mobile/presentation/bloc/step/step_cubit.dart';
 
@@ -44,6 +47,8 @@ void main() async {
   await Hive.initFlutter();
   await Hive.openBox('assessment_box');
   await Hive.openBox('notification_box');
+  await OfflineSyncManager.init();
+  networkConnectivityService.init();
   await TokenService.init();
   runApp(const BodyPilotApp());
 }
@@ -74,6 +79,11 @@ class BodyPilotApp extends StatelessWidget {
         theme: AppTheme.lightTheme,
         darkTheme: AppTheme.darkTheme,
         themeMode: ThemeMode.light,
+        builder: (context, child) {
+          return OfflineBannerWidget(
+            child: child ?? const SizedBox.shrink(),
+          );
+        },
       ),
     );
   }

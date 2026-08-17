@@ -58,6 +58,7 @@ dependencies:
   go_router: ^17.3.0
   pedometer: ^4.0.1
   permission_handler: ^11.3.1
+  connectivity_plus: ^6.1.4
 
   path: any
 dev_dependencies:

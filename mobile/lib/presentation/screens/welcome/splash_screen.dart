@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/presentation/bloc/splash/splash_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 
@@ -50,10 +50,7 @@ class _SplashScreenState extends State<SplashScreen> {
               Positioned.fill(
                 child: Container(
                   decoration: const BoxDecoration(
-                    image: DecorationImage(
-                      image: AssetImage('assets/images/logo.png'),
-                      fit: BoxFit.cover,
-                    ),
+                    image: DecorationImage(image: AssetImage('assets/images/logo.png'), fit: BoxFit.cover),
                   ),
                 ),
               ),
@@ -79,17 +76,15 @@ class _SplashScreenState extends State<SplashScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Spacer(flex: 3),
-                      Text(
-                        'BodyPilot',
-                        style: AppTheme.headlineStyle.copyWith(
-                          fontSize: 40,
-                          color: Colors.white,
-                        ),
-                      ),
+                      Text('BodyPilot', style: AppTheme.headlineStyle.copyWith(fontSize: 40, color: Colors.white)),
                       const SizedBox(height: 8),
                       Text(
                         'Trợ lý Sức khỏe & Dinh dưỡng AI',
-                        style: GoogleFonts.inter(fontSize: 16, color: Colors.white.withOpacity(0.85), letterSpacing: 0.2),
+                        style: GoogleFonts.inter(
+                          fontSize: 16,
+                          color: Colors.white.withOpacity(0.85),
+                          letterSpacing: 0.2,
+                        ),
                       ),
                       const Spacer(flex: 2),
                       const SizedBox(

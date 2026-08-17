@@ -4,7 +4,6 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_cubit.dart';
-import 'package:mobile/presentation/bloc/assessment/assessment_state.dart';
 import 'package:mobile/presentation/widgets/black_button_2.dart';
 
 class AssessmentResultStep extends StatelessWidget {
@@ -155,52 +154,28 @@ class AssessmentResultStep extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [
-                  const Color(0xFF1E293B),
-                  const Color(0xFF0F172A),
-                ],
+                colors: [const Color(0xFF1E293B), const Color(0xFF0F172A)],
               ),
               borderRadius: BorderRadius.circular(24),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.12),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
-                ),
-              ],
+              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 16, offset: const Offset(0, 8))],
             ),
             child: Column(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.auto_awesome,
-                    color: Color(0xFFF59E0B),
-                    size: 32,
-                  ),
+                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), shape: BoxShape.circle),
+                  child: const Icon(Icons.auto_awesome, color: Color(0xFFF59E0B), size: 32),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'Phân Tích Thể Trạng Hoàn Tất',
-                  style: GoogleFonts.beVietnamPro(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: GoogleFonts.beVietnamPro(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   'Hệ thống AI đã tự động tính toán các chỉ số sức khỏe dựa trên khảo sát của bạn.',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.beVietnamPro(
-                    fontSize: 13,
-                    color: const Color(0xFF94A3B8),
-                    height: 1.4,
-                  ),
+                  style: GoogleFonts.beVietnamPro(fontSize: 13, color: const Color(0xFF94A3B8), height: 1.4),
                 ),
               ],
             ),
@@ -220,10 +195,7 @@ class AssessmentResultStep extends StatelessWidget {
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: bmiColor.withOpacity(0.18),
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: bmiColor.withOpacity(0.18), shape: BoxShape.circle),
                   child: Icon(bmiIcon, color: bmiColor, size: 26),
                 ),
                 const SizedBox(width: 14),
@@ -235,18 +207,12 @@ class AssessmentResultStep extends StatelessWidget {
                         children: [
                           Text(
                             'Đánh giá BMI:',
-                            style: GoogleFonts.beVietnamPro(
-                              fontSize: 13,
-                              color: const Color(0xFF64748B),
-                            ),
+                            style: GoogleFonts.beVietnamPro(fontSize: 13, color: const Color(0xFF64748B)),
                           ),
                           const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-                            decoration: BoxDecoration(
-                              color: bmiColor,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
+                            decoration: BoxDecoration(color: bmiColor, borderRadius: BorderRadius.circular(12)),
                             child: Text(
                               bmiCategory,
                               style: GoogleFonts.beVietnamPro(
@@ -278,11 +244,7 @@ class AssessmentResultStep extends StatelessWidget {
 
           Text(
             'Các Chỉ Số Sinh Học Cốt Lõi',
-            style: GoogleFonts.beVietnamPro(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: const Color(0xFF1E293B),
-            ),
+            style: GoogleFonts.beVietnamPro(fontSize: 16, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
           ),
           const SizedBox(height: 12),
 
@@ -347,13 +309,7 @@ class AssessmentResultStep extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.grey.shade100,
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 10, offset: const Offset(0, 4))],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -419,13 +375,7 @@ class AssessmentResultStep extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade100,
-            blurRadius: 8,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 8, offset: const Offset(0, 3))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -474,13 +424,7 @@ class AssessmentResultStep extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 4),
-              Text(
-                unit,
-                style: GoogleFonts.beVietnamPro(
-                  fontSize: 10,
-                  color: const Color(0xFF94A3B8),
-                ),
-              ),
+              Text(unit, style: GoogleFonts.beVietnamPro(fontSize: 10, color: const Color(0xFF94A3B8))),
             ],
           ),
           const SizedBox(height: 4),
@@ -488,11 +432,7 @@ class AssessmentResultStep extends StatelessWidget {
             subtitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.beVietnamPro(
-              fontSize: 11,
-              fontWeight: FontWeight.w500,
-              color: accentColor,
-            ),
+            style: GoogleFonts.beVietnamPro(fontSize: 11, fontWeight: FontWeight.w500, color: accentColor),
           ),
         ],
       ),
@@ -503,10 +443,7 @@ class AssessmentResultStep extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: GoogleFonts.beVietnamPro(fontSize: 13, color: const Color(0xFF64748B)),
-        ),
+        Text(label, style: GoogleFonts.beVietnamPro(fontSize: 13, color: const Color(0xFF64748B))),
         Text(
           value,
           style: GoogleFonts.beVietnamPro(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),

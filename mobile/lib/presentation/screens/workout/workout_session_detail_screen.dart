@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:core_shared/models/workout_session_model.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'exercise_detail_screen.dart';
+import 'workout_execution_screen.dart';
 
 class WorkoutSessionDetailScreen extends StatelessWidget {
   final WorkoutSessionModel session;
@@ -158,7 +159,11 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
             right: 24,
             child: ElevatedButton(
               onPressed: () {
-                // TODO: Start workout flow
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => WorkoutExecutionScreen(session: session),
+                  ),
+                );
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,

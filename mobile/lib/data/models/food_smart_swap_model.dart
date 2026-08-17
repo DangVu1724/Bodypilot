@@ -10,6 +10,7 @@ class FoodSmartSwapCandidateModel {
   final double carbs;
   final double matchScore;
   final String matchReason;
+  final String? swapGroup;
 
   FoodSmartSwapCandidateModel({
     required this.foodId,
@@ -23,6 +24,7 @@ class FoodSmartSwapCandidateModel {
     required this.carbs,
     required this.matchScore,
     required this.matchReason,
+    this.swapGroup,
   });
 
   factory FoodSmartSwapCandidateModel.fromJson(Map<String, dynamic> json) {
@@ -38,6 +40,7 @@ class FoodSmartSwapCandidateModel {
       carbs: (json['carbs'] as num?)?.toDouble() ?? 0.0,
       matchScore: (json['matchScore'] as num?)?.toDouble() ?? 80.0,
       matchReason: json['matchReason'] as String? ?? 'Tương đồng dinh dưỡng',
+      swapGroup: json['swapGroup'] as String?,
     );
   }
 }
