@@ -1,5 +1,19 @@
 package com.bodypilot.backend.service.impl;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.bodypilot.backend.exception.ResourceNotFoundException;
 import com.bodypilot.backend.model.dto.nutrition.FoodSmartSwapCandidateDTO;
 import com.bodypilot.backend.model.dto.nutrition.FoodSmartSwapRequest;
@@ -7,18 +21,18 @@ import com.bodypilot.backend.model.dto.workout.ExerciseSmartSwapCandidateDTO;
 import com.bodypilot.backend.model.dto.workout.ExerciseSmartSwapRequest;
 import com.bodypilot.backend.model.entity.health.Injury;
 import com.bodypilot.backend.model.entity.nutrition.Food;
-import com.bodypilot.backend.model.entity.user.*;
+import com.bodypilot.backend.model.entity.user.User;
+import com.bodypilot.backend.model.entity.user.UserAllergy;
+import com.bodypilot.backend.model.entity.user.UserInjury;
 import com.bodypilot.backend.model.entity.workout.Exercise;
-import com.bodypilot.backend.repository.*;
+import com.bodypilot.backend.repository.ExerciseRepository;
+import com.bodypilot.backend.repository.FoodRepository;
+import com.bodypilot.backend.repository.UserAllergyRepository;
+import com.bodypilot.backend.repository.UserInjuryRepository;
 import com.bodypilot.backend.service.SmartSwapService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -28,17 +42,26 @@ public class SmartSwapServiceImpl implements SmartSwapService {
     private final FoodRepository foodRepository;
     private final ExerciseRepository exerciseRepository;
     private final UserAllergyRepository allergyRepository;
-    private final UserDietPreferenceRepository dietPreferenceRepository;
-    private final UserFoodPreferenceRepository foodPreferenceRepository;
+
     private final UserInjuryRepository userInjuryRepository;
     private final DietSuggestionHelper dietSuggestionHelper;
+
+    private static final Map<String, List<String>> CATEGORY_SWAP_MAP = Map.of(
+            "FRUIT", List.of("FRUIT"),
+            "VEGETABLE", List.of("VEGETABLE"),
+            "MEAT", List.of("MEAT", "SEAFOOD"),
+            "SEAFOOD", List.of("SEAFOOD", "MEAT"),
+            "NOODLE_SOUP", List.of("NOODLE_SOUP", "DRY_DISH", "GRAIN"),
+            "GRAIN", List.of("GRAIN", "DRY_DISH"),
+            "DAIRY", List.of("DAIRY", "BEVERAGE"));
 
     @Override
     public List<FoodSmartSwapCandidateDTO> getFoodSwapCandidates(User user, FoodSmartSwapRequest request) {
         Food targetFood = foodRepository.findById(request.getFoodId())
                 .orElseThrow(() -> new ResourceNotFoundException("Food not found with id: " + request.getFoodId()));
 
-        BigDecimal servingQty = request.getCurrentServingQuantity() != null ? request.getCurrentServingQuantity() : new BigDecimal("100.0");
+        BigDecimal servingQty = request.getCurrentServingQuantity() != null ? request.getCurrentServingQuantity()
+                : new BigDecimal("100.0");
         BigDecimal factor = servingQty.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
         BigDecimal targetCal = targetFood.getCaloriesPer100g().multiply(factor);
         BigDecimal targetProtein = targetFood.getProteinPer100g().multiply(factor);
@@ -49,30 +72,43 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                 .map(a -> a.getAllergyMaster().getId())
                 .collect(Collectors.toSet());
 
-        List<Food> candidatePool = new ArrayList<>();
-        if (targetFood.getCategory() != null) {
-            candidatePool = foodRepository.findByCategoryIdAndIsRecommendedTrue(targetFood.getCategory().getId());
-        }
+        // STRICT REQUIREMENT: Only pull foods where is_recommended == true!
+        List<Food> candidatePool = foodRepository.findByIsRecommendedTrue();
 
-        if (candidatePool.size() < 5) {
-            candidatePool = foodRepository.findByIsRecommendedTrue();
-        }
+        String targetCategoryCode = targetFood.getCategory() != null ? targetFood.getCategory().getCode() : "";
+        List<String> allowedTargetCategories = CATEGORY_SWAP_MAP.getOrDefault(
+                targetCategoryCode != null ? targetCategoryCode.toUpperCase() : "",
+                Collections.emptyList());
 
-        // Exclude target food and allergic foods
+        // Filter candidates: is_recommended == true, not target food, not allergic food
         List<Food> filteredFoods = candidatePool.stream()
                 .filter(food -> !food.getId().equals(targetFood.getId()))
                 .filter(food -> !allergicFoodIds.contains(food.getId()))
-                .filter(food -> food.getCaloriesPer100g() != null && food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) > 0)
+                .filter(food -> food.getCaloriesPer100g() != null
+                        && food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) > 0)
+                .filter(food -> {
+                    if (allowedTargetCategories.isEmpty())
+                        return true;
+                    String candCategoryCode = food.getCategory() != null ? food.getCategory().getCode() : "";
+                    return candCategoryCode != null && allowedTargetCategories.contains(candCategoryCode.toUpperCase());
+                })
                 .collect(Collectors.toList());
 
-        // Shuffle to select random candidates
+        // If category filter is too strict, fallback to any recommended food
+        if (filteredFoods.isEmpty()) {
+            filteredFoods = candidatePool.stream()
+                    .filter(food -> !food.getId().equals(targetFood.getId()))
+                    .filter(food -> !allergicFoodIds.contains(food.getId()))
+                    .collect(Collectors.toList());
+        }
+
+        // Shuffle to select top candidates
         Collections.shuffle(filteredFoods);
         List<Food> selectedFoods = filteredFoods.stream().limit(10).collect(Collectors.toList());
 
         List<FoodSmartSwapCandidateDTO> candidates = new ArrayList<>();
 
         for (Food food : selectedFoods) {
-            // Calculate recommended serving quantity to match target calories
             BigDecimal recFactor = targetCal.divide(food.getCaloriesPer100g(), 4, RoundingMode.HALF_UP);
             BigDecimal recQuantity = recFactor.multiply(new BigDecimal("100")).setScale(1, RoundingMode.HALF_UP);
 
@@ -91,7 +127,7 @@ public class SmartSwapServiceImpl implements SmartSwapService {
             BigDecimal candFat = food.getFatPer100g().multiply(actualFactor).setScale(1, RoundingMode.HALF_UP);
             BigDecimal candCarbs = food.getCarbsPer100g().multiply(actualFactor).setScale(1, RoundingMode.HALF_UP);
 
-            // Compute macro match score (comparing protein similarity)
+            // Compute macro match score
             double score = 85.0;
             if (targetCal.compareTo(BigDecimal.ZERO) > 0 && targetProtein.compareTo(BigDecimal.ZERO) > 0) {
                 double targetRatio = targetProtein.doubleValue() / Math.max(1.0, targetCal.doubleValue());
@@ -103,6 +139,14 @@ public class SmartSwapServiceImpl implements SmartSwapService {
             if (targetFood.getCategory() != null && food.getCategory() != null &&
                     targetFood.getCategory().getId().equals(food.getCategory().getId())) {
                 score = Math.min(99.0, score + 5.0);
+            }
+
+            // Tag swapType: HIGH_PROTEIN, LOW_CALORIE, BALANCED
+            String swapType = "BALANCED";
+            if (candProtein.compareTo(targetProtein.multiply(new BigDecimal("1.2"))) >= 0) {
+                swapType = "HIGH_PROTEIN";
+            } else if (candCal.compareTo(targetCal.multiply(new BigDecimal("0.75"))) <= 0) {
+                swapType = "LOW_CALORIE";
             }
 
             double roundedScore = Math.round(score * 10.0) / 10.0;
@@ -119,7 +163,8 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                     .fat(candFat)
                     .carbs(candCarbs)
                     .matchScore(roundedScore)
-                    .matchReason(String.format("Tương đồng %.0f%% Dinh dưỡng & Calo", roundedScore))
+                    .matchReason(String.format("Khuyên dùng • Tương đồng %.0f%% Dinh dưỡng", roundedScore))
+                    .swapGroup(swapType)
                     .build());
         }
 
@@ -131,7 +176,8 @@ public class SmartSwapServiceImpl implements SmartSwapService {
     @Override
     public List<ExerciseSmartSwapCandidateDTO> getExerciseSwapCandidates(User user, ExerciseSmartSwapRequest request) {
         Exercise targetEx = exerciseRepository.findById(request.getExerciseId())
-                .orElseThrow(() -> new ResourceNotFoundException("Exercise not found with id: " + request.getExerciseId()));
+                .orElseThrow(
+                        () -> new ResourceNotFoundException("Exercise not found with id: " + request.getExerciseId()));
 
         List<UserInjury> userInjuries = userInjuryRepository.findAllByUserId(user.getId());
         Set<String> restrictedCodes = new HashSet<>();

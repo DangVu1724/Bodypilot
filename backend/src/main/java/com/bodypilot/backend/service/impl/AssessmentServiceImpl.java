@@ -1,34 +1,46 @@
 package com.bodypilot.backend.service.impl;
 
-import com.bodypilot.backend.model.entity.user.UserProfile;
-import com.bodypilot.backend.model.entity.user.UserMetricHistory;
-import com.bodypilot.backend.model.entity.user.UserInjury;
-import com.bodypilot.backend.model.entity.user.UserHealthCondition;
-import com.bodypilot.backend.model.entity.user.User;
-import com.bodypilot.backend.model.entity.user.UserGoal;
-import com.bodypilot.backend.model.entity.user.UserAllergy;
-import com.bodypilot.backend.model.entity.user.UserDietPreference;
-import com.bodypilot.backend.model.entity.user.UserFoodPreference;
-import com.bodypilot.backend.model.entity.health.AllergyMaster;
-import com.bodypilot.backend.model.entity.nutrition.DietTag;
-import com.bodypilot.backend.model.enums.SeverityLevel;
-import com.bodypilot.backend.model.enums.FoodBudget;
-import com.bodypilot.backend.model.enums.DislikedFoodGroup;
+import java.time.LocalDate;
 import java.util.List;
-import com.bodypilot.backend.exception.ResourceNotFoundException;
-import com.bodypilot.backend.model.dto.user.AssessmentSubmissionRequest;
-import com.bodypilot.backend.model.dto.nutrition.CalorieCalculationResult;
-import com.bodypilot.backend.model.enums.ActivityLevel;
-import com.bodypilot.backend.model.enums.Gender;
-import com.bodypilot.backend.repository.*;
-import com.bodypilot.backend.service.AssessmentService;
-import com.bodypilot.backend.service.CalorieCalculatorService;
-import lombok.RequiredArgsConstructor;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.UUID;
+import com.bodypilot.backend.exception.ResourceNotFoundException;
+import com.bodypilot.backend.model.dto.nutrition.CalorieCalculationResult;
+import com.bodypilot.backend.model.dto.user.AssessmentSubmissionRequest;
+import com.bodypilot.backend.model.entity.user.User;
+import com.bodypilot.backend.model.entity.user.UserAllergy;
+import com.bodypilot.backend.model.entity.user.UserDietPreference;
+import com.bodypilot.backend.model.entity.user.UserFoodPreference;
+import com.bodypilot.backend.model.entity.user.UserGoal;
+import com.bodypilot.backend.model.entity.user.UserHealthCondition;
+import com.bodypilot.backend.model.entity.user.UserInjury;
+import com.bodypilot.backend.model.entity.user.UserMetricHistory;
+import com.bodypilot.backend.model.entity.user.UserProfile;
+import com.bodypilot.backend.model.enums.ActivityLevel;
+import com.bodypilot.backend.model.enums.DislikedFoodGroup;
+import com.bodypilot.backend.model.enums.FoodBudget;
+import com.bodypilot.backend.model.enums.Gender;
+import com.bodypilot.backend.model.enums.SeverityLevel;
+import com.bodypilot.backend.repository.AllergyMasterRepository;
+import com.bodypilot.backend.repository.DietTagRepository;
+import com.bodypilot.backend.repository.HealthConditionRepository;
+import com.bodypilot.backend.repository.InjuryRepository;
+import com.bodypilot.backend.repository.UserAllergyRepository;
+import com.bodypilot.backend.repository.UserDietPreferenceRepository;
+import com.bodypilot.backend.repository.UserFoodPreferenceRepository;
+import com.bodypilot.backend.repository.UserGoalRepository;
+import com.bodypilot.backend.repository.UserHealthConditionRepository;
+import com.bodypilot.backend.repository.UserInjuryRepository;
+import com.bodypilot.backend.repository.UserMetricHistoryRepository;
+import com.bodypilot.backend.repository.UserProfileRepository;
+import com.bodypilot.backend.repository.UserRepository;
+import com.bodypilot.backend.service.AssessmentService;
+import com.bodypilot.backend.service.CalorieCalculatorService;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -77,14 +89,14 @@ public class AssessmentServiceImpl implements AssessmentService {
 
         // Map strings to Enums for calculation
         Gender enumGender = "Nam".equalsIgnoreCase(request.getSelectedGender()) ? Gender.MALE : Gender.FEMALE;
-        
+
         ActivityLevel enumActivityLevel;
         try {
             enumActivityLevel = ActivityLevel.valueOf(request.getActivityLevel());
         } catch (Exception e) {
             enumActivityLevel = ActivityLevel.SEDENTARY; // fallback
         }
-        
+
         com.bodypilot.backend.model.enums.Goal enumGoal;
         try {
             enumGoal = com.bodypilot.backend.model.enums.Goal.valueOf(request.getSelectedGoal());
@@ -94,33 +106,32 @@ public class AssessmentServiceImpl implements AssessmentService {
 
         // Calculate metrics
         CalorieCalculationResult metrics = calorieCalculatorService.calculateMetrics(
-            request.getWeight(),
-            request.getHeightCm(),
-            request.getAge(),
-            enumGender,
-            enumActivityLevel,
-            enumGoal
-        );
+                request.getWeight(),
+                request.getHeightCm(),
+                request.getAge(),
+                enumGender,
+                enumActivityLevel,
+                enumGoal);
 
         // Save UserMetricHistory
         UserMetricHistory history = UserMetricHistory.builder()
-            .user(user)
-            .weight(request.getWeight())
-            .heightCm(request.getHeightCm())
-            .age(request.getAge())
-            .goal(request.getSelectedGoal())
-            .activityLevel(request.getActivityLevel())
-            .bmi(metrics.getBmi())
-            .bmr(metrics.getBmr())
-            .tdee(metrics.getTdee())
-            .targetCalories(metrics.getTargetCalories())
-            .build();
+                .user(user)
+                .weight(request.getWeight())
+                .heightCm(request.getHeightCm())
+                .age(request.getAge())
+                .goal(request.getSelectedGoal())
+                .activityLevel(request.getActivityLevel())
+                .bmi(metrics.getBmi())
+                .bmr(metrics.getBmr())
+                .tdee(metrics.getTdee())
+                .targetCalories(metrics.getTargetCalories())
+                .build();
         userMetricHistoryRepository.save(history);
 
         // 2. Create/Update Goal (Update instead of creating a new row if exists)
         UserGoal goal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE").stream().findFirst()
                 .orElse(UserGoal.builder().user(user).status("ACTIVE").build());
-                
+
         goal.setType(request.getSelectedGoal());
         goal.setTargetWeight(request.getTargetWeight());
         if (goal.getId() == null) {
@@ -175,7 +186,8 @@ public class AssessmentServiceImpl implements AssessmentService {
 
         // 6. Link Diet Preference
         if (request.getSelectedDietTagId() != null) {
-            List<UserDietPreference> existingDiets = userDietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
+            List<UserDietPreference> existingDiets = userDietPreferenceRepository
+                    .findAllByUserIdAndIsActiveTrue(userId);
             for (UserDietPreference dp : existingDiets) {
                 dp.setIsActive(false);
                 userDietPreferenceRepository.save(dp);
@@ -189,7 +201,8 @@ public class AssessmentServiceImpl implements AssessmentService {
                         userDietPreferenceRepository.save(dietPreference);
                     });
         } else {
-            List<UserDietPreference> existingDiets = userDietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
+            List<UserDietPreference> existingDiets = userDietPreferenceRepository
+                    .findAllByUserIdAndIsActiveTrue(userId);
             for (UserDietPreference dp : existingDiets) {
                 dp.setIsActive(false);
                 userDietPreferenceRepository.save(dp);

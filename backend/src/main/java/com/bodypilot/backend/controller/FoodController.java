@@ -1,22 +1,30 @@
 package com.bodypilot.backend.controller;
 
-import com.bodypilot.backend.model.entity.nutrition.Food;
-import com.bodypilot.backend.model.dto.nutrition.FoodSummaryResponse;
-import com.bodypilot.backend.model.dto.nutrition.FoodResponse;
-import com.bodypilot.backend.model.dto.nutrition.FoodRequest;
-import com.bodypilot.backend.model.dto.nutrition.FoodCategoryDTO;
-import com.bodypilot.backend.model.dto.nutrition.DietTagDTO;
-import com.bodypilot.backend.model.dto.common.PageResponse;
-import com.bodypilot.backend.model.dto.common.ApiResponse;
-import com.bodypilot.backend.service.FoodService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.UUID;
+import com.bodypilot.backend.model.dto.common.ApiResponse;
+import com.bodypilot.backend.model.dto.common.PageResponse;
+import com.bodypilot.backend.model.dto.nutrition.DietTagDTO;
+import com.bodypilot.backend.model.dto.nutrition.FoodCategoryDTO;
+import com.bodypilot.backend.model.dto.nutrition.FoodResponse;
+import com.bodypilot.backend.model.dto.nutrition.FoodSummaryResponse;
+import com.bodypilot.backend.service.FoodService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/foods")
@@ -73,13 +81,15 @@ public class FoodController {
     }
 
     @PostMapping
-    public ResponseEntity<ApiResponse<FoodResponse>> createFood(@RequestBody com.bodypilot.backend.model.dto.nutrition.FoodRequest request) {
+    public ResponseEntity<ApiResponse<FoodResponse>> createFood(
+            @RequestBody com.bodypilot.backend.model.dto.nutrition.FoodRequest request) {
         FoodResponse food = foodService.createFood(request);
         return ResponseEntity.ok(ApiResponse.ok("Food created", food));
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<FoodResponse>> updateFood(@PathVariable UUID id, @RequestBody com.bodypilot.backend.model.dto.nutrition.FoodRequest request) {
+    public ResponseEntity<ApiResponse<FoodResponse>> updateFood(@PathVariable UUID id,
+            @RequestBody com.bodypilot.backend.model.dto.nutrition.FoodRequest request) {
         FoodResponse food = foodService.updateFood(id, request);
         return ResponseEntity.ok(ApiResponse.ok("Food updated", food));
     }

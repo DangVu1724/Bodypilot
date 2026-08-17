@@ -1,14 +1,14 @@
 package com.bodypilot.backend.service;
 
-import com.bodypilot.backend.model.entity.user.UserGoal;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+
+import org.springframework.stereotype.Service;
+
 import com.bodypilot.backend.model.dto.nutrition.CalorieCalculationResult;
 import com.bodypilot.backend.model.enums.ActivityLevel;
 import com.bodypilot.backend.model.enums.Gender;
 import com.bodypilot.backend.model.enums.Goal;
-import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 
 @Service
 public class CalorieCalculatorService {
@@ -18,18 +18,20 @@ public class CalorieCalculatorService {
      *
      * @param weight        Weight in kilograms (must be strictly positive)
      * @param height        Height in centimeters (must be strictly positive)
-     * @param age           Age in years (must be strictly positive)
+     * @param age           Age in years (must ưbe strictly positive)
      * @param gender        Gender enum (MALE or FEMALE)
      * @param activityLevel Activity level multiplier category
      * @param goal          Fitness goal for target calorie adjustment
-     * @return CalorieCalculationResult containing BMI (1 decimal), BMR, TDEE, and Target Calories (rounded)
+     * @return CalorieCalculationResult containing BMI (1 decimal), BMR, TDEE, and
+     *         Target Calories (rounded)
      */
-    public CalorieCalculationResult calculateMetrics(double weight, double height, int age, Gender gender, ActivityLevel activityLevel, Goal goal) {
+    public CalorieCalculationResult calculateMetrics(double weight, double height, int age, Gender gender,
+            ActivityLevel activityLevel, Goal goal) {
         // Validate input mathematically
         if (weight <= 0 || height <= 0 || age <= 0) {
             throw new IllegalArgumentException("Weight, height, and age must be strictly positive values.");
         }
-        
+
         // Validate required enums
         if (gender == null || activityLevel == null || goal == null) {
             throw new IllegalArgumentException("Gender, ActivityLevel, and Goal parameters cannot be null.");
@@ -78,12 +80,14 @@ public class CalorieCalculatorService {
     }
 
     /**
-     * Calculates the calories burned during an exercise based on MET value, duration, and user's weight.
+     * Calculates the calories burned during an exercise based on MET value,
+     * duration, and user's weight.
      * Formula: Calories = (MET * 3.5 * Weight (kg) / 200.0) * Duration in minutes
      *
-     * @param metValue         The Metabolic Equivalent of Task (MET) value for the exercise.
-     * @param durationMinutes  The duration of the exercise in minutes.
-     * @param weightKg         The weight of the user in kilograms.
+     * @param metValue        The Metabolic Equivalent of Task (MET) value for the
+     *                        exercise.
+     * @param durationMinutes The duration of the exercise in minutes.
+     * @param weightKg        The weight of the user in kilograms.
      * @return The estimated calories burned (rounded to 1 decimal place).
      */
     public double calculateWorkoutCalories(Double metValue, Number durationMinutes, Double weightKg) {
@@ -103,7 +107,8 @@ public class CalorieCalculatorService {
      * Helper method to accurately round a double to specified decimal places.
      */
     private double round(double value, int places) {
-        if (places < 0) throw new IllegalArgumentException("Decimal places cannot be negative.");
+        if (places < 0)
+            throw new IllegalArgumentException("Decimal places cannot be negative.");
 
         BigDecimal bd = BigDecimal.valueOf(value);
         bd = bd.setScale(places, RoundingMode.HALF_UP);

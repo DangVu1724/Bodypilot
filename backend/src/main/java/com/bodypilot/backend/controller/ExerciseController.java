@@ -1,13 +1,8 @@
 package com.bodypilot.backend.controller;
 
-import com.bodypilot.backend.model.dto.workout.MuscleDTO;
-import com.bodypilot.backend.model.dto.workout.ExerciseRequest;
-import com.bodypilot.backend.model.dto.workout.BodyPartDTO;
-import com.bodypilot.backend.model.dto.workout.ExerciseDTO;
-import com.bodypilot.backend.model.dto.common.PageResponse;
-import com.bodypilot.backend.model.dto.workout.WorkoutCategoryDTO;
-import com.bodypilot.backend.service.ExerciseService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,8 +11,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.UUID;
+import com.bodypilot.backend.model.dto.common.PageResponse;
+import com.bodypilot.backend.model.dto.workout.ExerciseDTO;
+import com.bodypilot.backend.model.dto.workout.WorkoutCategoryDTO;
+import com.bodypilot.backend.service.ExerciseService;
+
+import lombok.RequiredArgsConstructor;
 
 @RestController
 @RequestMapping("/api/v1/exercises")
@@ -34,8 +33,9 @@ public class ExerciseController {
             @RequestParam(required = false) String bodyPartCode,
             @RequestParam(required = false) String muscleCode,
             Pageable pageable) {
-        
-        PageResponse<ExerciseDTO> response = exerciseService.searchExercises(name, categoryId, categoryCode, bodyPartCode, muscleCode, pageable);
+
+        PageResponse<ExerciseDTO> response = exerciseService.searchExercises(name, categoryId, categoryCode,
+                bodyPartCode, muscleCode, pageable);
         return ResponseEntity.ok(response);
     }
 
@@ -60,12 +60,14 @@ public class ExerciseController {
     }
 
     @org.springframework.web.bind.annotation.PostMapping
-    public ResponseEntity<ExerciseDTO> createExercise(@org.springframework.web.bind.annotation.RequestBody com.bodypilot.backend.model.dto.workout.ExerciseRequest request) {
+    public ResponseEntity<ExerciseDTO> createExercise(
+            @org.springframework.web.bind.annotation.RequestBody com.bodypilot.backend.model.dto.workout.ExerciseRequest request) {
         return ResponseEntity.ok(exerciseService.createExercise(request));
     }
 
     @org.springframework.web.bind.annotation.PutMapping("/{id}")
-    public ResponseEntity<ExerciseDTO> updateExercise(@PathVariable UUID id, @org.springframework.web.bind.annotation.RequestBody com.bodypilot.backend.model.dto.workout.ExerciseRequest request) {
+    public ResponseEntity<ExerciseDTO> updateExercise(@PathVariable UUID id,
+            @org.springframework.web.bind.annotation.RequestBody com.bodypilot.backend.model.dto.workout.ExerciseRequest request) {
         return ResponseEntity.ok(exerciseService.updateExercise(id, request));
     }
 

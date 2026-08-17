@@ -1,10 +1,20 @@
 package com.bodypilot.backend.service.impl;
 
+import java.util.Collections;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+
 import com.bodypilot.backend.model.dto.auth.AuthResponse;
+import com.bodypilot.backend.model.dto.auth.GoogleLoginRequest;
 import com.bodypilot.backend.model.dto.auth.LoginRequest;
-import com.bodypilot.backend.model.dto.user.UserProfileResponse;
 import com.bodypilot.backend.model.dto.auth.UserRegistrationRequest;
-import com.bodypilot.backend.model.dto.user.UserResponse;
 import com.bodypilot.backend.model.entity.user.User;
 import com.bodypilot.backend.model.entity.user.UserProfile;
 import com.bodypilot.backend.repository.UserGoalRepository;
@@ -13,21 +23,12 @@ import com.bodypilot.backend.repository.UserRepository;
 import com.bodypilot.backend.security.JwtService;
 import com.bodypilot.backend.service.AuthService;
 import com.bodypilot.backend.service.UserService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.security.core.userdetails.UserDetailsService;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import com.bodypilot.backend.model.dto.auth.GoogleLoginRequest;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdToken;
 import com.google.api.client.googleapis.auth.oauth2.GoogleIdTokenVerifier;
 import com.google.api.client.http.javanet.NetHttpTransport;
 import com.google.api.client.json.gson.GsonFactory;
-import org.springframework.beans.factory.annotation.Value;
-import java.util.Collections;
-import java.util.UUID;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -76,15 +77,14 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse login(LoginRequest request) {
         User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new com.bodypilot.backend.exception.ResourceNotFoundException("Tài khoản này chưa tồn tại trên hệ thống. Vui lòng kiểm tra lại Email hoặc Đăng ký!"));
+                .orElseThrow(() -> new com.bodypilot.backend.exception.ResourceNotFoundException(
+                        "Tài khoản này chưa tồn tại trên hệ thống. Vui lòng kiểm tra lại Email hoặc Đăng ký!"));
 
         try {
             authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             request.getEmail(),
-                            request.getPassword()
-                    )
-            );
+                            request.getPassword()));
         } catch (org.springframework.security.authentication.BadCredentialsException e) {
             throw new IllegalArgumentException("Mật khẩu không chính xác. Vui lòng kiểm tra lại!");
         }

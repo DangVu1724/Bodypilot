@@ -24,4 +24,5 @@ public class FoodSmartSwapCandidateDTO {
     private BigDecimal carbs;
     private Double matchScore;
     private String matchReason;
+    private String swapGroup;
 }

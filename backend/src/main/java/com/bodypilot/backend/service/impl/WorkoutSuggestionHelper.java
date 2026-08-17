@@ -1,24 +1,39 @@
 package com.bodypilot.backend.service.impl;
 
+import java.time.LocalDate;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Component;
+
 import com.bodypilot.backend.model.dto.workout.DailyWorkoutDTO;
 import com.bodypilot.backend.model.dto.workout.DailyWorkoutItemDTO;
 import com.bodypilot.backend.model.dto.workout.ExerciseCandidate;
 import com.bodypilot.backend.model.entity.health.Injury;
+import com.bodypilot.backend.model.entity.user.UserGoal;
+import com.bodypilot.backend.model.entity.user.UserInjury;
+import com.bodypilot.backend.model.entity.user.UserMetricHistory;
+import com.bodypilot.backend.model.entity.user.UserProfile;
 import com.bodypilot.backend.model.entity.workout.Exercise;
 import com.bodypilot.backend.model.entity.workout.WorkoutPlan;
-import com.bodypilot.backend.model.entity.user.*;
-import com.bodypilot.backend.repository.*;
+import com.bodypilot.backend.repository.ExerciseRepository;
+import com.bodypilot.backend.repository.UserInjuryRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
-import java.time.LocalDate;
-import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -295,11 +310,14 @@ public class WorkoutSuggestionHelper {
         }
     }
 
-    public String generatePresetFallbackWorkoutPlan(UUID userId, LocalDate startDate, Integer days, String goalType, String focusBodyPart, String noteMessage) {
-        log.info("📋 [PRESET_WORKOUT_FALLBACK] Generating preset fallback workout plan for userId={}, startDate={}, days={}, goalType={}, focusBodyPart={}",
+    public String generatePresetFallbackWorkoutPlan(UUID userId, LocalDate startDate, Integer days, String goalType,
+            String focusBodyPart, String noteMessage) {
+        log.info(
+                "📋 [PRESET_WORKOUT_FALLBACK] Generating preset fallback workout plan for userId={}, startDate={}, days={}, goalType={}, focusBodyPart={}",
                 userId, startDate, days, goalType, focusBodyPart);
         try {
-            List<UserInjury> injuries = (userId != null) ? userInjuryRepository.findAllByUserId(userId) : new ArrayList<>();
+            List<UserInjury> injuries = (userId != null) ? userInjuryRepository.findAllByUserId(userId)
+                    : new ArrayList<>();
             List<Exercise> availableExercises = getFilteredExercises(injuries);
             Map<UUID, Exercise> exerciseMap = availableExercises.stream()
                     .collect(Collectors.toMap(Exercise::getId, e -> e, (e1, e2) -> e1));
@@ -314,7 +332,8 @@ public class WorkoutSuggestionHelper {
                 }
             }
 
-            List<PresetWorkoutPlanData.PresetWorkoutDay> presetDays = PresetWorkoutPlanData.getPresetForGoal(goalType, focusBodyPart);
+            List<PresetWorkoutPlanData.PresetWorkoutDay> presetDays = PresetWorkoutPlanData.getPresetForGoal(goalType,
+                    focusBodyPart);
             List<DailyWorkoutDTO> dailyWorkoutList = new ArrayList<>();
 
             for (int dayIdx = 0; dayIdx < days; dayIdx++) {
@@ -341,8 +360,10 @@ public class WorkoutSuggestionHelper {
 
                     if (matchedExercise == null) {
                         String bodyPartCode = presetItem.getBodyPartCode();
-                        List<Exercise> candidates = bodyPartMap.getOrDefault(bodyPartCode != null ? bodyPartCode.toUpperCase() : "CARDIO", availableExercises);
-                        if (candidates.isEmpty()) candidates = availableExercises;
+                        List<Exercise> candidates = bodyPartMap.getOrDefault(
+                                bodyPartCode != null ? bodyPartCode.toUpperCase() : "CARDIO", availableExercises);
+                        if (candidates.isEmpty())
+                            candidates = availableExercises;
 
                         matchedExercise = candidates.stream()
                                 .filter(e -> !isViolatingInjuries(e, injuries))
@@ -384,15 +405,19 @@ public class WorkoutSuggestionHelper {
     }
 
     private boolean isViolatingInjuries(Exercise e, List<UserInjury> injuries) {
-        if (e == null) return true;
-        if (injuries == null || injuries.isEmpty()) return false;
+        if (e == null)
+            return true;
+        if (injuries == null || injuries.isEmpty())
+            return false;
         for (UserInjury userInjury : injuries) {
             Injury injury = userInjury.getInjury();
-            if (injury == null) continue;
+            if (injury == null)
+                continue;
             if (injury.getRestrictedExercises() != null && injury.getRestrictedExercises().contains(e.getCode())) {
                 return true;
             }
-            if (injury.getBodyPart() != null && e.getBodyPart() != null && injury.getBodyPart().getId().equals(e.getBodyPart().getId())) {
+            if (injury.getBodyPart() != null && e.getBodyPart() != null
+                    && injury.getBodyPart().getId().equals(e.getBodyPart().getId())) {
                 return true;
             }
         }
@@ -749,7 +774,8 @@ public class WorkoutSuggestionHelper {
                     if (node != null && (node.isArray() || node.isObject())) {
                         int size = node.isArray() ? node.size() : (node.fieldNames().hasNext() ? 1 : 0);
                         if (size > 0) {
-                            log.info("✅ Auto-repaired truncated AI Workout JSON! Preserved valid structure (size: {}).", size);
+                            log.info("✅ Auto-repaired truncated AI Workout JSON! Preserved valid structure (size: {}).",
+                                    size);
                             return node;
                         }
                     }
@@ -802,7 +828,8 @@ public class WorkoutSuggestionHelper {
 
         String current = sb.toString().trim();
 
-        while (current.endsWith(",") || current.endsWith(":") || current.endsWith("{,") || current.endsWith("[,") || current.endsWith("\":")) {
+        while (current.endsWith(",") || current.endsWith(":") || current.endsWith("{,") || current.endsWith("[,")
+                || current.endsWith("\":")) {
             if (current.endsWith(",")) {
                 current = current.substring(0, current.length() - 1).trim();
             } else if (current.endsWith(":")) {

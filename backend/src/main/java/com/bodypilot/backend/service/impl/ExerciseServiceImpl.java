@@ -1,29 +1,30 @@
 package com.bodypilot.backend.service.impl;
 
-import com.bodypilot.backend.model.dto.workout.ExerciseRequest;
-import com.bodypilot.backend.model.dto.workout.ExerciseDTO;
-import com.bodypilot.backend.model.dto.common.PageResponse;
-import com.bodypilot.backend.model.dto.workout.WorkoutCategoryDTO;
-import com.bodypilot.backend.model.dto.workout.BodyPartDTO;
-import com.bodypilot.backend.model.dto.workout.MuscleDTO;
-import com.bodypilot.backend.model.entity.workout.Exercise;
-import com.bodypilot.backend.model.entity.workout.WorkoutCategory;
-import com.bodypilot.backend.model.entity.workout.BodyPart;
-import com.bodypilot.backend.model.entity.workout.Muscle;
-import com.bodypilot.backend.repository.ExerciseRepository;
-import com.bodypilot.backend.repository.WorkoutCategoryRepository;
-import com.bodypilot.backend.repository.BodyPartRepository;
-import com.bodypilot.backend.repository.MuscleRepository;
-import com.bodypilot.backend.service.ExerciseService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.bodypilot.backend.model.dto.common.PageResponse;
+import com.bodypilot.backend.model.dto.workout.BodyPartDTO;
+import com.bodypilot.backend.model.dto.workout.ExerciseDTO;
+import com.bodypilot.backend.model.dto.workout.MuscleDTO;
+import com.bodypilot.backend.model.dto.workout.WorkoutCategoryDTO;
+import com.bodypilot.backend.model.entity.workout.BodyPart;
+import com.bodypilot.backend.model.entity.workout.Exercise;
+import com.bodypilot.backend.model.entity.workout.Muscle;
+import com.bodypilot.backend.model.entity.workout.WorkoutCategory;
+import com.bodypilot.backend.repository.BodyPartRepository;
+import com.bodypilot.backend.repository.ExerciseRepository;
+import com.bodypilot.backend.repository.MuscleRepository;
+import com.bodypilot.backend.repository.WorkoutCategoryRepository;
+import com.bodypilot.backend.service.ExerciseService;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -59,7 +60,8 @@ public class ExerciseServiceImpl implements ExerciseService {
     }
 
     private WorkoutCategoryDTO mapToCategoryDTO(WorkoutCategory cat) {
-        if (cat == null) return null;
+        if (cat == null)
+            return null;
         return WorkoutCategoryDTO.builder()
                 .id(cat.getId())
                 .code(cat.getCode())
@@ -69,7 +71,8 @@ public class ExerciseServiceImpl implements ExerciseService {
     }
 
     private BodyPartDTO mapToBodyPartDTO(BodyPart bodyPart) {
-        if (bodyPart == null) return null;
+        if (bodyPart == null)
+            return null;
         return BodyPartDTO.builder()
                 .id(bodyPart.getId())
                 .code(bodyPart.getCode())
@@ -80,7 +83,8 @@ public class ExerciseServiceImpl implements ExerciseService {
     }
 
     private MuscleDTO mapToMuscleDTO(Muscle muscle) {
-        if (muscle == null) return null;
+        if (muscle == null)
+            return null;
         return MuscleDTO.builder()
                 .id(muscle.getId())
                 .code(muscle.getCode())
@@ -94,14 +98,16 @@ public class ExerciseServiceImpl implements ExerciseService {
 
     @Override
     @Transactional(readOnly = true)
-    public PageResponse<ExerciseDTO> searchExercises(String name, UUID categoryId, String categoryCode, String bodyPartCode, String muscleCode, Pageable pageable) {
+    public PageResponse<ExerciseDTO> searchExercises(String name, UUID categoryId, String categoryCode,
+            String bodyPartCode, String muscleCode, Pageable pageable) {
         String catIdStr = categoryId != null ? categoryId.toString() : null;
-        Page<Exercise> exercisePage = exerciseRepository.searchExercises(name, catIdStr, categoryCode, bodyPartCode, muscleCode, pageable);
-        
+        Page<Exercise> exercisePage = exerciseRepository.searchExercises(name, catIdStr, categoryCode, bodyPartCode,
+                muscleCode, pageable);
+
         List<ExerciseDTO> dtoList = exercisePage.getContent().stream()
                 .map(this::mapToDTO)
                 .collect(Collectors.toList());
-                
+
         return PageResponse.fromPage(exercisePage, dtoList);
     }
 
@@ -114,12 +120,13 @@ public class ExerciseServiceImpl implements ExerciseService {
     }
 
     private ExerciseDTO mapToDTO(Exercise exercise) {
-        if (exercise == null) return null;
-        
+        if (exercise == null)
+            return null;
+
         WorkoutCategoryDTO categoryDTO = mapToCategoryDTO(exercise.getCategory());
         BodyPartDTO bodyPartDTO = mapToBodyPartDTO(exercise.getBodyPart());
         MuscleDTO targetMuscleDTO = mapToMuscleDTO(exercise.getTargetMuscle());
-        List<MuscleDTO> secondaryMusclesDTO = exercise.getSecondaryMuscles() != null 
+        List<MuscleDTO> secondaryMusclesDTO = exercise.getSecondaryMuscles() != null
                 ? exercise.getSecondaryMuscles().stream().map(this::mapToMuscleDTO).collect(Collectors.toList())
                 : null;
 
@@ -168,7 +175,8 @@ public class ExerciseServiceImpl implements ExerciseService {
         exerciseRepository.deleteById(id);
     }
 
-    private void updateExerciseFromRequest(Exercise exercise, com.bodypilot.backend.model.dto.workout.ExerciseRequest request) {
+    private void updateExerciseFromRequest(Exercise exercise,
+            com.bodypilot.backend.model.dto.workout.ExerciseRequest request) {
         exercise.setCode(request.getCode());
         exercise.setName(request.getName());
         exercise.setDescription(request.getDescription());

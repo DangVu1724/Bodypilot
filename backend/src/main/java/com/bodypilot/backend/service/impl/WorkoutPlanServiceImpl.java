@@ -1,5 +1,13 @@
 package com.bodypilot.backend.service.impl;
 
+import java.util.Comparator;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.bodypilot.backend.model.dto.workout.ExerciseDTO;
 import com.bodypilot.backend.model.dto.workout.WorkoutPlanDTO;
 import com.bodypilot.backend.model.dto.workout.WorkoutSessionDTO;
@@ -10,15 +18,9 @@ import com.bodypilot.backend.model.entity.workout.WorkoutSessionExercise;
 import com.bodypilot.backend.model.enums.Goal;
 import com.bodypilot.backend.repository.WorkoutPlanRepository;
 import com.bodypilot.backend.service.WorkoutPlanService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Comparator;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -77,7 +79,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
                 .thumbnailUrl(planDTO.getThumbnailUrl())
                 .isPremium(planDTO.getIsPremium() != null ? planDTO.getIsPremium() : false)
                 .build();
-        
+
         WorkoutPlan savedPlan = workoutPlanRepository.save(plan);
         return mapToDTO(savedPlan);
     }
@@ -87,14 +89,14 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
     public WorkoutPlanDTO updatePlan(UUID id, WorkoutPlanDTO planDTO) {
         WorkoutPlan plan = workoutPlanRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Workout Plan not found with ID: " + id));
-        
+
         plan.setTitle(planDTO.getTitle());
         plan.setGoal(planDTO.getGoal());
         plan.setDifficulty(planDTO.getDifficulty());
         plan.setTotalDays(planDTO.getTotalDays());
         plan.setThumbnailUrl(planDTO.getThumbnailUrl());
         plan.setIsPremium(planDTO.getIsPremium() != null ? planDTO.getIsPremium() : false);
-        
+
         WorkoutPlan updatedPlan = workoutPlanRepository.save(plan);
         return mapToDTO(updatedPlan);
     }
@@ -117,8 +119,9 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
     }
 
     private WorkoutPlanDTO mapToDTOInternal(WorkoutPlan plan, boolean includeSessions) {
-        if (plan == null) return null;
-        
+        if (plan == null)
+            return null;
+
         WorkoutPlanDTO.WorkoutPlanDTOBuilder builder = WorkoutPlanDTO.builder()
                 .id(plan.getId())
                 .title(plan.getTitle())
@@ -132,7 +135,8 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
             UUID planId = plan.getId();
             builder.sessions(plan.getSessions().stream()
                     .map(session -> mapToSessionDTO(session, planId))
-                    .sorted(Comparator.comparing(WorkoutSessionDTO::getDayNumber, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .sorted(Comparator.comparing(WorkoutSessionDTO::getDayNumber,
+                            Comparator.nullsLast(Comparator.naturalOrder())))
                     .collect(Collectors.toList()));
         }
 
@@ -144,13 +148,15 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
     }
 
     private WorkoutSessionDTO mapToSessionDTO(WorkoutSession session, UUID planId) {
-        if (session == null) return null;
-        
+        if (session == null)
+            return null;
+
         List<WorkoutSessionExerciseDTO> exerciseDTOs = null;
         if (session.getSessionExercises() != null) {
             exerciseDTOs = session.getSessionExercises().stream()
                     .map(this::mapToExerciseDTO)
-                    .sorted(Comparator.comparing(WorkoutSessionExerciseDTO::getOrder, Comparator.nullsLast(Comparator.naturalOrder())))
+                    .sorted(Comparator.comparing(WorkoutSessionExerciseDTO::getOrder,
+                            Comparator.nullsLast(Comparator.naturalOrder())))
                     .collect(Collectors.toList());
         }
 
@@ -164,7 +170,8 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
     }
 
     private WorkoutSessionExerciseDTO mapToExerciseDTO(WorkoutSessionExercise se) {
-        if (se == null) return null;
+        if (se == null)
+            return null;
 
         ExerciseDTO exerciseDTO = null;
         if (se.getExercise() != null) {

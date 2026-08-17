@@ -1,23 +1,40 @@
 package com.bodypilot.backend.service;
 
-import com.bodypilot.backend.model.dto.user.UserAllergyUpdateRequest;
-import com.bodypilot.backend.model.dto.user.UserPreferencesUpdateRequest;
-import com.bodypilot.backend.model.entity.health.HealthCondition;
-import com.bodypilot.backend.model.entity.health.Injury;
-import com.bodypilot.backend.model.entity.user.*;
-import com.bodypilot.backend.model.entity.health.AllergyMaster;
-import com.bodypilot.backend.model.entity.nutrition.DietTag;
-import com.bodypilot.backend.model.enums.FoodBudget;
-import com.bodypilot.backend.model.enums.DislikedFoodGroup;
-import com.bodypilot.backend.model.enums.RecoveryStatus;
-import com.bodypilot.backend.model.enums.SeverityLevel;
-import com.bodypilot.backend.repository.*;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.UUID;
+import com.bodypilot.backend.model.dto.user.UserAllergyUpdateRequest;
+import com.bodypilot.backend.model.dto.user.UserPreferencesUpdateRequest;
+import com.bodypilot.backend.model.entity.health.AllergyMaster;
+import com.bodypilot.backend.model.entity.health.HealthCondition;
+import com.bodypilot.backend.model.entity.health.Injury;
+import com.bodypilot.backend.model.entity.user.User;
+import com.bodypilot.backend.model.entity.user.UserAllergy;
+import com.bodypilot.backend.model.entity.user.UserDietPreference;
+import com.bodypilot.backend.model.entity.user.UserFoodPreference;
+import com.bodypilot.backend.model.entity.user.UserHealthCondition;
+import com.bodypilot.backend.model.entity.user.UserInjury;
+import com.bodypilot.backend.model.entity.user.UserProfile;
+import com.bodypilot.backend.model.enums.DislikedFoodGroup;
+import com.bodypilot.backend.model.enums.FoodBudget;
+import com.bodypilot.backend.model.enums.RecoveryStatus;
+import com.bodypilot.backend.model.enums.SeverityLevel;
+import com.bodypilot.backend.repository.AllergyMasterRepository;
+import com.bodypilot.backend.repository.DietTagRepository;
+import com.bodypilot.backend.repository.HealthConditionRepository;
+import com.bodypilot.backend.repository.InjuryRepository;
+import com.bodypilot.backend.repository.UserAllergyRepository;
+import com.bodypilot.backend.repository.UserDietPreferenceRepository;
+import com.bodypilot.backend.repository.UserFoodPreferenceRepository;
+import com.bodypilot.backend.repository.UserHealthConditionRepository;
+import com.bodypilot.backend.repository.UserInjuryRepository;
+import com.bodypilot.backend.repository.UserProfileRepository;
+import com.bodypilot.backend.repository.UserRepository;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -130,7 +147,8 @@ public class HealthInjuryService {
 
         // 3. Update Diet Preferences
         if (request.getSelectedDietTagId() != null) {
-            List<UserDietPreference> existingDiets = userDietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
+            List<UserDietPreference> existingDiets = userDietPreferenceRepository
+                    .findAllByUserIdAndIsActiveTrue(userId);
             for (UserDietPreference dp : existingDiets) {
                 dp.setIsActive(false);
                 userDietPreferenceRepository.save(dp);
@@ -144,7 +162,8 @@ public class HealthInjuryService {
                         userDietPreferenceRepository.save(dietPreference);
                     });
         } else {
-            List<UserDietPreference> existingDiets = userDietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
+            List<UserDietPreference> existingDiets = userDietPreferenceRepository
+                    .findAllByUserIdAndIsActiveTrue(userId);
             for (UserDietPreference dp : existingDiets) {
                 dp.setIsActive(false);
                 userDietPreferenceRepository.save(dp);
@@ -190,7 +209,8 @@ public class HealthInjuryService {
     }
 
     @Transactional
-    public void assignInjuryToUser(UUID userId, UUID injuryId, SeverityLevel severity, RecoveryStatus status, String note) {
+    public void assignInjuryToUser(UUID userId, UUID injuryId, SeverityLevel severity, RecoveryStatus status,
+            String note) {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User not found"));
         Injury injury = injuryRepository.findById(injuryId)

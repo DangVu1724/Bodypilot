@@ -1,9 +1,18 @@
 package com.bodypilot.backend.model.entity.user;
 
 import com.bodypilot.backend.model.entity.common.BaseEntity;
-import jakarta.persistence.*;
-import lombok.*;
-import java.util.UUID;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
 @Entity
 @Table(name = "users")

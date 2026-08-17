@@ -1,36 +1,36 @@
 package com.bodypilot.backend.service.impl;
 
-import com.bodypilot.backend.model.entity.nutrition.RecipeIngredient;
-import com.bodypilot.backend.model.entity.nutrition.Recipe;
-import com.bodypilot.backend.model.entity.nutrition.FoodServing;
-import com.bodypilot.backend.model.entity.nutrition.FoodCategory;
-import com.bodypilot.backend.model.entity.nutrition.Food;
-import com.bodypilot.backend.model.entity.nutrition.DietTag;
-import com.bodypilot.backend.model.dto.nutrition.RecipeIngredientRequest;
-import com.bodypilot.backend.model.dto.nutrition.RecipeIngredientDTO;
-import com.bodypilot.backend.model.dto.nutrition.RecipeDTO;
-import com.bodypilot.backend.model.dto.nutrition.FoodSummaryResponse;
-import com.bodypilot.backend.model.dto.nutrition.FoodServingDTO;
-import com.bodypilot.backend.model.dto.nutrition.FoodResponse;
-import com.bodypilot.backend.model.dto.nutrition.FoodRequest;
-import com.bodypilot.backend.model.dto.nutrition.FoodCategoryDTO;
-import com.bodypilot.backend.model.dto.nutrition.DietTagDTO;
-import com.bodypilot.backend.model.dto.common.PageResponse;
-import com.bodypilot.backend.exception.ResourceNotFoundException;
-import com.bodypilot.backend.repository.DietTagRepository;
-import com.bodypilot.backend.repository.FoodCategoryRepository;
-import com.bodypilot.backend.repository.FoodRepository;
-import com.bodypilot.backend.service.FoodService;
-import lombok.RequiredArgsConstructor;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.bodypilot.backend.exception.ResourceNotFoundException;
+import com.bodypilot.backend.model.dto.common.PageResponse;
+import com.bodypilot.backend.model.dto.nutrition.DietTagDTO;
+import com.bodypilot.backend.model.dto.nutrition.FoodCategoryDTO;
+import com.bodypilot.backend.model.dto.nutrition.FoodResponse;
+import com.bodypilot.backend.model.dto.nutrition.FoodServingDTO;
+import com.bodypilot.backend.model.dto.nutrition.FoodSummaryResponse;
+import com.bodypilot.backend.model.dto.nutrition.RecipeDTO;
+import com.bodypilot.backend.model.dto.nutrition.RecipeIngredientDTO;
+import com.bodypilot.backend.model.entity.nutrition.DietTag;
+import com.bodypilot.backend.model.entity.nutrition.Food;
+import com.bodypilot.backend.model.entity.nutrition.FoodCategory;
+import com.bodypilot.backend.model.entity.nutrition.FoodServing;
+import com.bodypilot.backend.model.entity.nutrition.Recipe;
+import com.bodypilot.backend.model.entity.nutrition.RecipeIngredient;
+import com.bodypilot.backend.repository.DietTagRepository;
+import com.bodypilot.backend.repository.FoodCategoryRepository;
+import com.bodypilot.backend.repository.FoodRepository;
+import com.bodypilot.backend.service.FoodService;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -53,7 +53,8 @@ public class FoodServiceImpl implements FoodService {
     @Override
     @Transactional(readOnly = true)
     public PageResponse<FoodSummaryResponse> getFoodsByType(String type, Pageable pageable) {
-        com.bodypilot.backend.model.enums.FoodType foodType = com.bodypilot.backend.model.enums.FoodType.valueOf(type.toUpperCase());
+        com.bodypilot.backend.model.enums.FoodType foodType = com.bodypilot.backend.model.enums.FoodType
+                .valueOf(type.toUpperCase());
         Page<Food> foodPage = foodRepository.findByTypeOrBoth(foodType, pageable);
         List<FoodSummaryResponse> content = foodPage.getContent().stream()
                 .map(this::mapToSummary)
@@ -125,7 +126,8 @@ public class FoodServiceImpl implements FoodService {
     }
 
     private FoodCategoryDTO mapToCategoryDTO(FoodCategory category) {
-        if (category == null) return null;
+        if (category == null)
+            return null;
         return FoodCategoryDTO.builder()
                 .id(category.getId())
                 .name(category.getName())
@@ -135,7 +137,8 @@ public class FoodServiceImpl implements FoodService {
     }
 
     private FoodServingDTO mapToServingDTO(FoodServing serving) {
-        if (serving == null) return null;
+        if (serving == null)
+            return null;
         return FoodServingDTO.builder()
                 .id(serving.getId())
                 .name(serving.getName())
@@ -153,13 +156,15 @@ public class FoodServiceImpl implements FoodService {
     }
 
     private RecipeDTO mapToRecipeDTO(Recipe recipe) {
-        if (recipe == null) return null;
+        if (recipe == null)
+            return null;
         return RecipeDTO.builder()
                 .id(recipe.getId())
                 .servings(recipe.getServings())
                 .cookingTimeMinutes(recipe.getCookingTimeMinutes())
                 .instructions(recipe.getInstructions())
-                .ingredients(recipe.getIngredients().stream().map(this::mapToIngredientDTO).collect(Collectors.toList()))
+                .ingredients(
+                        recipe.getIngredients().stream().map(this::mapToIngredientDTO).collect(Collectors.toList()))
                 .build();
     }
 
@@ -213,16 +218,16 @@ public class FoodServiceImpl implements FoodService {
         food.setFiberPer100g(BigDecimal.valueOf(request.getFiberPer100g()));
         food.setSugarPer100g(BigDecimal.valueOf(request.getSugarPer100g()));
         food.setSodiumMgPer100g(BigDecimal.valueOf(request.getSodiumMgPer100g()));
-        
+
         // Handle default serving reference
         if (request.getDefaultServingId() != null) {
             // Find in current servings or assume it will be added/exists
             food.getServings().stream()
-                .filter(s -> s.getId().equals(request.getDefaultServingId()))
-                .findFirst()
-                .ifPresent(food::setDefaultServing);
+                    .filter(s -> s.getId().equals(request.getDefaultServingId()))
+                    .findFirst()
+                    .ifPresent(food::setDefaultServing);
         }
-        
+
         food.setImageUrl(request.getImageUrl());
         food.setDescription(request.getDescription());
         food.setHealthScore(request.getHealthScore());
@@ -233,7 +238,8 @@ public class FoodServiceImpl implements FoodService {
             food.setCategory(null);
         }
 
-        if ((food.getType() == com.bodypilot.backend.model.enums.FoodType.DISH || food.getType() == com.bodypilot.backend.model.enums.FoodType.BOTH) && request.getRecipe() != null) {
+        if ((food.getType() == com.bodypilot.backend.model.enums.FoodType.DISH
+                || food.getType() == com.bodypilot.backend.model.enums.FoodType.BOTH) && request.getRecipe() != null) {
             Recipe recipe = food.getRecipe();
             if (recipe == null) {
                 recipe = new Recipe();
@@ -246,9 +252,11 @@ public class FoodServiceImpl implements FoodService {
 
             if (request.getRecipe().getIngredients() != null) {
                 recipe.getIngredients().clear();
-                for (com.bodypilot.backend.model.dto.nutrition.RecipeIngredientRequest riReq : request.getRecipe().getIngredients()) {
+                for (com.bodypilot.backend.model.dto.nutrition.RecipeIngredientRequest riReq : request.getRecipe()
+                        .getIngredients()) {
                     Food ingredientFood = foodRepository.findById(riReq.getFoodId())
-                            .orElseThrow(() -> new ResourceNotFoundException("Ingredient not found: " + riReq.getFoodId()));
+                            .orElseThrow(
+                                    () -> new ResourceNotFoundException("Ingredient not found: " + riReq.getFoodId()));
                     RecipeIngredient ri = new RecipeIngredient();
                     ri.setRecipe(recipe);
                     ri.setFood(ingredientFood);
