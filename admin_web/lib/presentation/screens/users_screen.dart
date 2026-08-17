@@ -50,7 +50,10 @@ class _UsersScreenState extends State<UsersScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(user.profile?.fullName ?? 'Chưa cập nhật tên', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  Text(
+                    user.profile?.fullName ?? 'Chưa cập nhật tên',
+                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  ),
                   Text(user.email, style: const TextStyle(fontSize: 13, color: AppTheme.textSecondary)),
                 ],
               ),
@@ -89,7 +92,10 @@ class _UsersScreenState extends State<UsersScreen> {
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Mục tiêu Fitness'),
                   subtitle: Text(user.goal?.type ?? 'Chưa thiết lập'),
-                  trailing: Text('Mục tiêu: ${user.goal?.targetWeight ?? "N/A"} kg', style: const TextStyle(fontWeight: FontWeight.bold)),
+                  trailing: Text(
+                    'Mục tiêu: ${user.goal?.targetWeight ?? "N/A"} kg',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 ListTile(
                   contentPadding: EdgeInsets.zero,
@@ -109,12 +115,7 @@ class _UsersScreenState extends State<UsersScreen> {
             ),
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
-          ),
-        ],
+        actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Đóng'))],
       ),
     );
   }
@@ -142,14 +143,7 @@ class _UsersScreenState extends State<UsersScreen> {
     return FutureBuilder<List<UserModel>>(
       future: _usersFuture,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return Center(child: Text('Lỗi: ${snapshot.error}'));
-        }
-
+        final isLoading = snapshot.connectionState == ConnectionState.waiting;
         final users = snapshot.data ?? [];
 
         return BaseTableScreen(
@@ -158,38 +152,49 @@ class _UsersScreenState extends State<UsersScreen> {
           onRefresh: _refreshUsers,
           onSearchChanged: _onSearchChanged,
           searchHint: 'Tìm theo tên hoặc email...',
+          isLoading: isLoading,
           columns: const ['ID', 'Họ tên', 'Email', 'Trạng thái', 'Thao tác'],
-          rows: users.map((user) => DataRow(cells: [
-            DataCell(Text(user.id.length >= 8 ? user.id.substring(0, 8) : user.id)),
-            DataCell(Text(user.profile?.fullName ?? 'Chưa cập nhật')),
-            DataCell(Text(user.email)),
-            DataCell(Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: (user.profile?.isAssessmentCompleted ?? false)
-                    ? Colors.green.withValues(alpha: 0.1)
-                    : Colors.orange.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                (user.profile?.isAssessmentCompleted ?? false) ? 'Đã khảo sát' : 'Chưa khảo sát',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: (user.profile?.isAssessmentCompleted ?? false) ? Colors.green : Colors.orange,
+          rows: users
+              .map(
+                (user) => DataRow(
+                  cells: [
+                    DataCell(Text(user.id.length >= 8 ? user.id.substring(0, 8) : user.id)),
+                    DataCell(Text(user.profile?.fullName ?? 'Chưa cập nhật')),
+                    DataCell(Text(user.email)),
+                    DataCell(
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: (user.profile?.isAssessmentCompleted ?? false)
+                              ? Colors.green.withValues(alpha: 0.1)
+                              : Colors.orange.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          (user.profile?.isAssessmentCompleted ?? false) ? 'Đã khảo sát' : 'Chưa khảo sát',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: (user.profile?.isAssessmentCompleted ?? false) ? Colors.green : Colors.orange,
+                          ),
+                        ),
+                      ),
+                    ),
+                    DataCell(
+                      Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.visibility_outlined, size: 18, color: AppTheme.primaryColor),
+                            tooltip: 'Xem chi tiết',
+                            onPressed: () => _showUserDetailDialog(user),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-            )),
-            DataCell(Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.visibility_outlined, size: 18, color: AppTheme.primaryColor),
-                  tooltip: 'Xem chi tiết',
-                  onPressed: () => _showUserDetailDialog(user),
-                ),
-              ],
-            )),
-          ])).toList(),
+              )
+              .toList(),
         );
       },
     );

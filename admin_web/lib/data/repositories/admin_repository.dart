@@ -2,12 +2,10 @@ import 'package:core_shared/core_shared.dart';
 import 'package:dio/dio.dart';
 import '../../core/network/api_client.dart';
 import '../models/admin_stats_model.dart';
+import '../models/page_response_model.dart';
 
 class AdminRepository {
   List<UserModel>? _cachedUsers;
-  List<ExerciseModel>? _cachedExercises;
-  List<FoodModel>? _cachedIngredients;
-  List<FoodModel>? _cachedDishes;
 
   // 0. Lấy thống kê tổng quan (Dashboard Stats)
   Future<AdminStatsModel> getDashboardStats() async {
@@ -46,21 +44,33 @@ class AdminRepository {
     }
   }
 
-  // 2. Lấy danh sách bài tập
-  Future<List<ExerciseModel>> getAllExercises({String? search, bool forceRefresh = false}) async {
-    if (_cachedExercises != null && !forceRefresh && (search == null || search.isEmpty)) return _cachedExercises!;
-
+  // 2. Lấy danh sách bài tập (Phân trang 20 bản ghi/trang & lọc Danh mục)
+  Future<PageResponseModel<ExerciseModel>> getAllExercises({
+    int page = 0,
+    int size = 20,
+    String? search,
+    String? categoryId,
+    String? categoryCode,
+  }) async {
     try {
-      final Map<String, dynamic> params = {'size': 100};
+      final Map<String, dynamic> params = {
+        'page': page,
+        'size': size,
+      };
       if (search != null && search.isNotEmpty) params['name'] = search;
+      if (categoryId != null && categoryId.isNotEmpty) params['categoryId'] = categoryId;
+      if (categoryCode != null && categoryCode.isNotEmpty) params['categoryCode'] = categoryCode;
 
       final response = await apiClient.get('api/v1/exercises', queryParameters: params);
       final dynamic rawData = response.data['data'] ?? response.data;
       
-      List<dynamic> content = (rawData is Map) ? (rawData['content'] ?? []) : (rawData as List);
-      final exercises = content.map((json) => ExerciseModel.fromJson(json as Map<String, dynamic>)).toList();
-      if (search == null || search.isEmpty) _cachedExercises = exercises;
-      return exercises;
+      if (rawData is Map<String, dynamic>) {
+        return PageResponseModel<ExerciseModel>.fromJson(
+          rawData,
+          (json) => ExerciseModel.fromJson(json),
+        );
+      }
+      return PageResponseModel<ExerciseModel>.empty();
     } on DioException catch (e) {
       throw Exception('Lỗi API Bài tập: ${e.response?.data['message'] ?? e.message}');
     } catch (e) {
@@ -84,7 +94,6 @@ class AdminRepository {
     try {
       final response = await apiClient.post('api/v1/exercises', data: exercise.toJson());
       final dynamic rawData = response.data['data'] ?? response.data;
-      _cachedExercises = null; // Clear cache
       return ExerciseModel.fromJson(rawData as Map<String, dynamic>);
     } on DioException catch (e) {
       throw Exception('Lỗi thêm bài tập: ${e.response?.data['message'] ?? e.message}');
@@ -96,7 +105,6 @@ class AdminRepository {
     try {
       final response = await apiClient.put('api/v1/exercises/$id', data: exercise.toJson());
       final dynamic rawData = response.data['data'] ?? response.data;
-      _cachedExercises = null; // Clear cache
       return ExerciseModel.fromJson(rawData as Map<String, dynamic>);
     } on DioException catch (e) {
       throw Exception('Lỗi cập nhật bài tập: ${e.response?.data['message'] ?? e.message}');
@@ -107,28 +115,38 @@ class AdminRepository {
   Future<void> deleteExercise(String id) async {
     try {
       await apiClient.delete('api/v1/exercises/$id');
-      _cachedExercises = null; // Clear cache
     } on DioException catch (e) {
       throw Exception('Lỗi xóa bài tập: ${e.response?.data['message'] ?? e.message}');
     }
   }
 
-  // 3. Lấy danh sách Nguyên liệu (Ingredients)
-  Future<List<FoodModel>> getAllIngredients({String? search, bool forceRefresh = false}) async {
-    if (_cachedIngredients != null && !forceRefresh && (search == null || search.isEmpty)) return _cachedIngredients!;
-
+  // 3. Lấy danh sách Nguyên liệu (Ingredients - Phân trang 20 bản ghi/trang & lọc Danh mục)
+  Future<PageResponseModel<FoodModel>> getAllIngredients({
+    int page = 0,
+    int size = 20,
+    String? search,
+    String? categoryId,
+  }) async {
     try {
-      final String path = (search != null && search.isNotEmpty) ? 'api/v1/foods/search' : 'api/v1/foods/ingredients';
-      final Map<String, dynamic> params = {'size': 100};
+      final bool useSearch = (search != null && search.isNotEmpty) || (categoryId != null && categoryId.isNotEmpty);
+      final String path = useSearch ? 'api/v1/foods/search' : 'api/v1/foods/ingredients';
+      final Map<String, dynamic> params = {
+        'page': page,
+        'size': size,
+      };
       if (search != null && search.isNotEmpty) params['query'] = search;
+      if (categoryId != null && categoryId.isNotEmpty) params['categoryId'] = categoryId;
 
       final response = await apiClient.get(path, queryParameters: params);
       final dynamic rawData = response.data['data'] ?? response.data;
       
-      List<dynamic> content = (rawData is Map) ? (rawData['content'] ?? []) : (rawData as List);
-      final ingredients = content.map((json) => FoodModel.fromJson(json as Map<String, dynamic>)).toList();
-      if (search == null || search.isEmpty) _cachedIngredients = ingredients;
-      return ingredients;
+      if (rawData is Map<String, dynamic>) {
+        return PageResponseModel<FoodModel>.fromJson(
+          rawData,
+          (json) => FoodModel.fromJson(json),
+        );
+      }
+      return PageResponseModel<FoodModel>.empty();
     } on DioException catch (e) {
       throw Exception('Lỗi API Nguyên liệu: ${e.response?.data['message'] ?? e.message}');
     } catch (e) {
@@ -136,22 +154,33 @@ class AdminRepository {
     }
   }
 
-  // 4. Lấy danh sách Món ăn (Dishes)
-  Future<List<FoodModel>> getAllDishes({String? search, bool forceRefresh = false}) async {
-    if (_cachedDishes != null && !forceRefresh && (search == null || search.isEmpty)) return _cachedDishes!;
-
+  // 4. Lấy danh sách Món ăn (Dishes - Phân trang 20 bản ghi/trang & lọc Danh mục)
+  Future<PageResponseModel<FoodModel>> getAllDishes({
+    int page = 0,
+    int size = 20,
+    String? search,
+    String? categoryId,
+  }) async {
     try {
-      final String path = (search != null && search.isNotEmpty) ? 'api/v1/foods/search' : 'api/v1/foods/dishes';
-      final Map<String, dynamic> params = {'size': 100};
+      final bool useSearch = (search != null && search.isNotEmpty) || (categoryId != null && categoryId.isNotEmpty);
+      final String path = useSearch ? 'api/v1/foods/search' : 'api/v1/foods/dishes';
+      final Map<String, dynamic> params = {
+        'page': page,
+        'size': size,
+      };
       if (search != null && search.isNotEmpty) params['query'] = search;
+      if (categoryId != null && categoryId.isNotEmpty) params['categoryId'] = categoryId;
 
       final response = await apiClient.get(path, queryParameters: params);
       final dynamic rawData = response.data['data'] ?? response.data;
       
-      List<dynamic> content = (rawData is Map) ? (rawData['content'] ?? []) : (rawData as List);
-      final dishes = content.map((json) => FoodModel.fromJson(json as Map<String, dynamic>)).toList();
-      if (search == null || search.isEmpty) _cachedDishes = dishes;
-      return dishes;
+      if (rawData is Map<String, dynamic>) {
+        return PageResponseModel<FoodModel>.fromJson(
+          rawData,
+          (json) => FoodModel.fromJson(json),
+        );
+      }
+      return PageResponseModel<FoodModel>.empty();
     } on DioException catch (e) {
       throw Exception('Lỗi API Món ăn: ${e.response?.data['message'] ?? e.message}');
     } catch (e) {
@@ -175,7 +204,6 @@ class AdminRepository {
     try {
       final response = await apiClient.post('api/v1/foods', data: food.toJson());
       final dynamic rawData = response.data['data'] ?? response.data;
-      _clearFoodCache();
       return FoodModel.fromJson(rawData as Map<String, dynamic>);
     } on DioException catch (e) {
       throw Exception('Lỗi thêm thực phẩm: ${e.response?.data['message'] ?? e.message}');
@@ -187,7 +215,6 @@ class AdminRepository {
     try {
       final response = await apiClient.put('api/v1/foods/$id', data: food.toJson());
       final dynamic rawData = response.data['data'] ?? response.data;
-      _clearFoodCache();
       return FoodModel.fromJson(rawData as Map<String, dynamic>);
     } on DioException catch (e) {
       throw Exception('Lỗi cập nhật thực phẩm: ${e.response?.data['message'] ?? e.message}');
@@ -198,22 +225,13 @@ class AdminRepository {
   Future<void> deleteFood(String id) async {
     try {
       await apiClient.delete('api/v1/foods/$id');
-      _clearFoodCache();
     } on DioException catch (e) {
       throw Exception('Lỗi xóa thực phẩm: ${e.response?.data['message'] ?? e.message}');
     }
   }
 
-  void _clearFoodCache() {
-    _cachedIngredients = null;
-    _cachedDishes = null;
-  }
-
   void clearCache() {
     _cachedUsers = null;
-    _cachedExercises = null;
-    _cachedIngredients = null;
-    _cachedDishes = null;
   }
 
   // Lấy Workout Categories

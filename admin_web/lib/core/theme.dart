@@ -2,13 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  static const primaryColor = Color(0xFF0EA5E9);
-  static const accentColor = Color(0xFFF97316);
-  static const backgroundColor = Color(0xFFF8FAFC);
+  static const primaryColor = Color(0xFFFF5A26); // Warm Reztro Orange
+  static const primaryLight = Color(0xFFFFF0EB);
+  static const accentColor = Color(0xFFFF8A65);
+  static const backgroundColor = Color(0xFFF4F5F7);
   static const sidebarColor = Colors.white;
   static const cardColor = Colors.white;
-  static const textPrimary = Color(0xFF0F172A);
-  static const textSecondary = Color(0xFF64748B);
+  static const textPrimary = Color(0xFF18181B);
+  static const textSecondary = Color(0xFF71717A);
+  static const borderColor = Color(0xFFEBECEF);
 
   static ThemeData get lightTheme {
     return ThemeData(
@@ -45,7 +47,7 @@ class AppTheme {
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(16),
-          side: BorderSide(color: Colors.grey.shade200),
+          side: const BorderSide(color: borderColor),
         ),
       ),
     );
