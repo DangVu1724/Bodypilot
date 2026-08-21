@@ -4,12 +4,18 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_cubit.dart';
 import 'package:mobile/presentation/widgets/black_button_2.dart';
 
-class DislikedFoodOption {
+class DislikedCategoryGroup {
   final String code;
   final String title;
   final IconData icon;
+  final List<String> subItems;
 
-  const DislikedFoodOption({required this.code, required this.title, required this.icon});
+  const DislikedCategoryGroup({
+    required this.code,
+    required this.title,
+    required this.icon,
+    required this.subItems,
+  });
 }
 
 class DislikedFoodsStep extends StatefulWidget {
@@ -23,25 +29,59 @@ class DislikedFoodsStep extends StatefulWidget {
 
 class _DislikedFoodsStepState extends State<DislikedFoodsStep> {
   late final TextEditingController _noteController;
+  final Set<String> _selectedSubItems = {};
+  String? _expandedCategoryCode;
 
-  static const List<DislikedFoodOption> options = [
-    DislikedFoodOption(code: 'NONE', title: 'Không có', icon: Icons.sentiment_satisfied),
-    DislikedFoodOption(code: 'ORGAN_MEAT', title: 'Nội tạng', icon: Icons.restaurant),
-    DislikedFoodOption(code: 'SEAFOOD', title: 'Hải sản', icon: Icons.set_meal),
-    DislikedFoodOption(code: 'SPICY_FOOD', title: 'Đồ cay', icon: Icons.whatshot),
-    DislikedFoodOption(code: 'FRIED_FOOD', title: 'Đồ chiên rán', icon: Icons.cookie),
-    DislikedFoodOption(code: 'FAST_FOOD', title: 'Đồ ăn nhanh', icon: Icons.lunch_dining),
-    DislikedFoodOption(code: 'SUGARY_FOOD', title: 'Đồ ngọt', icon: Icons.cake),
-    DislikedFoodOption(code: 'PROCESSED_FOOD', title: 'Đồ chế biến sẵn', icon: Icons.inventory_2),
-    DislikedFoodOption(code: 'DAIRY_PRODUCTS', title: 'Sữa & Chế phẩm', icon: Icons.local_cafe),
-    DislikedFoodOption(code: 'OTHER', title: 'Khác', icon: Icons.more_horiz),
+  static const List<DislikedCategoryGroup> categoryGroups = [
+    DislikedCategoryGroup(
+      code: 'MEAT',
+      title: 'Thịt & Gia cầm',
+      icon: Icons.restaurant,
+      subItems: ['Thịt gà', 'Thịt bò', 'Thịt heo', 'Thịt vịt', 'Thịt dê', 'Nội tạng'],
+    ),
+    DislikedCategoryGroup(
+      code: 'GRAIN',
+      title: 'Ngũ cốc & Tinh bột',
+      icon: Icons.rice_bowl,
+      subItems: ['Gạo lứt', 'Yến mạch', 'Khoai lang', 'Quinoa', 'Bánh mì nguyên cám'],
+    ),
+    DislikedCategoryGroup(
+      code: 'DAIRY_PRODUCTS',
+      title: 'Sữa & Trứng',
+      icon: Icons.local_cafe,
+      subItems: ['Sữa chua', 'Phô mai', 'Lòng đỏ trứng', 'Váng sữa'],
+    ),
+    DislikedCategoryGroup(
+      code: 'SEAFOOD',
+      title: 'Hải sản',
+      icon: Icons.set_meal,
+      subItems: ['Tôm', 'Cua', 'Cá biển', 'Mực', 'Nghêu / Sò / Ốc'],
+    ),
+    DislikedCategoryGroup(
+      code: 'FRIED_FOOD',
+      title: 'Món nước & Đồ rán',
+      icon: Icons.cookie,
+      subItems: ['Phở / Bún nhiều mỡ', 'Xôi mặn', 'Đồ chiên rán', 'Thức ăn nhanh'],
+    ),
+    DislikedCategoryGroup(
+      code: 'SPICY_FOOD',
+      title: 'Đồ cay & Ngọt',
+      icon: Icons.whatshot,
+      subItems: ['Rau củ đắng', 'Sầu riêng / Nhãn', 'Ớt / Đồ cay', 'Đồ ngọt nhiều đường'],
+    ),
   ];
 
   @override
   void initState() {
     super.initState();
-    final initialNote = context.read<AssessmentCubit>().state.dislikedFoodsNote;
+    final cubitState = context.read<AssessmentCubit>().state;
+    final initialNote = cubitState.dislikedFoodsNote ?? '';
     _noteController = TextEditingController(text: initialNote);
+
+    if (initialNote.isNotEmpty) {
+      final parts = initialNote.split(RegExp(r'[,;\n]+')).map((e) => e.trim()).where((e) => e.isNotEmpty);
+      _selectedSubItems.addAll(parts);
+    }
   }
 
   @override
@@ -50,83 +90,191 @@ class _DislikedFoodsStepState extends State<DislikedFoodsStep> {
     super.dispose();
   }
 
+  void _syncStateWithCubit() {
+    final cubit = context.read<AssessmentCubit>();
+    final activeGroups = <String>[];
+
+    for (final group in categoryGroups) {
+      final hasSelectedSubItem = group.subItems.any((item) => _selectedSubItems.contains(item));
+      if (hasSelectedSubItem) {
+        activeGroups.add(group.code);
+      }
+    }
+
+    final customText = _noteController.text.trim();
+    final allSubItems = List<String>.from(_selectedSubItems);
+    if (customText.isNotEmpty && !allSubItems.contains(customText)) {
+      allSubItems.add(customText);
+    }
+
+    final formattedNote = allSubItems.join(', ');
+    
+    for (final group in categoryGroups) {
+      if (activeGroups.contains(group.code)) {
+        if (!cubit.state.dislikedFoodGroups.contains(group.code)) {
+          cubit.toggleDislikedFoodGroup(group.code);
+        }
+      } else {
+        if (cubit.state.dislikedFoodGroups.contains(group.code)) {
+          cubit.toggleDislikedFoodGroup(group.code);
+        }
+      }
+    }
+
+    cubit.setDislikedFoodsNote(formattedNote);
+  }
+
+  void _toggleSubItem(String groupCode, String item) {
+    setState(() {
+      if (_selectedSubItems.contains(item)) {
+        _selectedSubItems.remove(item);
+      } else {
+        _selectedSubItems.add(item);
+      }
+    });
+    _syncStateWithCubit();
+  }
+
   @override
   Widget build(BuildContext context) {
-    final assessmentState = context.watch<AssessmentCubit>().state;
-    final selectedDisliked = assessmentState.dislikedFoodGroups;
-
     return Column(
       children: [
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         Expanded(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ShaderMask(
-                  shaderCallback: (bounds) => LinearGradient(
-                    colors: [AppTheme.primary, AppTheme.primary.withOpacity(0.7)],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ).createShader(bounds),
-                  child: Text(
-                    'Hạn chế thực phẩm',
-                    style: AppTheme.headlineStyle.copyWith(color: Colors.white),
-                    textAlign: TextAlign.center,
+                Center(
+                  child: ShaderMask(
+                    shaderCallback: (bounds) => LinearGradient(
+                      colors: [AppTheme.primary, AppTheme.primary.withOpacity(0.7)],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ).createShader(bounds),
+                    child: Text(
+                      'Hạn chế thực phẩm',
+                      style: AppTheme.headlineStyle.copyWith(color: Colors.white),
+                      textAlign: TextAlign.center,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  'Bạn muốn hạn chế nhóm thực phẩm nào?',
-                  style: AppTheme.semiboldStyle.copyWith(fontSize: 18, color: Colors.black87),
-                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  'AI sẽ điều chỉnh thực đơn giảm thiểu hoặc loại bỏ các nhóm này (Không dùng cho dị ứng nguy hiểm).',
+                  'Chọn các loại thực phẩm cụ thể bạn không thích hoặc muốn hạn chế:',
                   style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600),
                   textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 24),
-                GridView.builder(
+                const SizedBox(height: 20),
+                ListView.separated(
                   shrinkWrap: true,
                   physics: const NeverScrollableScrollPhysics(),
-                  itemCount: options.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 12,
-                    mainAxisSpacing: 12,
-                    childAspectRatio: 0.95,
-                  ),
+                  itemCount: categoryGroups.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 12),
                   itemBuilder: (context, index) {
-                    final option = options[index];
-                    final isSelected = selectedDisliked.contains(option.code);
-                    return _buildCategoryOption(
-                      title: option.title,
-                      icon: option.icon,
-                      isSelected: isSelected,
-                      code: option.code,
+                    final group = categoryGroups[index];
+                    final isExpanded = _expandedCategoryCode == group.code;
+                    final selectedCount = group.subItems.where((item) => _selectedSubItems.contains(item)).length;
+
+                    return Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: selectedCount > 0 ? AppTheme.primary : Colors.grey.shade200,
+                          width: selectedCount > 0 ? 1.5 : 1.0,
+                        ),
+                        boxShadow: [
+                          BoxShadow(color: Colors.grey.shade100, blurRadius: 4, offset: const Offset(0, 2)),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          ListTile(
+                            onTap: () {
+                              setState(() {
+                                _expandedCategoryCode = isExpanded ? null : group.code;
+                              });
+                            },
+                            leading: Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: selectedCount > 0 ? AppTheme.primary.withOpacity(0.1) : const Color(0xFFF1F5F9),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Icon(group.icon, color: selectedCount > 0 ? AppTheme.primary : const Color(0xFF64748B)),
+                            ),
+                            title: Text(
+                              group.title,
+                              style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: const Color(0xFF1E293B)),
+                            ),
+                            subtitle: selectedCount > 0
+                                ? Text(
+                                    'Đã chọn $selectedCount loại',
+                                    style: TextStyle(color: AppTheme.primary, fontSize: 12, fontWeight: FontWeight.w600),
+                                  )
+                                : Text(
+                                    'Bấm để xem các loại',
+                                    style: TextStyle(color: Colors.grey.shade400, fontSize: 12),
+                                  ),
+                            trailing: Icon(
+                              isExpanded ? Icons.keyboard_arrow_up : Icons.keyboard_arrow_down,
+                              color: Colors.grey.shade600,
+                            ),
+                          ),
+                          if (isExpanded) ...[
+                            const Divider(height: 1),
+                            Padding(
+                              padding: const EdgeInsets.all(12),
+                              child: Wrap(
+                                spacing: 8,
+                                runSpacing: 8,
+                                children: group.subItems.map((item) {
+                                  final isSelected = _selectedSubItems.contains(item);
+                                  return FilterChip(
+                                    selected: isSelected,
+                                    label: Text(item),
+                                    labelStyle: TextStyle(
+                                      color: isSelected ? Colors.white : const Color(0xFF334155),
+                                      fontSize: 13,
+                                      fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    ),
+                                    selectedColor: AppTheme.primary,
+                                    backgroundColor: const Color(0xFFF8FAFC),
+                                    checkmarkColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(20),
+                                      side: BorderSide(
+                                        color: isSelected ? AppTheme.primary : const Color(0xFFE2E8F0),
+                                      ),
+                                    ),
+                                    onSelected: (_) {
+                                      _toggleSubItem(group.code, item);
+                                    },
+                                  );
+                                }).toList(),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
                     );
                   },
                 ),
-                const SizedBox(height: 28),
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'Bạn không thích hoặc muốn hạn chế thực phẩm cụ thể nào khác?',
-                    style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: Colors.black87),
-                  ),
+                const SizedBox(height: 24),
+                Text(
+                  'Thực phẩm kiêng cữ khác (nếu có):',
+                  style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: Colors.black87),
                 ),
                 const SizedBox(height: 8),
                 TextField(
                   controller: _noteController,
-                  maxLines: 3,
-                  onChanged: (value) {
-                    context.read<AssessmentCubit>().setDislikedFoodsNote(value);
-                  },
+                  maxLines: 2,
+                  onChanged: (_) => _syncStateWithCubit(),
                   decoration: InputDecoration(
-                    hintText: 'Ví dụ: rau ngò, hành tây, cà tím, mướp đắng...',
+                    hintText: 'Nhập tên khác như: cần tây, mướp đắng, nấm mèo...',
                     hintStyle: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade400),
                     filled: true,
                     fillColor: Colors.white,
@@ -150,90 +298,26 @@ class _DislikedFoodsStepState extends State<DislikedFoodsStep> {
             ),
           ),
         ),
-        _buildBottomSection(selectedDisliked),
+        _buildBottomSection(),
       ],
     );
   }
 
-  Widget _buildCategoryOption({
-    required String title,
-    required IconData icon,
-    required bool isSelected,
-    required String code,
-  }) {
-    return GestureDetector(
-      onTap: () {
-        context.read<AssessmentCubit>().toggleDislikedFoodGroup(code);
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        decoration: BoxDecoration(
-          color: isSelected ? AppTheme.primary : Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: isSelected ? AppTheme.primary : Colors.grey.shade200, width: 1.5),
-          boxShadow: [
-            if (isSelected)
-              BoxShadow(color: AppTheme.primary.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3))
-            else
-              BoxShadow(color: Colors.grey.shade100, blurRadius: 4, offset: const Offset(0, 2)),
-          ],
-        ),
-        child: Stack(
-          children: [
-            if (isSelected)
-              Positioned(
-                top: 6,
-                right: 6,
-                child: Container(
-                  padding: const EdgeInsets.all(1),
-                  decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
-                  child: Icon(Icons.check, size: 10, color: AppTheme.primary),
-                ),
-              ),
-            Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(icon, size: 24, color: isSelected ? Colors.white : AppTheme.primary),
-                  const SizedBox(height: 8),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 4),
-                    child: Text(
-                      title,
-                      textAlign: TextAlign.center,
-                      style: AppTheme.semiboldStyle.copyWith(
-                        fontSize: 12,
-                        color: isSelected ? Colors.white : Colors.black87,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBottomSection(List<String> selectedDisliked) {
+  Widget _buildBottomSection() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: const BoxDecoration(
-        color: Colors.transparent,
-      ),
       child: Column(
         children: [
-          if (selectedDisliked.isNotEmpty && !selectedDisliked.contains('NONE'))
+          if (_selectedSubItems.isNotEmpty)
             Container(
-              margin: const EdgeInsets.only(bottom: 16),
+              margin: const EdgeInsets.only(bottom: 12),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
                 color: AppTheme.primary.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
-                'Đã chọn ${selectedDisliked.length} nhóm hạn chế',
+                'Đã chọn ${_selectedSubItems.length} thực phẩm kiêng cữ',
                 style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: AppTheme.primary),
               ),
             ),
@@ -241,7 +325,7 @@ class _DislikedFoodsStepState extends State<DislikedFoodsStep> {
             width: double.infinity,
             child: BlackButton2(
               label: 'Tiếp tục',
-              onPressed: selectedDisliked.isNotEmpty ? widget.onNext : null,
+              onPressed: widget.onNext,
               borderRadius: 16,
               padding: const EdgeInsets.symmetric(vertical: 16),
             ),

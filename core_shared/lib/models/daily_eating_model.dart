@@ -22,10 +22,10 @@ class DailyEatingModel {
   factory DailyEatingModel.fromJson(Map<String, dynamic> json) {
     return DailyEatingModel(
       id: json['id'],
-      date: DateTime.parse(json['date']),
+      date: json['date'] != null ? DateTime.parse(json['date'].toString()) : DateTime.now(),
       note: json['note'],
-      isAiGenerated: json['isAiGenerated'] ?? false,
-      mealSlots: (json['mealSlots'] as List).map((i) => MealSlotModel.fromJson(i)).toList(),
+      isAiGenerated: json['isAiGenerated'] ?? json['aiGenerated'] ?? false,
+      mealSlots: (json['mealSlots'] as List?)?.map((i) => MealSlotModel.fromJson(i)).toList() ?? [],
       totalCaloriesPlanned: ((json['totalCaloriesPlanned'] ?? 0) as num).toDouble(),
       totalCaloriesEaten: ((json['totalCaloriesEaten'] ?? 0) as num).toDouble(),
     );
@@ -62,13 +62,17 @@ class MealSlotModel {
   });
 
   factory MealSlotModel.fromJson(Map<String, dynamic> json) {
+    final mealTypeStr = (json['mealType'] as String?)?.toUpperCase().trim() ?? 'BREAKFAST';
     return MealSlotModel(
       id: json['id'],
-      mealType: MealType.values.firstWhere((e) => e.name == json['mealType']),
+      mealType: MealType.values.firstWhere(
+        (e) => e.name.toUpperCase() == mealTypeStr,
+        orElse: () => MealType.BREAKFAST,
+      ),
       customName: json['customName'],
       orderIndex: json['orderIndex'] ?? 0,
       isEaten: json['isEaten'] ?? false,
-      items: (json['items'] as List).map((i) => MealItemModel.fromJson(i)).toList(),
+      items: (json['items'] as List?)?.map((i) => MealItemModel.fromJson(i)).toList() ?? [],
     );
   }
 
@@ -122,7 +126,7 @@ class MealItemModel {
   factory MealItemModel.fromJson(Map<String, dynamic> json) {
     return MealItemModel(
       id: json['id'],
-      servingQuantity: (json['servingQuantity'] as num).toDouble(),
+      servingQuantity: ((json['servingQuantity'] ?? 100) as num).toDouble(),
       orderIndex: json['orderIndex'] ?? 0,
       isCustom: json['isCustom'] ?? false,
       isEaten: json['isEaten'] ?? false,

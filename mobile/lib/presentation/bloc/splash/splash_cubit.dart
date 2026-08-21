@@ -14,7 +14,6 @@ class SplashCubit extends Cubit<SplashStatus> {
     if (_isStarting) return;
     _isStarting = true;
 
-    // Minimum splash duration
     final minDuration = Future.delayed(const Duration(seconds: 2));
 
     try {
@@ -24,7 +23,6 @@ class SplashCubit extends Cubit<SplashStatus> {
         return;
       }
 
-      // 1. Check 7 days limit
       if (!TokenService.isSessionValid()) {
         await TokenService.removeToken();
         await minDuration;
@@ -32,10 +30,8 @@ class SplashCubit extends Cubit<SplashStatus> {
         return;
       }
 
-      // 2. Update last activity
       await TokenService.updateLastActivity();
 
-      // 3. Fetch user profile in background
       final isProfileFetched = await userCubit.fetchUserProfile();
 
       await minDuration;

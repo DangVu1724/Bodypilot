@@ -1,13 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:timezone/data/latest_all.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
 import 'package:flutter_timezone/flutter_timezone.dart';
 import 'package:logger/logger.dart';
 import 'package:mobile/data/models/notification_model.dart';
 import 'package:mobile/data/repositories/notification_repository.dart';
 import 'package:mobile/data/services/token_service.dart';
+import 'package:timezone/data/latest_all.dart' as tz;
+import 'package:timezone/timezone.dart' as tz;
 
 final _logger = Logger();
 
@@ -20,8 +20,7 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 
 class PushNotificationService {
   static final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  static final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
-      FlutterLocalNotificationsPlugin();
+  static final FlutterLocalNotificationsPlugin _localNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
   static Future<void> init() async {
     NotificationSettings settings = await _firebaseMessaging.requestPermission(
@@ -36,11 +35,7 @@ class PushNotificationService {
 
     _logger.i('FCM authorization status: ${settings.authorizationStatus}');
 
-    await _firebaseMessaging.setForegroundNotificationPresentationOptions(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    await _firebaseMessaging.setForegroundNotificationPresentationOptions(alert: true, badge: true, sound: true);
 
     String? fcmToken = await _firebaseMessaging.getToken();
     _logger.i("FCM TOKEN: $fcmToken");
@@ -59,7 +54,7 @@ class PushNotificationService {
     }
 
     await _initLocalNotifications();
-    await setupScheduledReminders();
+    await cancelAllScheduledReminders();
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
       _logger.i("FCM Foreground message received: ${message.notification?.title}");
@@ -113,11 +108,11 @@ class PushNotificationService {
   }
 
   static Future<void> _initLocalNotifications() async {
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('@mipmap/ic_launcher');
+    const AndroidInitializationSettings initializationSettingsAndroid = AndroidInitializationSettings(
+      '@mipmap/ic_launcher',
+    );
 
-    const DarwinInitializationSettings initializationSettingsDarwin =
-        DarwinInitializationSettings();
+    const DarwinInitializationSettings initializationSettingsDarwin = DarwinInitializationSettings();
 
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
@@ -132,8 +127,7 @@ class PushNotificationService {
     );
 
     await _localNotificationsPlugin
-        .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin>()
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
         ?.requestNotificationsPermission();
 
     try {
@@ -160,14 +154,7 @@ class PushNotificationService {
     required int minute,
   }) async {
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
+    tz.TZDateTime scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
 
     if (scheduledDate.isBefore(now)) {
       scheduledDate = scheduledDate.add(const Duration(days: 1));
@@ -184,10 +171,7 @@ class PushNotificationService {
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
 
-    const NotificationDetails platformDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+    const NotificationDetails platformDetails = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     try {
       await _localNotificationsPlugin.zonedSchedule(
@@ -223,14 +207,7 @@ class PushNotificationService {
     required int minute,
   }) async {
     final tz.TZDateTime now = tz.TZDateTime.now(tz.local);
-    tz.TZDateTime scheduledDate = tz.TZDateTime(
-      tz.local,
-      now.year,
-      now.month,
-      now.day,
-      hour,
-      minute,
-    );
+    tz.TZDateTime scheduledDate = tz.TZDateTime(tz.local, now.year, now.month, now.day, hour, minute);
 
     int daysToAdd = dayOfWeek - scheduledDate.weekday;
     if (daysToAdd < 0 || (daysToAdd == 0 && scheduledDate.isBefore(now))) {
@@ -250,10 +227,7 @@ class PushNotificationService {
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
 
-    const NotificationDetails platformDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+    const NotificationDetails platformDetails = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     try {
       await _localNotificationsPlugin.zonedSchedule(
@@ -280,54 +254,17 @@ class PushNotificationService {
     _logger.i('Weekly notification scheduled (ID $id) on Day $dayOfWeek at $hour:$minute');
   }
 
-  static Future<void> setupScheduledReminders() async {
+  // =========================================================================
+  // 1. QUẢN LÝ THÔNG BÁO HẸN GIỜ: NHƯỜNG HOÀN TOÀN CHO BACKEND SERVER FCM
+  // =========================================================================
+  static Future<void> cancelAllScheduledReminders() async {
     try {
       await _localNotificationsPlugin.cancelAll();
-
-      await scheduleDailyNotification(
-        id: 1001,
-        title: 'Chào buổi sáng cùng BodyPilot! 🍳🏋️',
-        body: 'Đừng quên ghi lại bữa sáng lành mạnh và xem hôm nay chúng ta sẽ tập gì nhé!',
-        hour: 7,
-        minute: 0,
+      _logger.i(
+        '✅ [LocalNoti] Cancelled all local scheduled alarms. All fixed scheduled notifications are managed by Backend FCM Server.',
       );
-
-      await scheduleDailyNotification(
-        id: 1002,
-        title: 'Đến giờ ăn trưa rồi! 🥗💧',
-        body: 'Hãy ghi lại thực đơn hôm nay để BodyPilot tính toán lượng calo giúp bạn nhé!',
-        hour: 12,
-        minute: 0,
-      );
-
-      await scheduleDailyNotification(
-        id: 1003,
-        title: 'Thời gian tập luyện lý tưởng đã đến! 💪🏃',
-        body: 'Cùng hoàn thành mục tiêu thể thao hôm nay để khỏe mạnh và tràn đầy năng lượng nào!',
-        hour: 17,
-        minute: 30,
-      );
-
-      await scheduleDailyNotification(
-        id: 1004,
-        title: 'Nhìn lại lượng calo hôm nay thôi! 🌛📊',
-        body: 'Đừng quên lưu lại bữa tối và cùng đánh giá mức độ hoàn thành mục tiêu ngày hôm nay nhé.',
-        hour: 20,
-        minute: 30,
-      );
-
-      await scheduleWeeklyNotification(
-        id: 1005,
-        title: 'Báo cáo sức khỏe tuần này đã sẵn sàng! 📈🔥',
-        body: 'Cùng BodyPilot tổng kết quá trình thay đổi tích cực của bạn trong 7 ngày qua nhé!',
-        dayOfWeek: DateTime.sunday,
-        hour: 20,
-        minute: 0,
-      );
-
-      _logger.i('Completed scheduling all reminders.');
     } catch (e) {
-      _logger.e('Error setting up reminders: $e');
+      _logger.e('Error cancelling local reminders: $e');
     }
   }
 
@@ -335,15 +272,10 @@ class PushNotificationService {
   static Future<void> scheduleUnloggedMealReminder({int hour = 11, int minute = 30}) async {
     const id = 1010;
     const title = 'Bạn chưa lên thực đơn hôm nay! 🥗';
-    const body = 'Dành 1 phút ghi nhận món ăn hoặc dùng tính năng Gợi ý Thực đơn thông minh để đạt chuẩn TDEE giúp bạn nhé!';
+    const body =
+        'Dành 1 phút ghi nhận món ăn hoặc dùng tính năng Gợi ý Thực đơn thông minh để đạt chuẩn TDEE giúp bạn nhé!';
 
-    await scheduleDailyNotification(
-      id: id,
-      title: title,
-      body: body,
-      hour: hour,
-      minute: minute,
-    );
+    await scheduleDailyNotification(id: id, title: title, body: body, hour: hour, minute: minute);
   }
 
   /// Nhắc nhở bài tập cá nhân hóa theo nhóm cơ / bài tập hôm nay
@@ -358,15 +290,12 @@ class PushNotificationService {
     final targetText = (targetMuscle != null && targetMuscle.isNotEmpty) ? ' (Nhóm cơ: $targetMuscle)' : '';
     final body = 'Buổi tập $workoutName$targetText đã sẵn sàng. Chuẩn bị năng lượng và hoàn thành bài tập ngay thôi!';
 
-    await scheduleDailyNotification(
-      id: id,
-      title: title,
-      body: body,
-      hour: hour,
-      minute: minute,
-    );
+    await scheduleDailyNotification(id: id, title: title, body: body, hour: hour, minute: minute);
   }
 
+  // =========================================================================
+  // 2. CHỨC NĂNG 2: HIỂN THỊ POP-UP BANNER KHI ĐANG MỞ APP (FOREGROUND BANNER)
+  // =========================================================================
   static Future<void> _showLocalNotification(RemoteMessage message) async {
     final notification = message.notification;
     final title = notification?.title ?? message.data['title'];
@@ -385,10 +314,7 @@ class PushNotificationService {
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
 
-    const NotificationDetails platformDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+    const NotificationDetails platformDetails = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     await _localNotificationsPlugin.show(
       id: message.hashCode,
@@ -399,6 +325,11 @@ class PushNotificationService {
     );
   }
 
+  // =========================================================================
+  // 3. CHỨC NĂNG 3: THÔNG BÁO SỰ KIỆN TẠI CHỖ (LOCAL INSTANT EVENTS)
+  // =========================================================================
+
+  /// Thông báo ngay lập tức khi BẤM HOÀN THÀNH BÀI TẬP
   static Future<void> showWorkoutCompletedNotification({
     String? title,
     String? body,
@@ -415,21 +346,52 @@ class PushNotificationService {
 
     const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
 
-    const NotificationDetails platformDetails = NotificationDetails(
-      android: androidDetails,
-      iOS: iosDetails,
-    );
+    const NotificationDetails platformDetails = NotificationDetails(android: androidDetails, iOS: iosDetails);
 
     final notificationTitle = title ?? 'Chúc mừng! Bạn đã hoàn thành buổi tập hôm nay! 🎉💪';
     final caloText = (totalCaloriesBurned != null && totalCaloriesBurned > 0)
         ? ' Bạn đã đốt cháy khoảng ${totalCaloriesBurned.toInt()} kcal.'
         : '';
-    final notificationBody = body ?? 'Tất cả các bài tập trong ngày đã được hoàn thành.$caloText Tiếp tục phát huy nhé!';
+    final notificationBody =
+        body ?? 'Tất cả các bài tập trong ngày đã được hoàn thành.$caloText Tiếp tục phát huy nhé!';
 
     await _localNotificationsPlugin.show(
       id: DateTime.now().millisecondsSinceEpoch ~/ 1000,
       title: notificationTitle,
       body: notificationBody,
+      notificationDetails: platformDetails,
+    );
+  }
+
+  /// Thông báo ngay lập tức hoặc nhắc nhở UỐNG NƯỚC tại chỗ
+  static Future<void> showWaterReminderNotification({
+    int waterAmountMl = 250,
+    int? currentTotalMl,
+    int? targetTotalMl,
+  }) async {
+    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
+      'bodypilot_water_channel',
+      'BodyPilot Water Reminder',
+      channelDescription: 'Nhắc nhở uống nước hàng ngày của BodyPilot',
+      importance: Importance.high,
+      priority: Priority.high,
+      playSound: true,
+    );
+
+    const DarwinNotificationDetails iosDetails = DarwinNotificationDetails();
+
+    const NotificationDetails platformDetails = NotificationDetails(android: androidDetails, iOS: iosDetails);
+
+    final String progressText = (currentTotalMl != null && targetTotalMl != null)
+        ? ' (Tiến độ: $currentTotalMl/$targetTotalMl ml)'
+        : '';
+    final String body =
+        'Đã nạp thêm $waterAmountMl ml nước mát!$progressText Cơ thể bạn đang được cấp nước đầy đủ để vận động.';
+
+    await _localNotificationsPlugin.show(
+      id: DateTime.now().millisecondsSinceEpoch ~/ 1000 + 1,
+      title: 'Đã ghi nhận uống nước! 💧🥛',
+      body: body,
       notificationDetails: platformDetails,
     );
   }

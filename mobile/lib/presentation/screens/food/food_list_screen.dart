@@ -312,14 +312,6 @@ class _DishListItem extends StatelessWidget {
                         '${food.caloriesPer100g.toStringAsFixed(0)}kcal',
                         style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.7), fontSize: 12),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 8),
-                        child: Text('•', style: AppTheme.bodyStyle.copyWith(color: Colors.white70)),
-                      ),
-                      Text(
-                        '${food.recipe?.cookingTimeMinutes ?? 0} mins',
-                        style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.7), fontSize: 12),
-                      ),
                     ],
                   ),
                 ],

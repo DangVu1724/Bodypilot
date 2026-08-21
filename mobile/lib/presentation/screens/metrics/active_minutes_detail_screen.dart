@@ -1,8 +1,9 @@
+import 'package:core_shared/models/daily_workout_model.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/workout_diary_repository.dart';
-import 'package:core_shared/models/daily_workout_model.dart';
+
 import 'widgets/custom_metric_charts.dart';
 
 class ActiveMinutesDetailScreen extends StatefulWidget {
@@ -98,10 +99,7 @@ class _ActiveMinutesDetailScreenState extends State<ActiveMinutesDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final daysCount = _isWeekly ? 7 : 30;
-    final dates = List.generate(
-      daysCount,
-      (index) => DateTime.now().subtract(Duration(days: daysCount - 1 - index)),
-    );
+    final dates = List.generate(daysCount, (index) => DateTime.now().subtract(Duration(days: daysCount - 1 - index)));
 
     final List<double> minutesValues = [];
     final List<String> chartLabels = [];
@@ -152,10 +150,7 @@ class _ActiveMinutesDetailScreenState extends State<ActiveMinutesDetailScreen> {
                     const SizedBox(width: 8),
                     Text(
                       'Thời gian Vận động',
-                      style: AppTheme.headlineStyle.copyWith(
-                        fontSize: 22,
-                        color: const Color(0xFF1E293B),
-                      ),
+                      style: AppTheme.headlineStyle.copyWith(fontSize: 22, color: const Color(0xFF1E293B)),
                     ),
                   ],
                 ),
@@ -231,184 +226,196 @@ class _ActiveMinutesDetailScreenState extends State<ActiveMinutesDetailScreen> {
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
                     : _errorMessage != null
-                        ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
-                        : RefreshIndicator(
-                            onRefresh: _fetchData,
-                            child: SingleChildScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                    ? Center(
+                        child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _fetchData,
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Stats Grid
+                              Row(
                                 children: [
-                                  // Stats Grid
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildStatCard(
-                                          'Tổng số phút',
-                                          '${totalActiveMinutes.toStringAsFixed(0)} phút',
-                                          const Color(0xFF10B981),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _buildStatCard(
-                                          'Trung bình/ngày',
-                                          '${avgMinutes.toStringAsFixed(1)} phút',
-                                          const Color(0xFF3B82F6),
-                                        ),
-                                      ),
-                                    ],
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      'Tổng số phút',
+                                      '${totalActiveMinutes.toStringAsFixed(0)} phút',
+                                      const Color(0xFF10B981),
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  _buildWideStatCard(
-                                    'Số ngày đã tập luyện',
-                                    '$completedWorkouts ngày',
-                                    Icons.fitness_center_rounded,
-                                    const Color(0xFF8B5CF6),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      'Trung bình/ngày',
+                                      '${avgMinutes.toStringAsFixed(1)} phút',
+                                      const Color(0xFF3B82F6),
+                                    ),
                                   ),
-                                  const SizedBox(height: 24),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildWideStatCard(
+                                'Số ngày đã tập luyện',
+                                '$completedWorkouts ngày',
+                                Icons.fitness_center_rounded,
+                                const Color(0xFF8B5CF6),
+                              ),
+                              const SizedBox(height: 24),
 
-                                  // Chart
-                                  Container(
-                                    padding: const EdgeInsets.all(20),
+                              // Chart
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28)),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Thời lượng hoạt động (phút)',
+                                      style: AppTheme.semiboldStyle.copyWith(
+                                        fontSize: 16,
+                                        color: const Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    SingleBarChart(
+                                      values: minutesValues,
+                                      labels: chartLabels,
+                                      target: _targetActiveMinutes,
+                                      unit: 'phút',
+                                      barColor: const Color(0xFF10B981),
+                                      barSecondaryColor: const Color(0xFF059669),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Detailed logs
+                              Text(
+                                'Chi tiết bài tập hoàn thành',
+                                style: AppTheme.semiboldStyle.copyWith(fontSize: 16, color: const Color(0xFF1E293B)),
+                              ),
+                              const SizedBox(height: 12),
+                              ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: dates.length,
+                                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final reverseIndex = dates.length - 1 - index;
+                                  final date = dates[reverseIndex];
+                                  final m = _getActiveMinutesForDate(date);
+                                  final exercises = _getCompletedExercisesForDate(date);
+                                  final dateStr = DateFormat('dd/MM/yyyy').format(date);
+                                  final dayName = date.weekday == 7 ? 'Chủ Nhật' : 'Thứ ${date.weekday + 1}';
+
+                                  return Container(
+                                    padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(28),
+                                      color: Colors.white.withOpacity(0.8),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          'Thời lượng hoạt động (phút)',
-                                          style: AppTheme.semiboldStyle.copyWith(
-                                            fontSize: 16,
-                                            color: const Color(0xFF1E293B),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 24),
-                                        SingleBarChart(
-                                          values: minutesValues,
-                                          labels: chartLabels,
-                                          target: _targetActiveMinutes,
-                                          unit: 'phút',
-                                          barColor: const Color(0xFF10B981),
-                                          barSecondaryColor: const Color(0xFF059669),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-
-                                  // Detailed logs
-                                  Text(
-                                    'Chi tiết bài tập hoàn thành',
-                                    style: AppTheme.semiboldStyle.copyWith(
-                                      fontSize: 16,
-                                      color: const Color(0xFF1E293B),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  ListView.separated(
-                                    shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    itemCount: dates.length,
-                                    separatorBuilder: (context, index) => const SizedBox(height: 8),
-                                    itemBuilder: (context, index) {
-                                      final reverseIndex = dates.length - 1 - index;
-                                      final date = dates[reverseIndex];
-                                      final m = _getActiveMinutesForDate(date);
-                                      final exercises = _getCompletedExercisesForDate(date);
-                                      final dateStr = DateFormat('dd/MM/yyyy').format(date);
-                                      final dayName = date.weekday == 7 ? 'Chủ Nhật' : 'Thứ ${date.weekday + 1}';
-
-                                      return Container(
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.8),
-                                          borderRadius: BorderRadius.circular(16),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      dayName,
-                                                      style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: const Color(0xFF1E293B)),
-                                                    ),
-                                                    Text(
-                                                      dateStr,
-                                                      style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: Colors.grey.shade600),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                                  decoration: BoxDecoration(
-                                                    color: m >= _targetActiveMinutes ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF),
-                                                    borderRadius: BorderRadius.circular(10),
+                                                Text(
+                                                  dayName,
+                                                  style: AppTheme.semiboldStyle.copyWith(
+                                                    fontSize: 14,
+                                                    color: const Color(0xFF1E293B),
                                                   ),
-                                                  child: Text(
-                                                    '${m.toStringAsFixed(0)} phút',
-                                                    style: AppTheme.semiboldStyle.copyWith(
-                                                      fontSize: 14,
-                                                      color: m >= _targetActiveMinutes ? const Color(0xFF10B981) : const Color(0xFF3B82F6),
-                                                    ),
+                                                ),
+                                                Text(
+                                                  dateStr,
+                                                  style: AppTheme.bodyStyle.copyWith(
+                                                    fontSize: 12,
+                                                    color: Colors.grey.shade600,
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                            if (exercises.isNotEmpty) ...[
-                                              const Divider(height: 16),
-                                              ...exercises.map((ex) {
-                                                String desc = '';
-                                                if (ex.durationMinutesSnapshot != null) {
-                                                  desc += '${ex.durationMinutesSnapshot} phút';
-                                                }
-                                                if (ex.setsSnapshot != null) {
-                                                  desc += '${desc.isNotEmpty ? " • " : ""}${ex.setsSnapshot} hiệp';
-                                                }
-                                                if (ex.repsSnapshot != null) {
-                                                  desc += ' x ${ex.repsSnapshot} lần';
-                                                }
-
-                                                return Padding(
-                                                  padding: const EdgeInsets.symmetric(vertical: 4),
-                                                  child: Row(
-                                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                    children: [
-                                                      Expanded(
-                                                        child: Text(
-                                                          ex.exerciseNameSnapshot,
-                                                          style: AppTheme.bodyStyle.copyWith(fontSize: 13, color: Colors.grey.shade800),
-                                                          maxLines: 1,
-                                                          overflow: TextOverflow.ellipsis,
-                                                        ),
-                                                      ),
-                                                      Text(
-                                                        desc,
-                                                        style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: Colors.grey.shade600),
-                                                      ),
-                                                    ],
-                                                  ),
-                                                );
-                                              }),
-                                            ],
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: m >= _targetActiveMinutes
+                                                    ? const Color(0xFFECFDF5)
+                                                    : const Color(0xFFEFF6FF),
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              child: Text(
+                                                '${m.toStringAsFixed(0)} phút',
+                                                style: AppTheme.semiboldStyle.copyWith(
+                                                  fontSize: 14,
+                                                  color: m >= _targetActiveMinutes
+                                                      ? const Color(0xFF10B981)
+                                                      : const Color(0xFF3B82F6),
+                                                ),
+                                              ),
+                                            ),
                                           ],
                                         ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 32),
-                                ],
+                                        if (exercises.isNotEmpty) ...[
+                                          const Divider(height: 16),
+                                          ...exercises.map((ex) {
+                                            String desc = '';
+                                            if (ex.durationMinutesSnapshot != null) {
+                                              desc += '${ex.durationMinutesSnapshot} phút';
+                                            }
+                                            if (ex.setsSnapshot != null) {
+                                              desc += '${desc.isNotEmpty ? " • " : ""}${ex.setsSnapshot} hiệp';
+                                            }
+                                            if (ex.repsSnapshot != null) {
+                                              desc += ' x ${ex.repsSnapshot} lần';
+                                            }
+
+                                            return Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 4),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      ex.exerciseNameSnapshot,
+                                                      style: AppTheme.bodyStyle.copyWith(
+                                                        fontSize: 13,
+                                                        color: Colors.grey.shade800,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    desc,
+                                                    style: AppTheme.bodyStyle.copyWith(
+                                                      fontSize: 12,
+                                                      color: Colors.grey.shade600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            );
+                                          }),
+                                        ],
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                            ),
+                              const SizedBox(height: 32),
+                            ],
                           ),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -420,29 +427,16 @@ class _ActiveMinutesDetailScreenState extends State<ActiveMinutesDetailScreen> {
   Widget _buildStatCard(String title, String value, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: AppTheme.bodyStyle.copyWith(
-              color: Colors.grey.shade500,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTheme.headlineStyle.copyWith(
-              color: color,
-              fontSize: 24,
-            ),
-          ),
+          Text(value, style: AppTheme.headlineStyle.copyWith(color: color, fontSize: 24)),
         ],
       ),
     );
@@ -451,10 +445,7 @@ class _ActiveMinutesDetailScreenState extends State<ActiveMinutesDetailScreen> {
   Widget _buildWideStatCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -462,22 +453,10 @@ class _ActiveMinutesDetailScreenState extends State<ActiveMinutesDetailScreen> {
             children: [
               Icon(icon, color: color, size: 24),
               const SizedBox(width: 12),
-              Text(
-                title,
-                style: AppTheme.semiboldStyle.copyWith(
-                  color: Colors.grey.shade700,
-                  fontSize: 14,
-                ),
-              ),
+              Text(title, style: AppTheme.semiboldStyle.copyWith(color: Colors.grey.shade700, fontSize: 14)),
             ],
           ),
-          Text(
-            value,
-            style: AppTheme.headlineStyle.copyWith(
-              color: color,
-              fontSize: 20,
-            ),
-          ),
+          Text(value, style: AppTheme.headlineStyle.copyWith(color: color, fontSize: 20)),
         ],
       ),
     );

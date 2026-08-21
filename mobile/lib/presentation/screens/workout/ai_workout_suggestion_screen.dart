@@ -1,13 +1,14 @@
-import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/services/token_service.dart';
-import 'package:mobile/data/repositories/user_repository.dart';
 import 'package:mobile/data/repositories/workout_diary_repository.dart';
 import 'package:core_shared/models/daily_workout_model.dart';
+import 'package:mobile/presentation/bloc/workout/ai_workout_cubit.dart';
+import 'package:mobile/presentation/bloc/workout/ai_workout_state.dart';
 
 class AiWorkoutSuggestionScreen extends StatefulWidget {
   final int days;
@@ -19,6 +20,7 @@ class AiWorkoutSuggestionScreen extends StatefulWidget {
 }
 
 class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
+  late final AiWorkoutCubit _aiWorkoutCubit;
   List<DailyWorkoutModel> _suggestions = [];
   int _selectedDayIndex = 0;
   bool _isLoading = true;
@@ -71,6 +73,7 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
   @override
   void dispose() {
     _stopLoadingTimer();
+    _aiWorkoutCubit.close();
     super.dispose();
   }
 
@@ -97,8 +100,10 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
   @override
   void initState() {
     super.initState();
+    _aiWorkoutCubit = AiWorkoutCubit();
     _startTomorrow = widget.startTomorrow;
     _selectedFocusBodyPart = TokenService.getFocusBodyPart();
+    _startLoadingTimer();
     _fetchAiSuggestion();
   }
 
@@ -217,52 +222,12 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
 
   bool _startTomorrow = false;
 
-  Future<void> _fetchAiSuggestion() async {
-    _startLoadingTimer();
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final userId = TokenService.getUserId();
-      if (userId == null) {
-        throw Exception("Không tìm thấy thông tin tài khoản người dùng.");
-      }
-      final startDateStr = DateFormat('yyyy-MM-dd').format(
-        _startTomorrow ? DateTime.now().add(const Duration(days: 1)) : DateTime.now(),
-      );
-      final jsonString = await userRepository.getAiWorkoutSuggestion(
-        userId,
-        days: widget.days,
-        focusBodyPart: _selectedFocusBodyPart,
-        startDate: startDateStr,
-      );
-      final List<dynamic> decoded = jsonDecode(jsonString) as List<dynamic>;
-      final suggestions = decoded.map((e) => DailyWorkoutModel.fromJson(e as Map<String, dynamic>)).toList();
-      if (mounted) {
-        setState(() {
-          _suggestions = suggestions;
-        });
-        if (suggestions.any((e) => !e.isAiGenerated)) {
-          _showAiBusyFallbackDialog();
-        }
-      }
-    } catch (e, stackTrace) {
-      print("🚨 [AiWorkoutSuggestionScreen Error]: $e");
-      print("   StackTrace: $stackTrace");
-      if (mounted) {
-        setState(() {
-          _errorMessage = e.toString().replaceAll("Exception: ", "");
-        });
-      }
-    } finally {
-      _stopLoadingTimer();
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+  void _fetchAiSuggestion() {
+    _aiWorkoutCubit.fetchAiWorkoutSuggestion(
+      days: widget.days,
+      startTomorrow: _startTomorrow,
+      focusBodyPart: _selectedFocusBodyPart,
+    );
   }
 
   void _showAiBusyFallbackDialog() {
@@ -427,15 +392,58 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final hasValidSuggestions = !_isLoading && _errorMessage == null && _suggestions.isNotEmpty;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: _isLoading
-          ? _buildLoadingState()
-          : (_errorMessage != null || _suggestions.isEmpty)
-          ? _buildErrorState()
-          : _buildContentState(),
-      bottomNavigationBar: hasValidSuggestions ? _buildBottomBar() : null,
+    return BlocProvider.value(
+      value: _aiWorkoutCubit,
+      child: BlocConsumer<AiWorkoutCubit, AiWorkoutState>(
+        listener: (context, state) {
+          if (state is AiWorkoutLoading) {
+            _startLoadingTimer();
+            if (mounted) {
+              setState(() {
+                _isLoading = true;
+                _errorMessage = null;
+              });
+            }
+          } else if (state is AiWorkoutSuccess) {
+            _stopLoadingTimer();
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+                _suggestions = state.suggestions;
+              });
+              if (state.isFallback) {
+                _showAiBusyFallbackDialog();
+              }
+            }
+          } else if (state is AiWorkoutError) {
+            _stopLoadingTimer();
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+                _errorMessage = state.message;
+              });
+            }
+          }
+        },
+        builder: (context, state) {
+          final isScreenLoading = (state is AiWorkoutLoading || _isLoading) &&
+              state is! AiWorkoutSuccess &&
+              state is! AiWorkoutError;
+          final suggestions = (state is AiWorkoutSuccess) ? state.suggestions : _suggestions;
+          final errorMessage = (state is AiWorkoutError) ? state.message : _errorMessage;
+          final hasValidSuggestions = !isScreenLoading && errorMessage == null && suggestions.isNotEmpty;
+
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: isScreenLoading
+                ? _buildLoadingState()
+                : (errorMessage != null || suggestions.isEmpty)
+                ? _buildErrorState()
+                : _buildContentState(),
+            bottomNavigationBar: hasValidSuggestions ? _buildBottomBar() : null,
+          );
+        },
+      ),
     );
   }
 

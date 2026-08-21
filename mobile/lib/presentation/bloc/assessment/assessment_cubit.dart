@@ -48,7 +48,6 @@ class AssessmentCubit extends Cubit<AssessmentState> {
   @override
   void emit(AssessmentState state) {
     super.emit(state);
-    // Only persist if we're not in a success or loading state to prevent auto-redirection on reload
     if (state.status != AssessmentStatus.success && state.status != AssessmentStatus.loading) {
       _box.put('current_assessment', state.toJson());
     }

@@ -119,9 +119,7 @@ class _AgeStepState extends State<AgeStep> {
         const Spacer(),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: const BoxDecoration(
-            color: Colors.transparent,
-          ),
+          decoration: const BoxDecoration(color: Colors.transparent),
           child: Column(
             children: [
               SizedBox(

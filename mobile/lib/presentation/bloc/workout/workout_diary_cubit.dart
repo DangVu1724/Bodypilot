@@ -7,6 +7,7 @@ import 'package:mobile/presentation/bloc/workout/workout_diary_state.dart';
 
 class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
   final WorkoutDiaryRepository _repository;
+  final Set<String> _notifiedWorkoutDates = {};
 
   WorkoutDiaryCubit(this._repository) : super(const WorkoutDiaryState());
 
@@ -165,12 +166,15 @@ class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
     emit(state.copyWith(status: WorkoutDiaryStatus.loading));
     try {
       final updatedDailyWorkout = await _repository.updateExerciseStatus(itemId, isCompleted);
+      final dateStr = _formatDate(date);
       final updatedDailyWorkouts = Map<String, DailyWorkoutModel>.from(state.dailyWorkouts);
-      updatedDailyWorkouts[_formatDate(date)] = updatedDailyWorkout;
+      updatedDailyWorkouts[dateStr] = updatedDailyWorkout;
 
-      if (isCompleted) {
+      // Only fire completion notification ONCE per day when reaching 100% completion for the first time
+      if (isCompleted && !_notifiedWorkoutDates.contains(dateStr)) {
         final items = updatedDailyWorkout.workoutItems;
         if (items.isNotEmpty && items.every((item) => item.isCompleted)) {
+          _notifiedWorkoutDates.add(dateStr);
           PushNotificationService.showWorkoutCompletedNotification(
             totalCaloriesBurned: updatedDailyWorkout.totalCaloriesBurned,
           );

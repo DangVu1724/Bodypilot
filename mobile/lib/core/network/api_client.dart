@@ -12,7 +12,7 @@ class ApiClient {
   // 3. iOS Simulator / Web / Windows: 'http://localhost:8080/api/v1'
   // 4. Render Cloud Production: 'https://bodypilot-to4y.onrender.com/api/v1'
 
-  static const String physicalDeviceUrl = 'http://192.168.100.20:8080/api/v1';
+  static const String physicalDeviceUrl = 'http://192.168.1.226:8080/api/v1';
   static const String localAndroidUrl = 'http://10.0.2.2:8080/api/v1';
   static const String localIosUrl = 'http://localhost:8080/api/v1';
   static const String renderCloudUrl = 'https://bodypilot-to4y.onrender.com/api/v1';

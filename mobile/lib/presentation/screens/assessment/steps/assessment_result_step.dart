@@ -15,9 +15,9 @@ class AssessmentResultStep extends StatelessWidget {
   Widget build(BuildContext context) {
     final state = context.watch<AssessmentCubit>().state;
 
-    final double weight = (state.selectedWeight ?? 60).toDouble();
-    final double height = (state.selectedHeight ?? 170).toDouble();
-    final int age = state.selectedAge ?? 25;
+    final double weight = (state.selectedWeight).toDouble();
+    final double height = (state.selectedHeight).toDouble();
+    final int age = state.selectedAge;
     final isMale = state.selectedGender?.toUpperCase() == 'MALE' || state.selectedGender == 'Nam';
     final goalCode = state.selectedGoal ?? 'MAINTAIN';
     final activityCode = state.selectedActivityLevel ?? 'MODERATE';

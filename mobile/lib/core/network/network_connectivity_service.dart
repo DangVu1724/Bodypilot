@@ -6,11 +6,13 @@ import 'package:logger/logger.dart';
 final _logger = Logger();
 
 class NetworkConnectivityService {
-  static final NetworkConnectivityService _instance = NetworkConnectivityService._internal();
+  static final NetworkConnectivityService _instance =
+      NetworkConnectivityService._internal();
   factory NetworkConnectivityService() => _instance;
   NetworkConnectivityService._internal();
 
   final Connectivity _connectivity = Connectivity();
+  // Khi mạng thay đổi, nó sẽ phát tin true (có mạng) hoặc false (mất mạng) cho tất cả các Widget trên UI cùng nghe.
   final StreamController<bool> _statusController = StreamController<bool>.broadcast();
 
   bool _isOnline = true;

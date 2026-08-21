@@ -1,3 +1,4 @@
+import 'package:core_shared/models/daily_eating_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -5,7 +6,7 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
-import 'package:core_shared/models/daily_eating_model.dart';
+
 import 'widgets/custom_metric_charts.dart';
 
 class ProteinDetailScreen extends StatefulWidget {
@@ -116,10 +117,7 @@ class _ProteinDetailScreenState extends State<ProteinDetailScreen> {
     final double targetProtein = (targetCalories * macros['p']!) / 4;
 
     final daysCount = _isWeekly ? 7 : 30;
-    final dates = List.generate(
-      daysCount,
-      (index) => DateTime.now().subtract(Duration(days: daysCount - 1 - index)),
-    );
+    final dates = List.generate(daysCount, (index) => DateTime.now().subtract(Duration(days: daysCount - 1 - index)));
 
     final List<double> proteinValues = [];
     final List<String> chartLabels = [];
@@ -169,10 +167,7 @@ class _ProteinDetailScreenState extends State<ProteinDetailScreen> {
                     const SizedBox(width: 8),
                     Text(
                       'Lượng Protein nạp vào',
-                      style: AppTheme.headlineStyle.copyWith(
-                        fontSize: 22,
-                        color: const Color(0xFF1E293B),
-                      ),
+                      style: AppTheme.headlineStyle.copyWith(fontSize: 22, color: const Color(0xFF1E293B)),
                     ),
                   ],
                 ),
@@ -248,171 +243,185 @@ class _ProteinDetailScreenState extends State<ProteinDetailScreen> {
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
                     : _errorMessage != null
-                        ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
-                        : RefreshIndicator(
-                            onRefresh: _fetchData,
-                            child: SingleChildScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                    ? Center(
+                        child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _fetchData,
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Stats Grid
+                              Row(
                                 children: [
-                                  // Stats Grid
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildStatCard(
-                                          'Trung bình/ngày',
-                                          '${avgProtein.toStringAsFixed(1)}g',
-                                          const Color(0xFF3B82F6),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _buildStatCard(
-                                          'Mục tiêu ngày',
-                                          '${targetProtein.toStringAsFixed(0)}g',
-                                          const Color(0xFF10B981),
-                                        ),
-                                      ),
-                                    ],
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      'Trung bình/ngày',
+                                      '${avgProtein.toStringAsFixed(1)}g',
+                                      const Color(0xFF3B82F6),
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  _buildWideStatCard(
-                                    'Nạp nhiều nhất một ngày',
-                                    '${maxProtein.toStringAsFixed(1)}g',
-                                    Icons.military_tech_rounded,
-                                    const Color(0xFF8B5CF6),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      'Mục tiêu ngày',
+                                      '${targetProtein.toStringAsFixed(0)}g',
+                                      const Color(0xFF10B981),
+                                    ),
                                   ),
-                                  const SizedBox(height: 24),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              _buildWideStatCard(
+                                'Nạp nhiều nhất một ngày',
+                                '${maxProtein.toStringAsFixed(1)}g',
+                                Icons.military_tech_rounded,
+                                const Color(0xFF8B5CF6),
+                              ),
+                              const SizedBox(height: 24),
 
-                                  // Chart
-                                  Container(
-                                    padding: const EdgeInsets.all(20),
+                              // Chart
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(28)),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Tiến trình nạp Protein',
+                                      style: AppTheme.semiboldStyle.copyWith(
+                                        fontSize: 16,
+                                        color: const Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    SingleBarChart(
+                                      values: proteinValues,
+                                      labels: chartLabels,
+                                      target: targetProtein,
+                                      unit: 'g',
+                                      barColor: const Color(0xFF3B82F6),
+                                      barSecondaryColor: const Color(0xFF8B5CF6),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Detailed list
+                              Text(
+                                'Chi tiết Protein nạp vào',
+                                style: AppTheme.semiboldStyle.copyWith(fontSize: 16, color: const Color(0xFF1E293B)),
+                              ),
+                              const SizedBox(height: 12),
+                              ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: dates.length,
+                                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  final reverseIndex = dates.length - 1 - index;
+                                  final date = dates[reverseIndex];
+                                  final p = _getProteinForDate(date);
+                                  final items = _getProteinItemsForDate(date);
+                                  final dateStr = DateFormat('dd/MM/yyyy').format(date);
+                                  final dayName = date.weekday == 7 ? 'Chủ Nhật' : 'Thứ ${date.weekday + 1}';
+
+                                  return Container(
+                                    padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(28),
+                                      color: Colors.white.withOpacity(0.8),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Column(
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
-                                        Text(
-                                          'Tiến trình nạp Protein',
-                                          style: AppTheme.semiboldStyle.copyWith(
-                                            fontSize: 16,
-                                            color: const Color(0xFF1E293B),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 24),
-                                        SingleBarChart(
-                                          values: proteinValues,
-                                          labels: chartLabels,
-                                          target: targetProtein,
-                                          unit: 'g',
-                                          barColor: const Color(0xFF3B82F6),
-                                          barSecondaryColor: const Color(0xFF8B5CF6),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-
-                                  // Detailed list
-                                  Text(
-                                    'Chi tiết Protein nạp vào',
-                                    style: AppTheme.semiboldStyle.copyWith(
-                                      fontSize: 16,
-                                      color: const Color(0xFF1E293B),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  ListView.separated(
-                                    shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    itemCount: dates.length,
-                                    separatorBuilder: (context, index) => const SizedBox(height: 8),
-                                    itemBuilder: (context, index) {
-                                      final reverseIndex = dates.length - 1 - index;
-                                      final date = dates[reverseIndex];
-                                      final p = _getProteinForDate(date);
-                                      final items = _getProteinItemsForDate(date);
-                                      final dateStr = DateFormat('dd/MM/yyyy').format(date);
-                                      final dayName = date.weekday == 7 ? 'Chủ Nhật' : 'Thứ ${date.weekday + 1}';
-
-                                      return Container(
-                                        padding: const EdgeInsets.all(16),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.8),
-                                          borderRadius: BorderRadius.circular(16),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                        Row(
+                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                           children: [
-                                            Row(
-                                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
                                               children: [
-                                                Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                                  children: [
-                                                    Text(
-                                                      dayName,
-                                                      style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: const Color(0xFF1E293B)),
-                                                    ),
-                                                    Text(
-                                                      dateStr,
-                                                      style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: Colors.grey.shade600),
-                                                    ),
-                                                  ],
-                                                ),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                                  decoration: BoxDecoration(
-                                                    color: p >= targetProtein ? const Color(0xFFECFDF5) : const Color(0xFFEFF6FF),
-                                                    borderRadius: BorderRadius.circular(10),
+                                                Text(
+                                                  dayName,
+                                                  style: AppTheme.semiboldStyle.copyWith(
+                                                    fontSize: 14,
+                                                    color: const Color(0xFF1E293B),
                                                   ),
-                                                  child: Text(
-                                                    '${p.toStringAsFixed(1)} g',
-                                                    style: AppTheme.semiboldStyle.copyWith(
-                                                      fontSize: 14,
-                                                      color: p >= targetProtein ? const Color(0xFF10B981) : const Color(0xFF3B82F6),
-                                                    ),
+                                                ),
+                                                Text(
+                                                  dateStr,
+                                                  style: AppTheme.bodyStyle.copyWith(
+                                                    fontSize: 12,
+                                                    color: Colors.grey.shade600,
                                                   ),
                                                 ),
                                               ],
                                             ),
-                                            if (items.isNotEmpty) ...[
-                                              const Divider(height: 16),
-                                              ...items.map((item) => Padding(
-                                                    padding: const EdgeInsets.symmetric(vertical: 4),
-                                                    child: Row(
-                                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                                      children: [
-                                                        Expanded(
-                                                          child: Text(
-                                                            item.foodNameSnapshot,
-                                                            style: AppTheme.bodyStyle.copyWith(fontSize: 13, color: Colors.grey.shade800),
-                                                            maxLines: 1,
-                                                            overflow: TextOverflow.ellipsis,
-                                                          ),
-                                                        ),
-                                                        Text(
-                                                          '${item.proteinSnapshot.toStringAsFixed(1)}g đạm',
-                                                          style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: Colors.grey.shade600),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  )),
-                                            ],
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: p >= targetProtein
+                                                    ? const Color(0xFFECFDF5)
+                                                    : const Color(0xFFEFF6FF),
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              child: Text(
+                                                '${p.toStringAsFixed(1)} g',
+                                                style: AppTheme.semiboldStyle.copyWith(
+                                                  fontSize: 14,
+                                                  color: p >= targetProtein
+                                                      ? const Color(0xFF10B981)
+                                                      : const Color(0xFF3B82F6),
+                                                ),
+                                              ),
+                                            ),
                                           ],
                                         ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 32),
-                                ],
+                                        if (items.isNotEmpty) ...[
+                                          const Divider(height: 16),
+                                          ...items.map(
+                                            (item) => Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 4),
+                                              child: Row(
+                                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                                children: [
+                                                  Expanded(
+                                                    child: Text(
+                                                      item.foodNameSnapshot,
+                                                      style: AppTheme.bodyStyle.copyWith(
+                                                        fontSize: 13,
+                                                        color: Colors.grey.shade800,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  Text(
+                                                    '${item.proteinSnapshot.toStringAsFixed(1)}g đạm',
+                                                    style: AppTheme.bodyStyle.copyWith(
+                                                      fontSize: 12,
+                                                      color: Colors.grey.shade600,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                  );
+                                },
                               ),
-                            ),
+                              const SizedBox(height: 32),
+                            ],
                           ),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -424,29 +433,16 @@ class _ProteinDetailScreenState extends State<ProteinDetailScreen> {
   Widget _buildStatCard(String title, String value, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: AppTheme.bodyStyle.copyWith(
-              color: Colors.grey.shade500,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTheme.headlineStyle.copyWith(
-              color: color,
-              fontSize: 24,
-            ),
-          ),
+          Text(value, style: AppTheme.headlineStyle.copyWith(color: color, fontSize: 24)),
         ],
       ),
     );
@@ -455,10 +451,7 @@ class _ProteinDetailScreenState extends State<ProteinDetailScreen> {
   Widget _buildWideStatCard(String title, String value, IconData icon, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
@@ -466,22 +459,10 @@ class _ProteinDetailScreenState extends State<ProteinDetailScreen> {
             children: [
               Icon(icon, color: color, size: 24),
               const SizedBox(width: 12),
-              Text(
-                title,
-                style: AppTheme.semiboldStyle.copyWith(
-                  color: Colors.grey.shade700,
-                  fontSize: 14,
-                ),
-              ),
+              Text(title, style: AppTheme.semiboldStyle.copyWith(color: Colors.grey.shade700, fontSize: 14)),
             ],
           ),
-          Text(
-            value,
-            style: AppTheme.headlineStyle.copyWith(
-              color: color,
-              fontSize: 20,
-            ),
-          ),
+          Text(value, style: AppTheme.headlineStyle.copyWith(color: color, fontSize: 20)),
         ],
       ),
     );

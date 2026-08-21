@@ -44,7 +44,7 @@ class CheckInResultDialog extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Chỉ số cơ thể & kế hoạch đã được AI cập nhật thành công.',
+                'Chỉ số cơ thể & kế hoạch đã cập nhật thành công.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.7),

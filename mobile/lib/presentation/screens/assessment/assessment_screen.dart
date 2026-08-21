@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_cubit.dart';
 import 'package:mobile/presentation/bloc/assessment/assessment_state.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
+import 'package:mobile/presentation/screens/assessment/steps/activity_level_step.dart';
 import 'package:mobile/presentation/screens/assessment/steps/age_step.dart';
+import 'package:mobile/presentation/screens/assessment/steps/assessment_result_step.dart';
 import 'package:mobile/presentation/screens/assessment/steps/body_step.dart';
 import 'package:mobile/presentation/screens/assessment/steps/condition_step.dart';
 import 'package:mobile/presentation/screens/assessment/steps/experience_step.dart';
@@ -13,8 +15,6 @@ import 'package:mobile/presentation/screens/assessment/steps/gender_step.dart';
 import 'package:mobile/presentation/screens/assessment/steps/goal_step.dart';
 import 'package:mobile/presentation/screens/assessment/steps/injury_step.dart';
 import 'package:mobile/presentation/screens/assessment/steps/target_weight_step.dart';
-import 'package:mobile/presentation/screens/assessment/steps/activity_level_step.dart';
-import 'package:mobile/presentation/screens/assessment/steps/assessment_result_step.dart';
 
 class AssessmentScreen extends StatefulWidget {
   const AssessmentScreen({super.key});
@@ -52,7 +52,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
       child: BlocListener<AssessmentCubit, AssessmentState>(
         listener: (context, state) {
           if (state.status == AssessmentStatus.success) {
-            if (currentIndex < 9) { // 10 steps total (0 to 9), result step is index 9
+            if (currentIndex < 9) {
               nextPage(10);
             }
           } else if (state.status == AssessmentStatus.failure) {
@@ -73,7 +73,9 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
               ExperienceStep(onNext: () => nextPage(steps.length)),
               ActivityLevelStep(onNext: () => nextPage(steps.length)),
               ConditionStep(onNext: () => nextPage(steps.length)),
-              InjuryStep(onNext: () => context.read<AssessmentCubit>().submitAssessment(userCubit: context.read<UserCubit>())),
+              InjuryStep(
+                onNext: () => context.read<AssessmentCubit>().submitAssessment(userCubit: context.read<UserCubit>()),
+              ),
               AssessmentResultStep(
                 onComplete: () {
                   if (Navigator.of(context).canPop()) {
@@ -90,7 +92,7 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
             return WillPopScope(
               onWillPop: () async {
                 if (isResultStep) {
-                  return false; // Disable back on result screen
+                  return false;
                 }
                 if (currentIndex > 0) {
                   previousPage();
@@ -111,7 +113,10 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
                             alignment: Alignment.center,
-                            decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(20)),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
                             child: Text(
                               '${currentIndex + 1}/${steps.length - 1}',
                               style: AppTheme.semiboldStyle.copyWith(fontSize: 14),
@@ -148,7 +153,11 @@ class _AssessmentScreenState extends State<AssessmentScreen> {
                                 child: SlideTransition(position: slide, child: child),
                               );
                             },
-                            child: Container(key: ValueKey(index), padding: const EdgeInsets.all(16), child: steps[index]),
+                            child: Container(
+                              key: ValueKey(index),
+                              padding: const EdgeInsets.all(16),
+                              child: steps[index],
+                            ),
                           );
                         },
                       ),

@@ -146,17 +146,6 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(child: Text(food.name, style: AppTheme.headlineStyle.copyWith(fontSize: 24))),
-              if (food.recipe?.cookingTimeMinutes != null)
-                Row(
-                  children: [
-                    const Icon(Icons.access_time, size: 20, color: AppTheme.textSecondary),
-                    const SizedBox(width: 4),
-                    Text(
-                      '${food.recipe!.cookingTimeMinutes} Min',
-                      style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary),
-                    ),
-                  ],
-                ),
             ],
           ),
           const SizedBox(height: 12),

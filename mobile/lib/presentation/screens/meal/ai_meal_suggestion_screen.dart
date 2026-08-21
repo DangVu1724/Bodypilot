@@ -1,14 +1,15 @@
-import 'dart:convert';
 import 'dart:async';
+
+import 'package:core_shared/models/daily_eating_model.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/app_theme.dart';
-import 'package:mobile/data/services/token_service.dart';
-import 'package:mobile/data/repositories/user_repository.dart';
-import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
-import 'package:core_shared/models/daily_eating_model.dart';
 import 'package:mobile/core/utils/category_image_helper.dart';
+import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
+import 'package:mobile/presentation/bloc/meal/ai_meal_cubit.dart';
+import 'package:mobile/presentation/bloc/meal/ai_meal_state.dart';
 
 class AiMealSuggestionScreen extends StatefulWidget {
   final int days;
@@ -20,6 +21,7 @@ class AiMealSuggestionScreen extends StatefulWidget {
 }
 
 class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
+  late final AiMealCubit _aiMealCubit;
   List<DailyEatingModel> _suggestions = [];
   int _selectedDayIndex = 0;
   bool _isLoading = true;
@@ -46,10 +48,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
       'title': 'Lọc danh sách thực phẩm',
       'desc': 'Đang lựa chọn các loại thực phẩm dinh dưỡng phù hợp nhất từ cơ sở dữ liệu...',
     },
-    {
-      'title': 'AI lên thực đơn chi tiết',
-      'desc': 'Gửi dữ liệu sang AI để tính toán khẩu phần ăn tối ưu...',
-    },
+    {'title': 'AI lên thực đơn chi tiết', 'desc': 'Gửi dữ liệu sang AI để tính toán khẩu phần ăn tối ưu...'},
   ];
 
   void _startLoadingTimer() {
@@ -77,6 +76,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
   void dispose() {
     _stopLoadingTimer();
     _feedbackController.dispose();
+    _aiMealCubit.close();
     super.dispose();
   }
 
@@ -99,55 +99,17 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
   @override
   void initState() {
     super.initState();
+    _aiMealCubit = AiMealCubit();
     _startTomorrow = widget.startTomorrow;
+    _startLoadingTimer();
     _fetchAiSuggestion();
   }
 
-  Future<void> _fetchAiSuggestion() async {
-    _startLoadingTimer();
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
-    try {
-      final userId = TokenService.getUserId();
-      if (userId == null) {
-        throw Exception("Không tìm thấy thông tin tài khoản người dùng.");
-      }
-      final startDateStr = DateFormat('yyyy-MM-dd').format(
-        _startTomorrow ? DateTime.now().add(const Duration(days: 1)) : DateTime.now(),
-      );
-      final jsonString = await userRepository.getAiDietSuggestion(
-        userId,
-        days: widget.days,
-        startDate: startDateStr,
-      );
-      final List<dynamic> decoded = jsonDecode(jsonString) as List<dynamic>;
-      final suggestions = decoded.map((e) => DailyEatingModel.fromJson(e as Map<String, dynamic>)).toList();
-      if (mounted) {
-        setState(() {
-          _suggestions = suggestions;
-        });
-        if (suggestions.any((e) => !e.isAiGenerated)) {
-          _showAiBusyFallbackDialog();
-        }
-      }
-    } catch (e, stackTrace) {
-      print("🚨 [AiMealSuggestionScreen Error]: $e");
-      print("   StackTrace: $stackTrace");
-      if (mounted) {
-        setState(() {
-          _errorMessage = e.toString().replaceAll("Exception: ", "");
-        });
-      }
-    } finally {
-      _stopLoadingTimer();
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
-    }
+  void _fetchAiSuggestion() {
+    _aiMealCubit.fetchAiMealSuggestion(
+      days: widget.days,
+      startTomorrow: _startTomorrow,
+    );
   }
 
   void _showAiBusyFallbackDialog() {
@@ -162,10 +124,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
             children: [
               Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                decoration: BoxDecoration(color: const Color(0xFFFEF3C7), borderRadius: BorderRadius.circular(12)),
                 child: const Text('🤖', style: TextStyle(fontSize: 22)),
               ),
               const SizedBox(width: 12),
@@ -230,64 +189,18 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
     _fetchAiSuggestion();
   }
 
-  Future<void> _sendFeedback() async {
+  void _sendFeedback() {
     final feedbackText = _feedbackController.text.trim();
     if (feedbackText.isEmpty || _isRegenerating || _isLoading || _isSaving) return;
 
     FocusScope.of(context).unfocus();
-    setState(() {
-      _isRegenerating = true;
-      _lastUserFeedback = feedbackText;
-    });
+    _lastUserFeedback = feedbackText;
 
-    _startLoadingTimer();
-
-    try {
-      final userId = TokenService.getUserId();
-      if (userId == null) {
-        throw Exception("Không tìm thấy thông tin tài khoản người dùng.");
-      }
-      final startDateStr = DateFormat('yyyy-MM-dd').format(
-        _startTomorrow ? DateTime.now().add(const Duration(days: 1)) : DateTime.now(),
-      );
-      final jsonString = await userRepository.getAiDietSuggestion(
-        userId,
-        days: widget.days,
-        startDate: startDateStr,
-        userFeedback: feedbackText,
-      );
-      final List<dynamic> decoded = jsonDecode(jsonString) as List<dynamic>;
-      final suggestions = decoded.map((e) => DailyEatingModel.fromJson(e as Map<String, dynamic>)).toList();
-      if (mounted) {
-        setState(() {
-          _suggestions = suggestions;
-          _feedbackController.clear();
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('AI đã cập nhật thực đơn theo phản hồi của bạn!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      }
-    } catch (e) {
-      print("🚨 [AiMealSuggestionScreen Feedback Error]: $e");
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Không thể điều chỉnh thực đơn: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } finally {
-      _stopLoadingTimer();
-      if (mounted) {
-        setState(() {
-          _isRegenerating = false;
-        });
-      }
-    }
+    _aiMealCubit.regenerateWithFeedback(
+      days: widget.days,
+      startTomorrow: _startTomorrow,
+      userFeedback: feedbackText,
+    );
   }
 
   Future<void> _applyMealPlan() async {
@@ -312,10 +225,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEE2E2),
-                    borderRadius: BorderRadius.circular(10),
-                  ),
+                  decoration: BoxDecoration(color: const Color(0xFFFEE2E2), borderRadius: BorderRadius.circular(10)),
                   child: const Icon(Icons.warning_rounded, color: Color(0xFFDC2626), size: 24),
                 ),
                 const SizedBox(width: 12),
@@ -334,7 +244,10 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                child: const Text(
+                  'Hủy',
+                  style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                ),
               ),
               ElevatedButton(
                 onPressed: () => Navigator.of(dialogContext).pop(true),
@@ -376,27 +289,91 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
         _isSaving = false;
       });
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi khi áp dụng thực đơn: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text('Lỗi khi áp dụng thực đơn: $e'), backgroundColor: Colors.red));
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final hasValidSuggestions = !_isLoading && !_isRegenerating && _errorMessage == null && _suggestions.isNotEmpty;
-    return Scaffold(
-      backgroundColor: Colors.white,
-      body: (_isLoading || _isRegenerating)
-          ? _buildLoadingState()
-          : (_errorMessage != null || _suggestions.isEmpty)
-              ? _buildErrorState()
-              : _buildContentState(),
-      bottomNavigationBar: hasValidSuggestions ? _buildBottomBar() : null,
+    return BlocProvider.value(
+      value: _aiMealCubit,
+      child: BlocConsumer<AiMealCubit, AiMealState>(
+        listener: (context, state) {
+          if (state is AiMealLoading) {
+            _startLoadingTimer();
+            if (mounted) {
+              setState(() {
+                _isLoading = true;
+                _errorMessage = null;
+              });
+            }
+          } else if (state is AiMealRegenerating) {
+            _startLoadingTimer();
+            if (mounted) {
+              setState(() {
+                _isRegenerating = true;
+              });
+            }
+          } else if (state is AiMealSuccess) {
+            _stopLoadingTimer();
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+                _isRegenerating = false;
+                _suggestions = state.suggestions;
+                if (state.isRegenerated) {
+                  _feedbackController.clear();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('AI đã cập nhật thực đơn theo phản hồi của bạn!'),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                }
+              });
+              if (state.isFallback) {
+                _showAiBusyFallbackDialog();
+              }
+            }
+          } else if (state is AiMealError) {
+            _stopLoadingTimer();
+            if (mounted) {
+              setState(() {
+                _isLoading = false;
+                _isRegenerating = false;
+                _errorMessage = state.message;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Không thể điều chỉnh thực đơn: ${state.message}'),
+                  backgroundColor: Colors.red,
+                ),
+              );
+            }
+          }
+        },
+        builder: (context, state) {
+          final isScreenLoading = (state is AiMealLoading || state is AiMealRegenerating || _isLoading || _isRegenerating) &&
+              state is! AiMealSuccess &&
+              state is! AiMealError;
+          final suggestions = (state is AiMealSuccess) ? state.suggestions : _suggestions;
+          final errorMessage = (state is AiMealError) ? state.message : _errorMessage;
+          final hasValidSuggestions = !isScreenLoading && errorMessage == null && suggestions.isNotEmpty;
+
+          return Scaffold(
+            backgroundColor: Colors.white,
+            body: isScreenLoading
+                ? _buildLoadingState()
+                : (errorMessage != null || suggestions.isEmpty)
+                ? _buildErrorState()
+                : _buildContentState(),
+            bottomNavigationBar: hasValidSuggestions ? _buildBottomBar() : null,
+          );
+        },
+      ),
     );
   }
 
@@ -409,10 +386,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
           children: [
             Container(
               padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: const Color(0xFFF07025).withOpacity(0.05),
-                shape: BoxShape.circle,
-              ),
+              decoration: BoxDecoration(color: const Color(0xFFF07025).withOpacity(0.05), shape: BoxShape.circle),
               child: const SizedBox(
                 width: 64,
                 height: 64,
@@ -425,11 +399,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
             const SizedBox(height: 32),
             Text(
               'Đang Thiết Lập Thực Đơn AI',
-              style: GoogleFonts.workSans(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF1E293B),
-              ),
+              style: GoogleFonts.workSans(fontSize: 22, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
@@ -479,7 +449,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                                 step['title']!,
                                 style: AppTheme.semiboldStyle.copyWith(
                                   fontSize: 15,
-                                  color: isCurrent 
+                                  color: isCurrent
                                       ? const Color(0xFFF07025)
                                       : (isDone ? const Color(0xFF334155) : const Color(0xFF94A3B8)),
                                 ),
@@ -489,8 +459,8 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                                 step['desc']!,
                                 style: AppTheme.bodyStyle.copyWith(
                                   fontSize: 12.5,
-                                  color: isCurrent 
-                                      ? const Color(0xFF475569) 
+                                  color: isCurrent
+                                      ? const Color(0xFF475569)
                                       : (isDone ? const Color(0xFF64748B) : const Color(0xFFCBD5E1)),
                                 ),
                               ),
@@ -511,7 +481,8 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
 
   Widget _buildErrorState() {
     final rawMsg = _errorMessage ?? '';
-    final isGeminiQuotaError = rawMsg.contains('429') ||
+    final isGeminiQuotaError =
+        rawMsg.contains('429') ||
         rawMsg.toLowerCase().contains('quota') ||
         rawMsg.toLowerCase().contains('rate limit') ||
         rawMsg.toLowerCase().contains('exhausted') ||
@@ -527,29 +498,19 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isGeminiQuotaError
-                    ? Colors.amber.withValues(alpha: 0.12)
-                    : Colors.red.withValues(alpha: 0.12),
+                color: isGeminiQuotaError ? Colors.amber.withValues(alpha: 0.12) : Colors.red.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(
-                isGeminiQuotaError
-                    ? Icons.hourglass_top_rounded
-                    : Icons.cloud_off_rounded,
+                isGeminiQuotaError ? Icons.hourglass_top_rounded : Icons.cloud_off_rounded,
                 size: 56,
                 color: isGeminiQuotaError ? Colors.amber[800] : Colors.red,
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              isGeminiQuotaError
-                  ? 'Lỗi Hạn Ngạch AI (Gemini Quota Exceeded)'
-                  : 'Không thể khởi tạo thực đơn AI',
-              style: GoogleFonts.workSans(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: const Color(0xFF1E293B),
-              ),
+              isGeminiQuotaError ? 'Lỗi Hạn Ngạch AI (Gemini Quota Exceeded)' : 'Không thể khởi tạo thực đơn AI',
+              style: GoogleFonts.workSans(fontSize: 20, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 10),
@@ -557,11 +518,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
               isGeminiQuotaError
                   ? 'Dịch vụ AI Gemini hiện tại đã hết lượt dùng miễn phí hoặc vượt quá hạn ngạch cho phép (HTTP 429).'
                   : 'Đã xảy ra sự cố trong quá trình tạo gợi ý thực đơn từ AI.',
-              style: AppTheme.bodyStyle.copyWith(
-                color: const Color(0xFF64748B),
-                fontSize: 14,
-                height: 1.4,
-              ),
+              style: AppTheme.bodyStyle.copyWith(color: const Color(0xFF64748B), fontSize: 14, height: 1.4),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 20),
@@ -571,14 +528,10 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
               width: double.infinity,
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: isGeminiQuotaError
-                    ? Colors.amber.withValues(alpha: 0.08)
-                    : Colors.grey.withValues(alpha: 0.08),
+                color: isGeminiQuotaError ? Colors.amber.withValues(alpha: 0.08) : Colors.grey.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isGeminiQuotaError
-                      ? Colors.amber.withValues(alpha: 0.3)
-                      : Colors.grey.withValues(alpha: 0.3),
+                  color: isGeminiQuotaError ? Colors.amber.withValues(alpha: 0.3) : Colors.grey.withValues(alpha: 0.3),
                 ),
               ),
               child: Column(
@@ -588,18 +541,13 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                     children: [
                       Icon(
                         Icons.lightbulb_outline,
-                        color: isGeminiQuotaError
-                            ? Colors.amber[800]
-                            : AppTheme.primary,
+                        color: isGeminiQuotaError ? Colors.amber[800] : AppTheme.primary,
                         size: 20,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         'Hướng dẫn xử lý:',
-                        style: AppTheme.semiboldStyle.copyWith(
-                          fontSize: 14,
-                          color: AppTheme.textPrimary,
-                        ),
+                        style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: AppTheme.textPrimary),
                       ),
                     ],
                   ),
@@ -617,10 +565,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                     const Divider(height: 20),
                     Text(
                       'Chi tiết lỗi: $rawMsg',
-                      style: AppTheme.bodyStyle.copyWith(
-                        fontSize: 12,
-                        color: Colors.red[700],
-                      ),
+                      style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: Colors.red[700]),
                     ),
                   ],
                 ],
@@ -636,17 +581,11 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                 icon: const Icon(Icons.refresh, color: Colors.white),
                 label: const Text(
                   'Thử lại ngay',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFF7A30),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
               ),
@@ -654,10 +593,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Quay lại',
-                style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary),
-              ),
+              child: Text('Quay lại', style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary)),
             ),
           ],
         ),
@@ -717,7 +653,10 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
-                          child: const Text('Thử lại AI', style: TextStyle(color: Color(0xFFF07025), fontWeight: FontWeight.bold, fontSize: 12)),
+                          child: const Text(
+                            'Thử lại AI',
+                            style: TextStyle(color: Color(0xFFF07025), fontWeight: FontWeight.bold, fontSize: 12),
+                          ),
                         ),
                       ],
                     ),
@@ -809,9 +748,8 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                 const SizedBox(height: 12),
 
                 // Note / Daily overview card
-                if (currentDay.note != null && currentDay.note!.isNotEmpty)
-                  _buildDailyOverviewCard(currentDay.note!),
-                
+                if (currentDay.note != null && currentDay.note!.isNotEmpty) _buildDailyOverviewCard(currentDay.note!),
+
                 const SizedBox(height: 20),
 
                 // List of meal slots
@@ -827,7 +765,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
 
   Widget _buildDarkHeader() {
     final weekdays = const ['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'];
-    
+
     return Container(
       decoration: const BoxDecoration(
         color: Color(0xFF131517),
@@ -944,11 +882,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
           Expanded(
             child: Text(
               note,
-              style: AppTheme.bodyStyle.copyWith(
-                color: const Color(0xFF334155),
-                fontSize: 13.5,
-                height: 1.45,
-              ),
+              style: AppTheme.bodyStyle.copyWith(color: const Color(0xFF334155), fontSize: 13.5, height: 1.45),
             ),
           ),
         ],
@@ -967,13 +901,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
         color: Colors.white,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: Colors.grey.shade100),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade100,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 10, offset: const Offset(0, 4))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -985,10 +913,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
               children: [
                 Container(
                   padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFF7A30).withOpacity(0.1),
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: BoxDecoration(color: const Color(0xFFFF7A30).withOpacity(0.1), shape: BoxShape.circle),
                   child: Icon(mealIcon, color: const Color(0xFFFF7A30), size: 20),
                 ),
                 const SizedBox(width: 12),
@@ -1003,11 +928,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                 const Spacer(),
                 Text(
                   '${totalCalories.toStringAsFixed(0)} kcal',
-                  style: GoogleFonts.workSans(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: GoogleFonts.workSans(fontSize: 14, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
                 ),
               ],
             ),
@@ -1080,8 +1001,16 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _buildMacroItem('${item.caloriesSnapshot.toStringAsFixed(0)} kcal', Icons.local_fire_department, Colors.orange),
-                    _buildMacroItem('P: ${item.proteinSnapshot.toStringAsFixed(0)}g', Icons.fitness_center, Colors.blue),
+                    _buildMacroItem(
+                      '${item.caloriesSnapshot.toStringAsFixed(0)} kcal',
+                      Icons.local_fire_department,
+                      Colors.orange,
+                    ),
+                    _buildMacroItem(
+                      'P: ${item.proteinSnapshot.toStringAsFixed(0)}g',
+                      Icons.fitness_center,
+                      Colors.blue,
+                    ),
                     _buildMacroItem('F: ${item.fatSnapshot.toStringAsFixed(0)}g', Icons.opacity, Colors.red),
                     _buildMacroItem('C: ${item.carbsSnapshot.toStringAsFixed(0)}g', Icons.grain, Colors.green),
                   ],
@@ -1102,11 +1031,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
         const SizedBox(width: 4),
         Text(
           value,
-          style: GoogleFonts.workSans(
-            fontSize: 11,
-            color: const Color(0xFF475569),
-            fontWeight: FontWeight.w600,
-          ),
+          style: GoogleFonts.workSans(fontSize: 11, color: const Color(0xFF475569), fontWeight: FontWeight.w600),
         ),
       ],
     );
@@ -1119,11 +1044,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
         color: Colors.white,
         border: Border(top: BorderSide(color: Colors.grey.shade200)),
         boxShadow: [
-          BoxShadow(
-            color: Colors.grey.shade200.withOpacity(0.5),
-            blurRadius: 10,
-            offset: const Offset(0, -4),
-          ),
+          BoxShadow(color: Colors.grey.shade200.withOpacity(0.5), blurRadius: 10, offset: const Offset(0, -4)),
         ],
       ),
       child: Column(
@@ -1173,10 +1094,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                         borderRadius: BorderRadius.circular(20),
                         child: Container(
                           padding: const EdgeInsets.all(7),
-                          decoration: const BoxDecoration(
-                            color: Color(0xFFFF7A30),
-                            shape: BoxShape.circle,
-                          ),
+                          decoration: const BoxDecoration(color: Color(0xFFFF7A30), shape: BoxShape.circle),
                           child: const Icon(Icons.send_rounded, color: Colors.white, size: 15),
                         ),
                       ),

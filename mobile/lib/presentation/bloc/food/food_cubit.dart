@@ -14,8 +14,16 @@ class FoodCubit extends Cubit<FoodState> {
     await loadCategories();
     // 1. Quick Load for Home Screen
     await searchFoods(size: 20);
-    // 2. Background Prefetch for Cache
-    _prefetchFoods(size: 100);
+    // 2. Batched Background Prefetch for Local SQLite Cache (Chunks of 100)
+    _startBackgroundBatchSync();
+  }
+
+  Future<void> _startBackgroundBatchSync() async {
+    try {
+      await foodRepository.startBatchedFoodSync(batchSize: 100, maxBatches: 10);
+    } catch (e) {
+      _logger.e('Background batched sync error: $e');
+    }
   }
 
   Future<void> loadCategories() async {
@@ -63,27 +71,7 @@ class FoodCubit extends Cubit<FoodState> {
     }
   }
 
-  Future<void> _prefetchFoods({int size = 100}) async {
-    try {
-      final response = await foodRepository.searchFoods(
-        '',
-        page: 0,
-        size: size,
-      );
 
-      // Merge unique foods
-      final existingIds = state.foods.map((f) => f.id).toSet();
-      final newUniqueFoods = response.content.where((f) => !existingIds.contains(f.id)).toList();
-
-      if (newUniqueFoods.isNotEmpty) {
-        emit(state.copyWith(
-          foods: [...state.foods, ...newUniqueFoods],
-        ));
-      }
-    } catch (e) {
-      _logger.e('Prefetch error: $e');
-    }
-  }
 
   Future<void> getFoodDetails(String foodId) async {
     emit(state.copyWith(status: FoodStatus.loading));

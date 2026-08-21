@@ -125,11 +125,6 @@ class _SmartSwapBottomSheetState extends State<SmartSwapBottomSheet> {
 
           const SizedBox(height: 12),
 
-          // Filter Chips Row
-          _buildFilterChips(),
-
-          const Divider(height: 20),
-
           // Candidates List
           Expanded(
             child: BlocBuilder<SmartSwapCubit, SmartSwapState>(
@@ -157,21 +152,27 @@ class _SmartSwapBottomSheetState extends State<SmartSwapBottomSheet> {
                   final allCandidates = state.candidates;
                   final filtered = _applyTagFilter(allCandidates);
 
-                  if (filtered.isEmpty) {
-                    return const Center(
-                      child: Text('Không tìm thấy món ăn phù hợp với tiêu chí lọc.'),
-                    );
-                  }
-
-                  return ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-                    physics: const BouncingScrollPhysics(),
-                    itemCount: filtered.length,
-                    separatorBuilder: (context, index) => const SizedBox(height: 14),
-                    itemBuilder: (context, index) {
-                      final candidate = filtered[index];
-                      return _buildCandidateCard(context, candidate);
-                    },
+                  return Column(
+                    children: [
+                      _buildFilterChips(allCandidates),
+                      const Divider(height: 20),
+                      Expanded(
+                        child: filtered.isEmpty
+                            ? const Center(
+                                child: Text('Không tìm thấy món ăn phù hợp với tiêu chí lọc.'),
+                              )
+                            : ListView.separated(
+                                padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+                                physics: const BouncingScrollPhysics(),
+                                itemCount: filtered.length,
+                                separatorBuilder: (context, index) => const SizedBox(height: 14),
+                                itemBuilder: (context, index) {
+                                  final candidate = filtered[index];
+                                  return _buildCandidateCard(context, candidate);
+                                },
+                              ),
+                      ),
+                    ],
                   );
                 }
 
@@ -184,13 +185,25 @@ class _SmartSwapBottomSheetState extends State<SmartSwapBottomSheet> {
     );
   }
 
-  Widget _buildFilterChips() {
-    final filters = [
+  Widget _buildFilterChips(List<FoodSmartSwapCandidateModel> candidates) {
+    final Set<String> categoryCodes = candidates
+        .map((c) {
+          String g = (c.swapGroup ?? '').toUpperCase();
+          return g == 'VEG' ? 'VEGETABLE' : g;
+        })
+        .where((code) => code.isNotEmpty)
+        .toSet();
+
+    final List<Map<String, String>> filters = [
       {'key': 'ALL', 'label': 'Tất cả'},
-      {'key': 'HIGH_PROTEIN', 'label': '🥩 Tăng Protein'},
-      {'key': 'LOW_CALORIE', 'label': '🥗 Giảm Calo'},
-      {'key': 'BALANCED', 'label': '⚖️ Cân bằng'},
     ];
+
+    for (final code in categoryCodes) {
+      final chipInfo = _getCategoryChipInfo(code);
+      if (chipInfo != null && !filters.any((f) => f['key'] == chipInfo['key'])) {
+        filters.add(chipInfo);
+      }
+    }
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -227,9 +240,39 @@ class _SmartSwapBottomSheetState extends State<SmartSwapBottomSheet> {
     );
   }
 
+  Map<String, String>? _getCategoryChipInfo(String code) {
+    switch (code) {
+      case 'MEAT':
+        return {'key': 'MEAT', 'label': '🥩 Thịt'};
+      case 'SEAFOOD':
+        return {'key': 'SEAFOOD', 'label': '🦐 Hải sản'};
+      case 'FRUIT':
+        return {'key': 'FRUIT', 'label': '🍎 Trái cây'};
+      case 'BEVERAGE':
+        return {'key': 'BEVERAGE', 'label': '🧃 Đồ uống'};
+      case 'DAIRY':
+        return {'key': 'DAIRY', 'label': '🥛 Sữa & Hạt'};
+      case 'GRAIN':
+        return {'key': 'GRAIN', 'label': '🍚 Cơm & Ngũ cốc'};
+      case 'DRY_DISH':
+        return {'key': 'DRY_DISH', 'label': '🥖 Món khô'};
+      case 'NOODLE_SOUP':
+        return {'key': 'NOODLE_SOUP', 'label': '🍜 Món nước'};
+      case 'VEGETABLE':
+      case 'VEG':
+        return {'key': 'VEGETABLE', 'label': '🥗 Rau củ'};
+      default:
+        return {'key': code, 'label': '🍲 $code'};
+    }
+  }
+
   List<FoodSmartSwapCandidateModel> _applyTagFilter(List<FoodSmartSwapCandidateModel> list) {
     if (_selectedTagFilter == 'ALL') return list;
-    return list.where((c) => c.swapGroup == _selectedTagFilter).toList();
+    return list.where((c) {
+      String group = (c.swapGroup ?? '').toUpperCase();
+      if (group == 'VEG') group = 'VEGETABLE';
+      return group == _selectedTagFilter;
+    }).toList();
   }
 
   Widget _buildCandidateCard(BuildContext context, FoodSmartSwapCandidateModel candidate) {
@@ -290,20 +333,36 @@ class _SmartSwapBottomSheetState extends State<SmartSwapBottomSheet> {
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: const Color(0xFF10B981).withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            candidate.matchReason,
-                            style: GoogleFonts.inter(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF10B981),
-                            ),
-                          ),
+                        Builder(
+                          builder: (context) {
+                            final text = candidate.matchReason;
+                            Color bgColor = const Color(0xFF10B981).withValues(alpha: 0.12);
+                            Color textColor = const Color(0xFF10B981);
+
+                            if (text.contains('Không khuyên dùng')) {
+                              bgColor = const Color(0xFFF59E0B).withValues(alpha: 0.12);
+                              textColor = const Color(0xFFD97706);
+                            } else if (text == 'Ổn') {
+                              bgColor = const Color(0xFF3B82F6).withValues(alpha: 0.12);
+                              textColor = const Color(0xFF2563EB);
+                            }
+
+                            return Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: bgColor,
+                                borderRadius: BorderRadius.circular(6),
+                              ),
+                              child: Text(
+                                text,
+                                style: GoogleFonts.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: textColor,
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ],
                     ),
@@ -354,15 +413,21 @@ class _SmartSwapBottomSheetState extends State<SmartSwapBottomSheet> {
 
           const SizedBox(height: 8),
 
-          // Macros
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              _buildMacroChip('🔥 ${scaledCal.toStringAsFixed(0)} kcal'),
-              _buildMacroChip('🥩 P: ${scaledP.toStringAsFixed(1)}g'),
-              _buildMacroChip('🍚 C: ${scaledC.toStringAsFixed(1)}g'),
-              _buildMacroChip('🥑 F: ${scaledF.toStringAsFixed(1)}g'),
-            ],
+          // Macros (Cuộn ngang linh hoạt chống overflow)
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            physics: const BouncingScrollPhysics(),
+            child: Row(
+              children: [
+                _buildMacroChip('🔥 ${scaledCal.toStringAsFixed(0)} kcal'),
+                const SizedBox(width: 6),
+                _buildMacroChip('🥩 P: ${scaledP.toStringAsFixed(1)}g'),
+                const SizedBox(width: 6),
+                _buildMacroChip('🍚 C: ${scaledC.toStringAsFixed(1)}g'),
+                const SizedBox(width: 6),
+                _buildMacroChip('🥑 F: ${scaledF.toStringAsFixed(1)}g'),
+              ],
+            ),
           ),
           const SizedBox(height: 14),
 

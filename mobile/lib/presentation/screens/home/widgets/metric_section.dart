@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
+import 'package:mobile/presentation/bloc/step/step_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
-import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
-import 'package:mobile/presentation/bloc/step/step_cubit.dart';
-import 'package:mobile/core/routes/app_routes.dart';
-import 'package:go_router/go_router.dart';
 
 class MetricCard extends StatelessWidget {
   final String title;
@@ -38,18 +38,10 @@ class MetricCard extends StatelessWidget {
         width: 160,
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: gradientColors,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
+          gradient: LinearGradient(colors: gradientColors, begin: Alignment.topLeft, end: Alignment.bottomRight),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
-            BoxShadow(
-              color: gradientColors.first.withOpacity(0.3),
-              blurRadius: 10,
-              offset: const Offset(0, 4),
-            ),
+            BoxShadow(color: gradientColors.first.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
           ],
         ),
         child: Column(
@@ -61,10 +53,7 @@ class MetricCard extends StatelessWidget {
                 Expanded(
                   child: Text(
                     title,
-                    style: AppTheme.semiboldStyle.copyWith(
-                      color: Colors.white,
-                      fontSize: 13,
-                    ),
+                    style: AppTheme.semiboldStyle.copyWith(color: Colors.white, fontSize: 13),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -79,22 +68,9 @@ class MetricCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.baseline,
               textBaseline: TextBaseline.alphabetic,
               children: [
-                Text(
-                  value,
-                  style: AppTheme.headlineStyle.copyWith(
-                    color: Colors.white,
-                    fontSize: 26,
-                    height: 1,
-                  ),
-                ),
+                Text(value, style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 26, height: 1)),
                 const SizedBox(width: 2),
-                Text(
-                  unit,
-                  style: AppTheme.bodyStyle.copyWith(
-                    color: Colors.white.withOpacity(0.8),
-                    fontSize: 12,
-                  ),
-                ),
+                Text(unit, style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.8), fontSize: 12)),
               ],
             ),
           ],

@@ -1,3 +1,5 @@
+import 'package:core_shared/models/daily_eating_model.dart';
+import 'package:core_shared/models/daily_workout_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
@@ -6,8 +8,7 @@ import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
 import 'package:mobile/data/repositories/workout_diary_repository.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
-import 'package:core_shared/models/daily_eating_model.dart';
-import 'package:core_shared/models/daily_workout_model.dart';
+
 import 'widgets/custom_metric_charts.dart';
 
 class CalorieBalanceDetailScreen extends StatefulWidget {
@@ -62,7 +63,7 @@ class _CalorieBalanceDetailScreenState extends State<CalorieBalanceDetailScreen>
 
   Map<String, double> _getDataForDate(DateTime date) {
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
-    
+
     double intake = 0.0;
     for (final e in _eatings) {
       if (DateFormat('yyyy-MM-dd').format(e.date) == dateStr) {
@@ -91,10 +92,7 @@ class _CalorieBalanceDetailScreenState extends State<CalorieBalanceDetailScreen>
     }
 
     final daysCount = _isWeekly ? 7 : 30;
-    final dates = List.generate(
-      daysCount,
-      (index) => DateTime.now().subtract(Duration(days: daysCount - 1 - index)),
-    );
+    final dates = List.generate(daysCount, (index) => DateTime.now().subtract(Duration(days: daysCount - 1 - index)));
 
     final List<double> intakeValues = [];
     final List<double> burnedValues = [];
@@ -107,7 +105,7 @@ class _CalorieBalanceDetailScreenState extends State<CalorieBalanceDetailScreen>
       final data = _getDataForDate(date);
       intakeValues.add(data['intake']!);
       burnedValues.add(data['burned']!);
-      
+
       totalIntake += data['intake']!;
       totalBurned += data['burned']!;
 
@@ -152,10 +150,7 @@ class _CalorieBalanceDetailScreenState extends State<CalorieBalanceDetailScreen>
                     const SizedBox(width: 8),
                     Text(
                       'Cân bằng Calorie',
-                      style: AppTheme.headlineStyle.copyWith(
-                        fontSize: 22,
-                        color: const Color(0xFF1E293B),
-                      ),
+                      style: AppTheme.headlineStyle.copyWith(fontSize: 22, color: const Color(0xFF1E293B)),
                     ),
                   ],
                 ),
@@ -231,197 +226,207 @@ class _CalorieBalanceDetailScreenState extends State<CalorieBalanceDetailScreen>
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
                     : _errorMessage != null
-                        ? Center(child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)))
-                        : RefreshIndicator(
-                            onRefresh: _fetchData,
-                            child: SingleChildScrollView(
-                              physics: const AlwaysScrollableScrollPhysics(),
-                              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                    ? Center(
+                        child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _fetchData,
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Stats Row
+                              Row(
                                 children: [
-                                  // Stats Row
-                                  Row(
-                                    children: [
-                                      Expanded(
-                                        child: _buildStatCard(
-                                          'Nạp vào (Kcal)',
-                                          avgIntake.toStringAsFixed(0),
-                                          const Color(0xFFF97316),
-                                        ),
-                                      ),
-                                      const SizedBox(width: 12),
-                                      Expanded(
-                                        child: _buildStatCard(
-                                          'Tiêu hao (Kcal)',
-                                          avgBurned.toStringAsFixed(0),
-                                          const Color(0xFFEC4899),
-                                        ),
-                                      ),
-                                    ],
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      'Nạp vào (Kcal)',
+                                      avgIntake.toStringAsFixed(0),
+                                      const Color(0xFFF97316),
+                                    ),
                                   ),
-                                  const SizedBox(height: 12),
-                                  Container(
-                                    width: double.infinity,
-                                    padding: const EdgeInsets.all(16),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: _buildStatCard(
+                                      'Tiêu hao (Kcal)',
+                                      avgBurned.toStringAsFixed(0),
+                                      const Color(0xFFEC4899),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 12),
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      'Cân bằng ròng (Net)',
+                                      style: AppTheme.semiboldStyle.copyWith(
+                                        color: const Color(0xFF64748B),
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    Text(
+                                      '${netBalance.toStringAsFixed(0)} kcal',
+                                      style: AppTheme.headlineStyle.copyWith(
+                                        color: netBalance > 0 ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                                        fontSize: 20,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Chart Card
+                              Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(28),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.black.withOpacity(0.02),
+                                      blurRadius: 10,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Xu hướng Calorie ${_isWeekly ? "Tuần" : "Tháng"}',
+                                      style: AppTheme.semiboldStyle.copyWith(
+                                        fontSize: 16,
+                                        color: const Color(0xFF1E293B),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Row(
+                                      children: [
+                                        _buildLegendItem('Nạp vào', const Color(0xFFF97316)),
+                                        const SizedBox(width: 12),
+                                        _buildLegendItem('Tiêu hao', const Color(0xFFEC4899)),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 24),
+                                    DoubleBarChart(
+                                      values1: intakeValues,
+                                      values2: burnedValues,
+                                      labels: chartLabels,
+                                      target: targetCalories,
+                                      unit: 'kcal',
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+
+                              // Detailed Logs
+                              Text(
+                                'Chi tiết hàng ngày',
+                                style: AppTheme.semiboldStyle.copyWith(fontSize: 16, color: const Color(0xFF1E293B)),
+                              ),
+                              const SizedBox(height: 12),
+                              ListView.separated(
+                                shrinkWrap: true,
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemCount: dates.length,
+                                separatorBuilder: (context, index) => const SizedBox(height: 8),
+                                itemBuilder: (context, index) {
+                                  // Hiện thị ngày đảo ngược (từ mới nhất đến cũ nhất)
+                                  final reverseIndex = dates.length - 1 - index;
+                                  final date = dates[reverseIndex];
+                                  final data = _getDataForDate(date);
+                                  final net = data['intake']! - data['burned']!;
+                                  final dateStr = DateFormat('dd/MM/yyyy').format(date);
+                                  final dayName = date.weekday == 7 ? 'Chủ Nhật' : 'Thứ ${date.weekday + 1}';
+
+                                  return Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                                     decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(20),
+                                      color: Colors.white.withOpacity(0.8),
+                                      borderRadius: BorderRadius.circular(16),
                                     ),
                                     child: Row(
                                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                       children: [
-                                        Text(
-                                          'Cân bằng ròng (Net)',
-                                          style: AppTheme.semiboldStyle.copyWith(
-                                            color: const Color(0xFF64748B),
-                                            fontSize: 14,
-                                          ),
+                                        Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              dayName,
+                                              style: AppTheme.semiboldStyle.copyWith(
+                                                fontSize: 14,
+                                                color: const Color(0xFF1E293B),
+                                              ),
+                                            ),
+                                            Text(
+                                              dateStr,
+                                              style: AppTheme.bodyStyle.copyWith(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                          ],
                                         ),
-                                        Text(
-                                          '${netBalance.toStringAsFixed(0)} kcal',
-                                          style: AppTheme.headlineStyle.copyWith(
-                                            color: netBalance > 0 ? const Color(0xFFEF4444) : const Color(0xFF10B981),
-                                            fontSize: 20,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  const SizedBox(height: 24),
-
-                                  // Chart Card
-                                  Container(
-                                    padding: const EdgeInsets.all(20),
-                                    decoration: BoxDecoration(
-                                      color: Colors.white,
-                                      borderRadius: BorderRadius.circular(28),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black.withOpacity(0.02),
-                                          blurRadius: 10,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ],
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Xu hướng Calorie ${_isWeekly ? "Tuần" : "Tháng"}',
-                                          style: AppTheme.semiboldStyle.copyWith(
-                                            fontSize: 16,
-                                            color: const Color(0xFF1E293B),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 8),
                                         Row(
                                           children: [
-                                            _buildLegendItem('Nạp vào', const Color(0xFFF97316)),
-                                            const SizedBox(width: 12),
-                                            _buildLegendItem('Tiêu hao', const Color(0xFFEC4899)),
+                                            Column(
+                                              crossAxisAlignment: CrossAxisAlignment.end,
+                                              children: [
+                                                Text(
+                                                  '+${data['intake']!.toStringAsFixed(0)} kcal',
+                                                  style: AppTheme.bodyStyle.copyWith(
+                                                    fontSize: 12,
+                                                    color: const Color(0xFFF97316),
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                                Text(
+                                                  '-${data['burned']!.toStringAsFixed(0)} kcal',
+                                                  style: AppTheme.bodyStyle.copyWith(
+                                                    fontSize: 12,
+                                                    color: const Color(0xFFEC4899),
+                                                    fontWeight: FontWeight.bold,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            const SizedBox(width: 16),
+                                            Container(
+                                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                              decoration: BoxDecoration(
+                                                color: net > 0 ? const Color(0xFFFEF2F2) : const Color(0xFFECFDF5),
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              child: Text(
+                                                '${net > 0 ? "+" : ""}${net.toStringAsFixed(0)}',
+                                                style: AppTheme.semiboldStyle.copyWith(
+                                                  fontSize: 13,
+                                                  color: net > 0 ? const Color(0xFFEF4444) : const Color(0xFF10B981),
+                                                ),
+                                              ),
+                                            ),
                                           ],
-                                        ),
-                                        const SizedBox(height: 24),
-                                        DoubleBarChart(
-                                          values1: intakeValues,
-                                          values2: burnedValues,
-                                          labels: chartLabels,
-                                          target: targetCalories,
-                                          unit: 'kcal',
                                         ),
                                       ],
                                     ),
-                                  ),
-                                  const SizedBox(height: 24),
-
-                                  // Detailed Logs
-                                  Text(
-                                    'Chi tiết hàng ngày',
-                                    style: AppTheme.semiboldStyle.copyWith(
-                                      fontSize: 16,
-                                      color: const Color(0xFF1E293B),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 12),
-                                  ListView.separated(
-                                    shrinkWrap: true,
-                                    physics: const NeverScrollableScrollPhysics(),
-                                    itemCount: dates.length,
-                                    separatorBuilder: (context, index) => const SizedBox(height: 8),
-                                    itemBuilder: (context, index) {
-                                      // Hiện thị ngày đảo ngược (từ mới nhất đến cũ nhất)
-                                      final reverseIndex = dates.length - 1 - index;
-                                      final date = dates[reverseIndex];
-                                      final data = _getDataForDate(date);
-                                      final net = data['intake']! - data['burned']!;
-                                      final dateStr = DateFormat('dd/MM/yyyy').format(date);
-                                      final dayName = date.weekday == 7 ? 'Chủ Nhật' : 'Thứ ${date.weekday + 1}';
-
-                                      return Container(
-                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                        decoration: BoxDecoration(
-                                          color: Colors.white.withOpacity(0.8),
-                                          borderRadius: BorderRadius.circular(16),
-                                        ),
-                                        child: Row(
-                                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                                          children: [
-                                            Column(
-                                              crossAxisAlignment: CrossAxisAlignment.start,
-                                              children: [
-                                                Text(
-                                                  dayName,
-                                                  style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: const Color(0xFF1E293B)),
-                                                ),
-                                                Text(
-                                                  dateStr,
-                                                  style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: Colors.grey.shade600),
-                                                ),
-                                              ],
-                                            ),
-                                            Row(
-                                              children: [
-                                                Column(
-                                                  crossAxisAlignment: CrossAxisAlignment.end,
-                                                  children: [
-                                                    Text(
-                                                      '+${data['intake']!.toStringAsFixed(0)} kcal',
-                                                      style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: const Color(0xFFF97316), fontWeight: FontWeight.bold),
-                                                    ),
-                                                    Text(
-                                                      '-${data['burned']!.toStringAsFixed(0)} kcal',
-                                                      style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: const Color(0xFFEC4899), fontWeight: FontWeight.bold),
-                                                    ),
-                                                  ],
-                                                ),
-                                                const SizedBox(width: 16),
-                                                Container(
-                                                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                                  decoration: BoxDecoration(
-                                                    color: net > 0 ? const Color(0xFFFEF2F2) : const Color(0xFFECFDF5),
-                                                    borderRadius: BorderRadius.circular(10),
-                                                  ),
-                                                  child: Text(
-                                                    '${net > 0 ? "+" : ""}${net.toStringAsFixed(0)}',
-                                                    style: AppTheme.semiboldStyle.copyWith(
-                                                      fontSize: 13,
-                                                      color: net > 0 ? const Color(0xFFEF4444) : const Color(0xFF10B981),
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ],
-                                        ),
-                                      );
-                                    },
-                                  ),
-                                  const SizedBox(height: 32),
-                                ],
+                                  );
+                                },
                               ),
-                            ),
+                              const SizedBox(height: 32),
+                            ],
                           ),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -433,29 +438,16 @@ class _CalorieBalanceDetailScreenState extends State<CalorieBalanceDetailScreen>
   Widget _buildStatCard(String title, String value, Color color) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
+      decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(20)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             title,
-            style: AppTheme.bodyStyle.copyWith(
-              color: Colors.grey.shade500,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-            ),
+            style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade500, fontSize: 12, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 8),
-          Text(
-            value,
-            style: AppTheme.headlineStyle.copyWith(
-              color: color,
-              fontSize: 24,
-            ),
-          ),
+          Text(value, style: AppTheme.headlineStyle.copyWith(color: color, fontSize: 24)),
         ],
       ),
     );
@@ -467,19 +459,10 @@ class _CalorieBalanceDetailScreenState extends State<CalorieBalanceDetailScreen>
         Container(
           width: 8,
           height: 8,
-          decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(2),
-          ),
+          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(2)),
         ),
         const SizedBox(width: 4),
-        Text(
-          label,
-          style: AppTheme.bodyStyle.copyWith(
-            fontSize: 11,
-            color: const Color(0xFF64748B),
-          ),
-        ),
+        Text(label, style: AppTheme.bodyStyle.copyWith(fontSize: 11, color: const Color(0xFF64748B))),
       ],
     );
   }

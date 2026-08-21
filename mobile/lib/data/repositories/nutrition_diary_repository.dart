@@ -16,9 +16,7 @@ class NutritionDiaryRepository {
 
   Future<DailyEatingModel> getDailyEating(DateTime date) async {
     try {
-      _logger.d('Has token: ${TokenService.hasToken()}');
       final response = await apiClient.get('$_basePath/day', queryParameters: {'date': _formatDate(date)});
-      _logger.i('Fetched daily eating for ${_formatDate(date)}');
       return DailyEatingModel.fromJson(response.data['data'] as Map<String, dynamic>);
     } on DioException catch (e) {
       final status = e.response?.statusCode;

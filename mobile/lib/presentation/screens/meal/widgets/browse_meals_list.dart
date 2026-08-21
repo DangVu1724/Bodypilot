@@ -82,16 +82,6 @@ class BrowseMealsList extends StatelessWidget {
                                     '${food.healthScore}',
                                     style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: Colors.grey.shade600),
                                   ),
-                                  Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 6),
-                                    child: Text('•', style: AppTheme.bodyStyle.copyWith(color: Colors.grey)),
-                                  ),
-                                  Icon(Icons.access_time_filled, size: 14, color: Colors.blue.shade400),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${food.recipe?.cookingTimeMinutes ?? 15}min',
-                                    style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: Colors.grey.shade600),
-                                  ),
                                 ],
                               ),
                             ],

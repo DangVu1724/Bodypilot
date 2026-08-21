@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/routes/app_routes.dart';
-import 'package:go_router/go_router.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/auth/login_cubit.dart';
 import 'package:mobile/presentation/bloc/auth/login_state.dart';
-import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
+import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -26,10 +26,9 @@ class LoginView extends StatelessWidget {
     return BlocListener<LoginCubit, LoginState>(
       listener: (context, state) {
         if (state.status == LoginStatus.success) {
-          // Fetch data immediately after successful login
           context.read<UserCubit>().fetchUserProfile();
           context.read<FoodCubit>().init();
-          
+
           if (state.isProfileComplete == true) {
             context.go(AppRoutes.home);
           } else {
@@ -37,10 +36,7 @@ class LoginView extends StatelessWidget {
           }
         } else if (state.status == LoginStatus.failure) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.errorMessage ?? 'Đăng nhập thất bại'),
-              backgroundColor: Colors.red,
-            ),
+            SnackBar(content: Text(state.errorMessage ?? 'Đăng nhập thất bại'), backgroundColor: Colors.red),
           );
         }
       },
@@ -74,10 +70,7 @@ class LoginView extends StatelessWidget {
                           ],
                         ),
                         padding: const EdgeInsets.all(16),
-                        child: Image.asset(
-                          'assets/images/logo.png',
-                          fit: BoxFit.contain,
-                        ),
+                        child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -94,14 +87,11 @@ class LoginView extends StatelessWidget {
                     const SizedBox(height: 8),
                     Text(
                       'Đăng nhập để tiếp tục hành trình sức khỏe của bạn',
-                      style: GoogleFonts.plusJakartaSans(
-                        fontSize: 14.5,
-                        color: AppTheme.textSecondary,
-                      ),
+                      style: GoogleFonts.plusJakartaSans(fontSize: 14.5, color: AppTheme.textSecondary),
                       textAlign: TextAlign.center,
                     ),
                     const SizedBox(height: 36),
-                    
+
                     TextField(
                       onChanged: cubit.emailChanged,
                       keyboardType: TextInputType.emailAddress,
@@ -136,7 +126,7 @@ class LoginView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    
+
                     TextField(
                       onChanged: cubit.passwordChanged,
                       obscureText: !state.isPasswordVisible,
@@ -180,7 +170,7 @@ class LoginView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    
+
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
@@ -200,7 +190,7 @@ class LoginView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton(
@@ -208,9 +198,7 @@ class LoginView extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppTheme.primary,
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           elevation: 0,
                         ),
@@ -225,15 +213,12 @@ class LoginView extends StatelessWidget {
                               )
                             : Text(
                                 'Đăng nhập',
-                                style: GoogleFonts.plusJakartaSans(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 16,
-                                ),
+                                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold, fontSize: 16),
                               ),
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
+
                     Row(
                       children: [
                         Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
@@ -241,17 +226,14 @@ class LoginView extends StatelessWidget {
                           padding: const EdgeInsets.symmetric(horizontal: 16),
                           child: Text(
                             'Hoặc đăng nhập bằng',
-                            style: GoogleFonts.plusJakartaSans(
-                              color: AppTheme.textSecondary,
-                              fontSize: 13,
-                            ),
+                            style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary, fontSize: 13),
                           ),
                         ),
                         Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
                       ],
                     ),
                     const SizedBox(height: 24),
-                    
+
                     SizedBox(
                       width: double.infinity,
                       child: OutlinedButton.icon(
@@ -260,7 +242,8 @@ class LoginView extends StatelessWidget {
                           'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
                           height: 18,
                           width: 18,
-                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, color: Colors.red, size: 24),
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(Icons.g_mobiledata, color: Colors.red, size: 24),
                         ),
                         label: Text(
                           'Đăng nhập bằng Google',
@@ -278,20 +261,17 @@ class LoginView extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 32),
-                    
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
                           "Chưa có tài khoản? ",
-                          style: GoogleFonts.plusJakartaSans(
-                            color: AppTheme.textSecondary,
-                            fontSize: 14,
-                          ),
+                          style: GoogleFonts.plusJakartaSans(color: AppTheme.textSecondary, fontSize: 14),
                         ),
                         TextButton(
                           onPressed: () {
-                             context.go(AppRoutes.signup);
+                            context.go(AppRoutes.signup);
                           },
                           style: TextButton.styleFrom(
                             padding: EdgeInsets.zero,
