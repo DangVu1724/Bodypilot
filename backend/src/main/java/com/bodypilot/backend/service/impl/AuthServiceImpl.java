@@ -17,7 +17,6 @@ import com.bodypilot.backend.model.dto.auth.LoginRequest;
 import com.bodypilot.backend.model.dto.auth.UserRegistrationRequest;
 import com.bodypilot.backend.model.entity.user.User;
 import com.bodypilot.backend.model.entity.user.UserProfile;
-import com.bodypilot.backend.repository.UserGoalRepository;
 import com.bodypilot.backend.repository.UserProfileRepository;
 import com.bodypilot.backend.repository.UserRepository;
 import com.bodypilot.backend.security.JwtService;
@@ -36,7 +35,6 @@ public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
     private final UserProfileRepository userProfileRepository;
-    private final UserGoalRepository goalRepository;
     private final PasswordEncoder passwordEncoder;
     private final JwtService jwtService;
     private final AuthenticationManager authenticationManager;

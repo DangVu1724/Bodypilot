@@ -26,6 +26,8 @@ import com.bodypilot.backend.repository.UserMetricHistoryRepository;
 import com.bodypilot.backend.repository.UserRepository;
 import com.bodypilot.backend.repository.WorkoutPlanRepository;
 import com.bodypilot.backend.service.GeminiService;
+import com.bodypilot.backend.service.impl.diet.DietSuggestionHelper;
+import com.bodypilot.backend.service.impl.workout.WorkoutSuggestionHelper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -37,6 +37,10 @@ public class PresetWorkoutPlanData {
                 private List<PresetExerciseItem> exerciseItems;
         }
 
+        public static List<PresetWorkoutDay> getPresetForGoal(String goalType) {
+                return getPresetForGoal(goalType, null);
+        }
+
         public static List<PresetWorkoutDay> getPresetForGoal(String goalType, String focusBodyPart) {
                 String goal = (goalType != null) ? goalType.toUpperCase() : "DEFAULT";
                 if (goal.contains("LOSE") || goal.contains("CUTTING")) {

@@ -33,16 +33,6 @@ public class Injury extends BaseEntity {
     @Enumerated(EnumType.STRING)
     private SeverityLevel severityLevel;
 
-    @ElementCollection
-    @CollectionTable(name = "injury_restricted_exercises", joinColumns = @JoinColumn(name = "injury_id"))
-    @Column(name = "exercise_code")
-    private List<String> restrictedExercises;
-
-    @ElementCollection
-    @CollectionTable(name = "injury_recommended_exercises", joinColumns = @JoinColumn(name = "injury_id"))
-    @Column(name = "exercise_code")
-    private List<String> recommendedExercises;
-
     @Builder.Default
     private boolean isActive = true;
 }

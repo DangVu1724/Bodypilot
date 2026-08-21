@@ -23,7 +23,10 @@ import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -56,14 +59,7 @@ public class CheckInServiceImpl implements CheckInService {
         java.time.DayOfWeek dayOfWeek = today.getDayOfWeek();
         boolean isSundayOrMonday = dayOfWeek == java.time.DayOfWeek.SUNDAY || dayOfWeek == java.time.DayOfWeek.MONDAY;
 
-        LocalDate sundayOfThisWeek;
-        if (dayOfWeek == java.time.DayOfWeek.SUNDAY) {
-            sundayOfThisWeek = today;
-        } else if (dayOfWeek == java.time.DayOfWeek.MONDAY) {
-            sundayOfThisWeek = today.minusDays(1);
-        } else {
-            sundayOfThisWeek = today.with(java.time.temporal.TemporalAdjusters.previous(java.time.DayOfWeek.SUNDAY));
-        }
+        LocalDate sundayOfThisWeek = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.SUNDAY));
 
         boolean checkedInThisWeek = userCheckInHistoryRepository.existsByUserIdAndCheckInDateBetween(userId, sundayOfThisWeek, today);
 
@@ -119,18 +115,16 @@ public class CheckInServiceImpl implements CheckInService {
         UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
                 .stream().findFirst().orElse(null);
 
-        String selectedGoalStr;
-        if (request.getGoalChoice() != null && !"KEEP_SAME".equalsIgnoreCase(request.getGoalChoice())) {
-            selectedGoalStr = request.getGoalChoice();
-            if (activeGoal != null) {
-                activeGoal.setType(selectedGoalStr);
-                if (request.getTargetWeight() != null) {
-                    activeGoal.setTargetWeight(request.getTargetWeight());
-                }
-                goalRepository.save(activeGoal);
+        String requestedGoal = request.getGoalChoice();
+        boolean hasNewGoal = requestedGoal != null && !"KEEP_SAME".equalsIgnoreCase(requestedGoal);
+        String selectedGoalStr = hasNewGoal ? requestedGoal : (activeGoal != null ? activeGoal.getType() : "LOSE_0_5KG");
+
+        if (hasNewGoal && activeGoal != null) {
+            activeGoal.setType(selectedGoalStr);
+            if (request.getTargetWeight() != null) {
+                activeGoal.setTargetWeight(request.getTargetWeight());
             }
-        } else {
-            selectedGoalStr = activeGoal != null ? activeGoal.getType() : "LOSE_0_5KG";
+            goalRepository.save(activeGoal);
         }
 
         // Map Enums for Calorie Calculation
@@ -203,34 +197,48 @@ public class CheckInServiceImpl implements CheckInService {
                 .build();
         userCheckInHistoryRepository.save(checkInHistory);
 
-        // Sync UserInjuries in database
+        // Sync UserInjuries in database (Optimized Batch Sync)
         if (request.getHasInjury() != null) {
-            if (Boolean.FALSE.equals(request.getHasInjury()) || request.getInjuredParts() == null || request.getInjuredParts().isEmpty()) {
-                List<UserInjury> existingInjuries = userInjuryRepository.findAllByUserId(userId);
+            List<UserInjury> existingInjuries = userInjuryRepository.findAllByUserId(userId);
+            boolean hasNoInjuries = Boolean.FALSE.equals(request.getHasInjury()) || request.getInjuredParts() == null || request.getInjuredParts().isEmpty();
+
+            if (hasNoInjuries) {
                 if (!existingInjuries.isEmpty()) {
                     userInjuryRepository.deleteAll(existingInjuries);
                 }
             } else {
-                List<UserInjury> existingInjuries = userInjuryRepository.findAllByUserId(userId);
                 List<String> selectedCodes = request.getInjuredParts();
 
-                for (UserInjury existing : existingInjuries) {
-                    if (existing.getInjury() != null && !selectedCodes.contains(existing.getInjury().getCode())) {
-                        userInjuryRepository.delete(existing);
-                    }
+                // 1. Batch Delete injuries that are no longer selected
+                List<UserInjury> toDelete = existingInjuries.stream()
+                        .filter(u -> u.getInjury() != null && !selectedCodes.contains(u.getInjury().getCode()))
+                        .toList();
+                if (!toDelete.isEmpty()) {
+                    userInjuryRepository.deleteAll(toDelete);
                 }
-                for (String code : selectedCodes) {
-                    boolean exists = existingInjuries.stream()
-                            .anyMatch(u -> u.getInjury() != null && code.equalsIgnoreCase(u.getInjury().getCode()));
-                    if (!exists) {
-                        injuryRepository.findByCode(code).ifPresent(injury -> {
-                            UserInjury newUi = UserInjury.builder()
+
+                // 2. Batch Insert new injuries that do not exist in DB yet
+                Set<String> existingCodes = existingInjuries.stream()
+                        .filter(u -> u.getInjury() != null)
+                        .map(u -> u.getInjury().getCode().toUpperCase())
+                        .collect(Collectors.toSet());
+
+                List<String> newCodes = selectedCodes.stream()
+                        .filter(code -> !existingCodes.contains(code.toUpperCase()))
+                        .toList();
+
+                if (!newCodes.isEmpty()) {
+                    List<UserInjury> newInjuries = newCodes.stream()
+                            .map(code -> injuryRepository.findByCode(code).orElse(null))
+                            .filter(Objects::nonNull)
+                            .map(injury -> UserInjury.builder()
                                     .user(user)
                                     .injury(injury)
                                     .recoveryStatus(com.bodypilot.backend.model.enums.RecoveryStatus.RECOVERING)
-                                    .build();
-                            userInjuryRepository.save(newUi);
-                        });
+                                    .build())
+                            .toList();
+                    if (!newInjuries.isEmpty()) {
+                        userInjuryRepository.saveAll(newInjuries);
                     }
                 }
             }

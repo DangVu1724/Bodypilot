@@ -35,10 +35,10 @@ import com.bodypilot.backend.repository.UserInjuryRepository;
 import com.bodypilot.backend.repository.UserMetricHistoryRepository;
 import com.bodypilot.backend.repository.UserRepository;
 import com.bodypilot.backend.repository.WorkoutPlanRepository;
-import com.bodypilot.backend.service.impl.DietSuggestionHelper;
+import com.bodypilot.backend.service.impl.diet.DietSuggestionHelper;
 import com.bodypilot.backend.service.impl.GeminiServiceImpl;
 import com.bodypilot.backend.service.impl.LlmRouterService;
-import com.bodypilot.backend.service.impl.WorkoutSuggestionHelper;
+import com.bodypilot.backend.service.impl.workout.WorkoutSuggestionHelper;
 
 @ExtendWith(MockitoExtension.class)
 class GeminiServiceTest {

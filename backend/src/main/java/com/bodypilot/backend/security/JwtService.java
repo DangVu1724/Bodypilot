@@ -37,7 +37,6 @@ public class JwtService {
     }
 
     public String generateToken(Map<String, Object> extraClaims, UserDetails userDetails) {
-        // ❌ đã bỏ role
         return buildToken(extraClaims, userDetails, jwtExpiration);
     }
 

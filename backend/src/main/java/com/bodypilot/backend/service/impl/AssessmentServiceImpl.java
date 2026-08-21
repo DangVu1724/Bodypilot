@@ -216,7 +216,7 @@ public class AssessmentServiceImpl implements AssessmentService {
             userFoodPreferenceRepository.save(fp);
         }
 
-        if (request.getDislikedFoodGroups() != null) {
+        if (request.getDislikedFoodGroups() != null && !request.getDislikedFoodGroups().isEmpty()) {
             for (String groupStr : request.getDislikedFoodGroups()) {
                 try {
                     DislikedFoodGroup group = DislikedFoodGroup.valueOf(groupStr.toUpperCase());
@@ -229,6 +229,12 @@ public class AssessmentServiceImpl implements AssessmentService {
                     // Ignore invalid enums
                 }
             }
+        } else if (request.getDislikedFoodsNote() != null && !request.getDislikedFoodsNote().trim().isEmpty()) {
+            UserFoodPreference pref = userFoodPreferenceRepository.findByUserAndDislikedFoodGroup(user, DislikedFoodGroup.OTHER)
+                    .orElse(UserFoodPreference.builder().user(user).dislikedFoodGroup(DislikedFoodGroup.OTHER).build());
+            pref.setIsActive(true);
+            pref.setNote(request.getDislikedFoodsNote());
+            userFoodPreferenceRepository.save(pref);
         }
     }
 }

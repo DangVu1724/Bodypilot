@@ -4,6 +4,8 @@ import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Data
@@ -13,9 +15,10 @@ import java.util.UUID;
 public class FoodCandidate {
     private UUID id;
     private String name;
-    private double calories;
-    private double protein;
-    private double fat;
-    private double carbs;
-    private String categoryCode;
+    private String categoryName;
+    private BigDecimal calories;
+    private BigDecimal protein;
+    private BigDecimal fat;
+    private BigDecimal carbs;
 }
+

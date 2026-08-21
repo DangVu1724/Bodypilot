@@ -30,6 +30,7 @@ import com.bodypilot.backend.repository.FoodRepository;
 import com.bodypilot.backend.repository.UserAllergyRepository;
 import com.bodypilot.backend.repository.UserInjuryRepository;
 import com.bodypilot.backend.service.SmartSwapService;
+import com.bodypilot.backend.service.impl.diet.DietSuggestionHelper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -47,13 +48,16 @@ public class SmartSwapServiceImpl implements SmartSwapService {
     private final DietSuggestionHelper dietSuggestionHelper;
 
     private static final Map<String, List<String>> CATEGORY_SWAP_MAP = Map.of(
-            "FRUIT", List.of("FRUIT"),
-            "VEGETABLE", List.of("VEGETABLE"),
+            "FRUIT", List.of("FRUIT", "BEVERAGE", "DAIRY"),
+            "BEVERAGE", List.of("BEVERAGE", "FRUIT", "DAIRY"),
+            "DAIRY", List.of("DAIRY", "FRUIT", "BEVERAGE"),
+            "VEGETABLE", List.of("VEGETABLE", "VEG"),
+            "VEG", List.of("VEGETABLE", "VEG"),
             "MEAT", List.of("MEAT", "SEAFOOD"),
             "SEAFOOD", List.of("SEAFOOD", "MEAT"),
             "NOODLE_SOUP", List.of("NOODLE_SOUP", "DRY_DISH", "GRAIN"),
-            "GRAIN", List.of("GRAIN", "DRY_DISH"),
-            "DAIRY", List.of("DAIRY", "BEVERAGE"));
+            "GRAIN", List.of("GRAIN", "DRY_DISH", "NOODLE_SOUP"),
+            "DRY_DISH", List.of("DRY_DISH", "GRAIN", "NOODLE_SOUP"));
 
     @Override
     public List<FoodSmartSwapCandidateDTO> getFoodSwapCandidates(User user, FoodSmartSwapRequest request) {
@@ -72,39 +76,43 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                 .map(a -> a.getAllergyMaster().getId())
                 .collect(Collectors.toSet());
 
-        // STRICT REQUIREMENT: Only pull foods where is_recommended == true!
-        List<Food> candidatePool = foodRepository.findByIsRecommendedTrue();
+        // Lấy tất cả thực phẩm để tìm các món thay thế cùng nhóm phù hợp nhất
+        List<Food> candidatePool = foodRepository.findAllWithRelations();
 
-        String targetCategoryCode = targetFood.getCategory() != null ? targetFood.getCategory().getCode() : "";
-        List<String> allowedTargetCategories = CATEGORY_SWAP_MAP.getOrDefault(
-                targetCategoryCode != null ? targetCategoryCode.toUpperCase() : "",
-                Collections.emptyList());
+        String targetCategoryCode = resolveCategoryCode(targetFood);
+        List<String> allowedTargetCategories = CATEGORY_SWAP_MAP.getOrDefault(targetCategoryCode, List.of(targetCategoryCode));
 
-        // Filter candidates: is_recommended == true, not target food, not allergic food
+        // Lọc món ăn: khác món hiện tại, không dị ứng, calo > 0, và BẮT BUỘC thuộc nhóm ngành hàng tương đương
         List<Food> filteredFoods = candidatePool.stream()
                 .filter(food -> !food.getId().equals(targetFood.getId()))
                 .filter(food -> !allergicFoodIds.contains(food.getId()))
                 .filter(food -> food.getCaloriesPer100g() != null
                         && food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) > 0)
                 .filter(food -> {
-                    if (allowedTargetCategories.isEmpty())
-                        return true;
-                    String candCategoryCode = food.getCategory() != null ? food.getCategory().getCode() : "";
-                    return candCategoryCode != null && allowedTargetCategories.contains(candCategoryCode.toUpperCase());
+                    String candCatCode = resolveCategoryCode(food);
+                    return allowedTargetCategories.contains(candCatCode);
                 })
                 .collect(Collectors.toList());
 
-        // If category filter is too strict, fallback to any recommended food
-        if (filteredFoods.isEmpty()) {
+        // Nếu quá ít món thuộc cùng nhóm, nới lỏng theo đặc tính protein / carbs để luôn có gợi ý
+        if (filteredFoods.size() < 3) {
+            boolean isHighProtein = targetFood.getProteinPer100g() != null && targetFood.getProteinPer100g().doubleValue() >= 8.0;
             filteredFoods = candidatePool.stream()
                     .filter(food -> !food.getId().equals(targetFood.getId()))
                     .filter(food -> !allergicFoodIds.contains(food.getId()))
+                    .filter(food -> food.getCaloriesPer100g() != null && food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) > 0)
+                    .filter(food -> {
+                        if (isHighProtein) {
+                            return food.getProteinPer100g() != null && food.getProteinPer100g().doubleValue() >= 6.0;
+                        }
+                        return true;
+                    })
                     .collect(Collectors.toList());
         }
 
-        // Shuffle to select top candidates
+        // Xáo trộn nhẹ để đa dạng danh sách nhưng vẫn ưu tiên các món hàng đầu
         Collections.shuffle(filteredFoods);
-        List<Food> selectedFoods = filteredFoods.stream().limit(10).collect(Collectors.toList());
+        List<Food> selectedFoods = filteredFoods.stream().limit(15).collect(Collectors.toList());
 
         List<FoodSmartSwapCandidateDTO> candidates = new ArrayList<>();
 
@@ -127,7 +135,7 @@ public class SmartSwapServiceImpl implements SmartSwapService {
             BigDecimal candFat = food.getFatPer100g().multiply(actualFactor).setScale(1, RoundingMode.HALF_UP);
             BigDecimal candCarbs = food.getCarbsPer100g().multiply(actualFactor).setScale(1, RoundingMode.HALF_UP);
 
-            // Compute macro match score
+            // Tính điểm tương đồng Macro
             double score = 85.0;
             if (targetCal.compareTo(BigDecimal.ZERO) > 0 && targetProtein.compareTo(BigDecimal.ZERO) > 0) {
                 double targetRatio = targetProtein.doubleValue() / Math.max(1.0, targetCal.doubleValue());
@@ -141,16 +149,19 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                 score = Math.min(99.0, score + 5.0);
             }
 
-            // Tag swapType: HIGH_PROTEIN, LOW_CALORIE, BALANCED
-            String swapType = "BALANCED";
-            if (candProtein.compareTo(targetProtein.multiply(new BigDecimal("1.2"))) >= 0) {
-                swapType = "HIGH_PROTEIN";
-            } else if (candCal.compareTo(targetCal.multiply(new BigDecimal("0.75"))) <= 0) {
-                swapType = "LOW_CALORIE";
-            }
+            String candCatCode = resolveCategoryCode(food);
 
             double roundedScore = Math.round(score * 10.0) / 10.0;
             String categoryName = food.getCategory() != null ? food.getCategory().getName() : "Khác";
+
+            String matchLabel;
+            if (roundedScore >= 85.0) {
+                matchLabel = "Khuyên dùng";
+            } else if (roundedScore >= 70.0) {
+                matchLabel = "Ổn";
+            } else {
+                matchLabel = "Không khuyên dùng";
+            }
 
             candidates.add(FoodSmartSwapCandidateDTO.builder()
                     .foodId(food.getId())
@@ -163,8 +174,8 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                     .fat(candFat)
                     .carbs(candCarbs)
                     .matchScore(roundedScore)
-                    .matchReason(String.format("Khuyên dùng • Tương đồng %.0f%% Dinh dưỡng", roundedScore))
-                    .swapGroup(swapType)
+                    .matchReason(matchLabel)
+                    .swapGroup(candCatCode)
                     .build());
         }
 
@@ -180,11 +191,11 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                         () -> new ResourceNotFoundException("Exercise not found with id: " + request.getExerciseId()));
 
         List<UserInjury> userInjuries = userInjuryRepository.findAllByUserId(user.getId());
-        Set<String> restrictedCodes = new HashSet<>();
+        Set<UUID> restrictedBodyPartIds = new HashSet<>();
         for (UserInjury ui : userInjuries) {
             Injury injury = ui.getInjury();
-            if (injury != null && injury.getRestrictedExercises() != null) {
-                restrictedCodes.addAll(injury.getRestrictedExercises());
+            if (injury != null && injury.getBodyPart() != null) {
+                restrictedBodyPartIds.add(injury.getBodyPart().getId());
             }
         }
 
@@ -195,7 +206,7 @@ public class SmartSwapServiceImpl implements SmartSwapService {
             if (ex.getId().equals(targetEx.getId())) {
                 continue;
             }
-            if (ex.getCode() != null && restrictedCodes.contains(ex.getCode())) {
+            if (ex.getBodyPart() != null && restrictedBodyPartIds.contains(ex.getBodyPart().getId())) {
                 continue;
             }
 
@@ -235,5 +246,66 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                 .sorted(Comparator.comparing(ExerciseSmartSwapCandidateDTO::getMatchScore).reversed())
                 .limit(10)
                 .collect(Collectors.toList());
+    }
+
+    private String resolveCategoryCode(Food food) {
+        if (food == null) return "OTHER";
+        if (food.getCategory() != null && food.getCategory().getCode() != null) {
+            String code = food.getCategory().getCode().toUpperCase().trim();
+            if ("VEG".equals(code)) return "VEGETABLE";
+            if (CATEGORY_SWAP_MAP.containsKey(code)) return code;
+        }
+
+        String name = "";
+        if (food.getCategory() != null && food.getCategory().getName() != null) {
+            name += " " + food.getCategory().getName().toLowerCase();
+        }
+        if (food.getName() != null) {
+            name += " " + food.getName().toLowerCase();
+        }
+
+        if (name.contains("thịt") || name.contains("gà") || name.contains("trứng") || name.contains("lợn") || name.contains("heo") || name.contains("bò") || name.contains("chả")) {
+            return "MEAT";
+        }
+        if (name.contains("hải sản") || name.contains("cá") || name.contains("tôm") || name.contains("mực") || name.contains("cua") || name.contains("ốc")) {
+            return "SEAFOOD";
+        }
+        if (name.contains("trái cây") || name.contains("hoa quả") || name.contains("táo") || name.contains("chuối") || name.contains("cam") || name.contains("dưa")) {
+            return "FRUIT";
+        }
+        if (name.contains("đồ uống") || name.contains("sinh tố") || name.contains("nước ép") || name.contains("trà") || name.contains("cà phê")) {
+            return "BEVERAGE";
+        }
+        if (name.contains("sữa") || name.contains("hạt") || name.contains("sữa chua") || name.contains("phô mai")) {
+            return "DAIRY";
+        }
+        if (name.contains("rau") || name.contains("củ") || name.contains("salad") || name.contains("nấm") || name.contains("su su") || name.contains("cà rốt")) {
+            return "VEGETABLE";
+        }
+        if (name.contains("cơm") || name.contains("ngũ cốc") || name.contains("yến mạch") || name.contains("xôi") || name.contains("cháo")) {
+            return "GRAIN";
+        }
+        if (name.contains("phở") || name.contains("bún") || name.contains("mì") || name.contains("hủ tiếu") || name.contains("canh") || name.contains("bánh canh")) {
+            return "NOODLE_SOUP";
+        }
+        if (name.contains("bánh mì") || name.contains("món khô") || name.contains("bánh")) {
+            return "DRY_DISH";
+        }
+
+        double p = food.getProteinPer100g() != null ? food.getProteinPer100g().doubleValue() : 0.0;
+        double c = food.getCarbsPer100g() != null ? food.getCarbsPer100g().doubleValue() : 0.0;
+        double cal = food.getCaloriesPer100g() != null ? food.getCaloriesPer100g().doubleValue() : 0.0;
+
+        if (p >= 8.0 || (cal > 0 && p / cal > 0.04)) {
+            return "MEAT";
+        }
+        if (c >= 20.0) {
+            return "GRAIN";
+        }
+        if (cal > 0 && cal < 50.0 && c < 10.0 && p < 3.0) {
+            return "VEGETABLE";
+        }
+
+        return "MEAT";
     }
 }
