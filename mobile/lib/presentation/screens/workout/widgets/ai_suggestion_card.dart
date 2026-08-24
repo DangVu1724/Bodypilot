@@ -9,7 +9,7 @@ class AiSuggestionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       children: [
-        const SectionTitle(title: 'Gợi Ý AI', actionText: 'Xem tất cả'),
+        const SectionTitle(title: 'Gợi Ý AI'),
         const SizedBox(height: 12),
         Container(
           height: 180,

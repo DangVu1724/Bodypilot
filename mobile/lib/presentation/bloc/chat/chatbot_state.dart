@@ -65,7 +65,7 @@ class ChatbotInitial extends ChatbotState {
           ChatMessage(
             id: 'welcome',
             role: 'model',
-            content: 'Chào bạn! Tôi là BodyPilot AI Coach 🤖\n\nTôi có thể giúp bạn giải đáp mọi thắc mắc về thực đơn calo, bài tập fitness, tư vấn chấn thương hoặc cách sử dụng BodyPilot. Bạn cần hỗ trợ gì hôm nay?',
+            content: 'Chào bạn! Tôi là BodyPilot AI Coach 🤖\n\nTôi có thể giúp bạn tra cứu calo & dinh dưỡng món ăn, hướng dẫn kỹ thuật bài tập, tư vấn phòng tránh chấn thương và giải đáp thắc mắc ứng dụng. Bạn cần hỗ trợ gì hôm nay?',
             timestamp: DateTime.now(),
           ),
         ]);

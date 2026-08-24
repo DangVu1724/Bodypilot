@@ -60,7 +60,7 @@ class HomeScreen extends StatelessWidget {
                       const HomeCalendarSection(),
                       const SizedBox(height: 32),
 
-                      SectionHeader(title: 'Chỉ Số Thể Hình', onSeeAll: () {}),
+                      const SectionHeader(title: 'Chỉ Số Thể Hình'),
                       const SizedBox(height: 16),
                       const MetricSection(),
                       const SizedBox(height: 24),

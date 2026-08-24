@@ -14,8 +14,8 @@ class MetricCard extends StatelessWidget {
   final String title;
   final String value;
   final String unit;
-  final Widget icon;
-  final List<Color> gradientColors;
+  final IconData iconData;
+  final Color accentColor;
   final Widget? bottomWidget;
   final VoidCallback? onTap;
 
@@ -24,8 +24,8 @@ class MetricCard extends StatelessWidget {
     required this.title,
     required this.value,
     required this.unit,
-    required this.icon,
-    required this.gradientColors,
+    required this.iconData,
+    required this.accentColor,
     this.bottomWidget,
     this.onTap,
   });
@@ -35,45 +35,124 @@ class MetricCard extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 160,
-        padding: const EdgeInsets.all(16),
+        width: 168,
         decoration: BoxDecoration(
-          gradient: LinearGradient(colors: gradientColors, begin: Alignment.topLeft, end: Alignment.bottomRight),
-          borderRadius: BorderRadius.circular(24),
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: accentColor.withValues(alpha: 0.18),
+            width: 1.2,
+          ),
           boxShadow: [
-            BoxShadow(color: gradientColors.first.withOpacity(0.3), blurRadius: 10, offset: const Offset(0, 4)),
+            BoxShadow(
+              color: accentColor.withValues(alpha: 0.08),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+              spreadRadius: 0,
+            ),
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: AppTheme.semiboldStyle.copyWith(color: Colors.white, fontSize: 13),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              // Left accent indicator bar
+              Positioned(
+                top: 0,
+                left: 0,
+                bottom: 0,
+                width: 4.5,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: accentColor,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(20),
+                      bottomLeft: Radius.circular(20),
+                    ),
                   ),
                 ),
-                icon,
-              ],
-            ),
-            const Spacer(),
-            ?bottomWidget,
-            const Spacer(),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Text(value, style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 26, height: 1)),
-                const SizedBox(width: 2),
-                Text(unit, style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.8), fontSize: 12)),
-              ],
-            ),
-          ],
+              ),
+
+              // Content
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 12, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header: Icon badge + Title + Chevron
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: accentColor.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: Icon(
+                            iconData,
+                            color: accentColor,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            title,
+                            style: AppTheme.semiboldStyle.copyWith(
+                              color: AppTheme.textPrimary,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          color: AppTheme.textSecondary.withValues(alpha: 0.4),
+                          size: 18,
+                        ),
+                      ],
+                    ),
+                    const Spacer(),
+                    // Bottom widget (progress & details)
+                    ?bottomWidget,
+                    const Spacer(),
+                    // Value & Unit
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      children: [
+                        Text(
+                          value,
+                          style: AppTheme.headlineStyle.copyWith(
+                            color: AppTheme.textPrimary,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            height: 1,
+                          ),
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          unit,
+                          style: AppTheme.bodyStyle.copyWith(
+                            color: AppTheme.textSecondary,
+                            fontSize: 11.5,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -196,8 +275,13 @@ class _MetricSectionState extends State<MetricSection> {
     const double targetActiveMinutes = 45.0;
     final activeProgress = (activeMinutes / targetActiveMinutes).clamp(0.0, 1.0);
 
+    const calorieColor = Color(0xFFF97316);
+    const proteinColor = Color(0xFF3B82F6);
+    const activeColor = Color(0xFF10B981);
+    const stepColor = Color(0xFFEC4899);
+
     return SizedBox(
-      height: 180,
+      height: 175,
       child: ListView(
         scrollDirection: Axis.horizontal,
         physics: const BouncingScrollPhysics(),
@@ -207,92 +291,90 @@ class _MetricSectionState extends State<MetricSection> {
             title: 'Cân bằng Calo',
             value: netCalorie.toStringAsFixed(0),
             unit: 'kcal',
-            icon: const Icon(Icons.local_fire_department, color: Colors.white, size: 20),
-            gradientColors: const [Color(0xFFF97316), Color(0xFFEF4444)],
+            iconData: Icons.local_fire_department_rounded,
+            accentColor: calorieColor,
             onTap: () => context.push(AppRoutes.calorieBalanceDetail),
             bottomWidget: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(3),
                   child: LinearProgressIndicator(
                     value: calorieProgress,
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                    minHeight: 4,
+                    backgroundColor: calorieColor.withValues(alpha: 0.12),
+                    valueColor: const AlwaysStoppedAnimation<Color>(calorieColor),
+                    minHeight: 5,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
                 Text(
-                  'Nạp: ${totalCaloriesEaten.toStringAsFixed(0)} | Đốt: ${totalCaloriesBurned.toStringAsFixed(0)}',
-                  style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.8), fontSize: 10),
+                  'Nạp ${totalCaloriesEaten.toStringAsFixed(0)} | Đốt ${totalCaloriesBurned.toStringAsFixed(0)}',
+                  style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 10.5, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
 
           // Card 2: Protein
           MetricCard(
             title: 'Lượng Protein',
             value: eatenProtein.toStringAsFixed(0),
             unit: 'g',
-            icon: const Icon(Icons.fitness_center_outlined, color: Colors.white, size: 20),
-            gradientColors: const [Color(0xFF3B82F6), Color(0xFF8B5CF6)],
+            iconData: Icons.fitness_center_rounded,
+            accentColor: proteinColor,
             onTap: () => context.push(AppRoutes.proteinDetail),
             bottomWidget: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(3),
                   child: LinearProgressIndicator(
                     value: proteinProgress,
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                    minHeight: 4,
+                    backgroundColor: proteinColor.withValues(alpha: 0.12),
+                    valueColor: const AlwaysStoppedAnimation<Color>(proteinColor),
+                    minHeight: 5,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
                 Text(
                   'Mục tiêu: ${targetProtein.toStringAsFixed(0)} g',
-                  style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.8), fontSize: 10),
+                  style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 10.5, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
-
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
 
           // Card 3: Active Minutes
           MetricCard(
             title: 'Vận động',
             value: activeMinutes.toStringAsFixed(0),
             unit: 'phút',
-            icon: const Icon(Icons.timer_outlined, color: Colors.white, size: 20),
-            gradientColors: const [Color(0xFF10B981), Color(0xFF059669)],
+            iconData: Icons.timer_outlined,
+            accentColor: activeColor,
             onTap: () => context.push(AppRoutes.activeMinutesDetail),
             bottomWidget: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(3),
                   child: LinearProgressIndicator(
                     value: activeProgress,
-                    backgroundColor: Colors.white.withOpacity(0.2),
-                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                    minHeight: 4,
+                    backgroundColor: activeColor.withValues(alpha: 0.12),
+                    valueColor: const AlwaysStoppedAnimation<Color>(activeColor),
+                    minHeight: 5,
                   ),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 5),
                 Text(
                   'Mục tiêu: 45 phút',
-                  style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.8), fontSize: 10),
+                  style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 10.5, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
 
           // Card 4: Step Counter
           Builder(
@@ -302,25 +384,25 @@ class _MetricSectionState extends State<MetricSection> {
                 title: 'Bước chân',
                 value: NumberFormat('#,###').format(stepState.steps),
                 unit: 'bước',
-                icon: const Icon(Icons.directions_walk_rounded, color: Colors.white, size: 20),
-                gradientColors: const [Color(0xFFEC4899), Color(0xFFD946EF)],
+                iconData: Icons.directions_walk_rounded,
+                accentColor: stepColor,
                 onTap: () => context.push(AppRoutes.stepDetail),
                 bottomWidget: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(2),
+                      borderRadius: BorderRadius.circular(3),
                       child: LinearProgressIndicator(
                         value: stepState.progress,
-                        backgroundColor: Colors.white.withOpacity(0.2),
-                        valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                        minHeight: 4,
+                        backgroundColor: stepColor.withValues(alpha: 0.12),
+                        valueColor: const AlwaysStoppedAnimation<Color>(stepColor),
+                        minHeight: 5,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 5),
                     Text(
                       'Đốt: ${stepState.caloriesBurned.toStringAsFixed(0)} kcal',
-                      style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.8), fontSize: 10),
+                      style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 10.5, fontWeight: FontWeight.w500),
                     ),
                   ],
                 ),

@@ -793,7 +793,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
                   ),
                 ),
                 Text(
-                  'Gợi ý Thực đơn AI',
+                  'Gợi ý Thực Đơn',
                   style: GoogleFonts.workSans(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 const SizedBox(width: 44), // Placeholder for balance

@@ -4,9 +4,9 @@ import '../../../../core/theme/app_theme.dart';
 class SectionTitle extends StatelessWidget {
   final String title;
   final String? subtitle;
-  final String actionText;
+  final String? actionText;
 
-  const SectionTitle({super.key, required this.title, this.subtitle, required this.actionText});
+  const SectionTitle({super.key, required this.title, this.subtitle, this.actionText});
 
   @override
   Widget build(BuildContext context) {
@@ -35,8 +35,10 @@ class SectionTitle extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 8),
-        Text(actionText, style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary, fontSize: 14)),
+        if (actionText != null) ...[
+          const SizedBox(width: 8),
+          Text(actionText!, style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary, fontSize: 14)),
+        ],
       ],
     );
   }

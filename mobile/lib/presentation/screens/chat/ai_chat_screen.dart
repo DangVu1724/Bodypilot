@@ -17,9 +17,11 @@ class _AiChatScreenState extends State<AiChatScreen> {
   final ScrollController _scrollController = ScrollController();
 
   final List<String> _quickSuggestions = [
-    '🥗 Tối nay tôi nên ăn món gì?',
-    '🦵 Đau khớp gối nên tránh bài tập nào?',
+    '🍗 100g ức gà chứa bao nhiêu calo và đạm?',
+    '🌅 Ăn gì tốt và lành mạnh vào buổi sáng?',
+    '🦵 Đau khớp gối nên tránh những bài tập nào?',
     '📊 Chỉ số BMR và TDEE của tôi là bao nhiêu?',
+    '💧 Nên uống bao nhiêu nước khi tập luyện?',
     '💪 Muốn tăng cơ nhanh nên bổ sung Protein ra sao?',
   ];
 

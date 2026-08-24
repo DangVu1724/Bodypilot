@@ -336,21 +336,7 @@ class AiSuggestionBanner extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text('Gợi Ý Từ AI', style: AppTheme.semiboldStyle.copyWith(fontSize: 16)),
-            GestureDetector(
-              onTap: () {
-                _showAiOptionsBottomSheet(context);
-              },
-              child: Text(
-                'Xem tất cả',
-                style: AppTheme.semiboldStyle.copyWith(fontSize: 13, color: const Color(0xFFF07025)),
-              ),
-            ),
-          ],
-        ),
+        Text('Gợi Ý Từ AI', style: AppTheme.semiboldStyle.copyWith(fontSize: 16)),
         const SizedBox(height: 12),
         Container(
           width: double.infinity,

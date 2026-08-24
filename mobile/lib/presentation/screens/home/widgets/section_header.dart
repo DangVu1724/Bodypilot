@@ -3,12 +3,12 @@ import 'package:mobile/core/theme/app_theme.dart';
 
 class SectionHeader extends StatelessWidget {
   final String title;
-  final VoidCallback onSeeAll;
+  final VoidCallback? onSeeAll;
 
   const SectionHeader({
     super.key,
     required this.title,
-    required this.onSeeAll,
+    this.onSeeAll,
   });
 
   @override
@@ -20,13 +20,14 @@ class SectionHeader extends StatelessWidget {
           title,
           style: AppTheme.semiboldStyle.copyWith(fontSize: 18),
         ),
-        TextButton(
-          onPressed: onSeeAll,
-          child: Text(
-            'Xem tất cả',
-            style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary, fontSize: 13),
+        if (onSeeAll != null)
+          TextButton(
+            onPressed: onSeeAll,
+            child: Text(
+              'Xem tất cả',
+              style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary, fontSize: 13),
+            ),
           ),
-        ),
       ],
     );
   }

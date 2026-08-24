@@ -947,7 +947,7 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
                   ),
                 ),
                 Text(
-                  'Gợi ý Lịch tập AI',
+                  'Gợi ý Lịch Tập',
                   style: GoogleFonts.workSans(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
                 ),
                 GestureDetector(
