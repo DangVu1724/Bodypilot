@@ -35,4 +35,8 @@ public interface ExerciseRepository extends JpaRepository<Exercise, UUID> {
                      @Param("bodyPartCode") String bodyPartCode,
                      @Param("muscleCode") String muscleCode,
                      Pageable pageable);
+
+       @EntityGraph(attributePaths = { "category", "bodyPart", "targetMuscle" })
+       @Query("SELECT e FROM Exercise e")
+       java.util.List<Exercise> findAllWithRelations();
 }
