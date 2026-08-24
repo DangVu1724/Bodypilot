@@ -6,6 +6,7 @@ import 'checkin_state.dart';
 
 class CheckInCubit extends Cubit<CheckInState> {
   final UserRepository _userRepository;
+  CheckInStatusModel? lastStatus;
 
   CheckInCubit(this._userRepository) : super(CheckInInitial());
 
@@ -16,32 +17,43 @@ class CheckInCubit extends Cubit<CheckInState> {
       return;
     }
 
-    emit(CheckInLoading());
+    if (lastStatus == null) {
+      emit(CheckInLoading());
+    }
+
     try {
       final status = await _userRepository.getCheckInStatus(userId);
+      lastStatus = status;
       emit(CheckInStatusLoaded(status));
     } catch (e) {
-      emit(CheckInError(e.toString()));
+      if (lastStatus != null) {
+        emit(CheckInStatusLoaded(lastStatus!));
+      } else {
+        emit(CheckInError(e.toString()));
+      }
     }
   }
 
-  Future<void> submitCheckIn(CheckInRequestModel request) async {
+  Future<CheckInResultModel?> submitCheckIn(CheckInRequestModel request) async {
     final userId = TokenService.getUserId();
     if (userId == null) {
       emit(const CheckInError('User not logged in'));
-      return;
+      return null;
     }
 
     emit(CheckInSubmitting());
     try {
       final result = await _userRepository.submitCheckIn(userId, request);
       emit(CheckInSuccess(result));
+      return result;
     } catch (e) {
       emit(CheckInError(e.toString()));
+      return null;
     }
   }
 
   void reset() {
+    lastStatus = null;
     emit(CheckInInitial());
   }
 }

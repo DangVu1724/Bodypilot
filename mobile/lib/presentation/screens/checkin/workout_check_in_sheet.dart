@@ -5,8 +5,10 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
 import 'package:mobile/presentation/bloc/checkin/checkin_cubit.dart';
-import 'package:mobile/presentation/bloc/checkin/checkin_state.dart';
+import 'package:mobile/presentation/bloc/step/step_cubit.dart';
+import 'package:mobile/data/repositories/step_repository.dart';
 import 'package:mobile/presentation/screens/checkin/checkin_result_dialog.dart';
+import 'package:mobile/data/services/token_service.dart';
 import 'package:core_shared/models/check_in_model.dart';
 
 class WorkoutCheckInSheet extends StatefulWidget {
@@ -23,19 +25,64 @@ class _WorkoutCheckInSheetState extends State<WorkoutCheckInSheet> {
   bool _isSubmitting = false;
 
   final List<Map<String, String>> _bodyParts = [
-    {'value': 'KNEE', 'label': 'Khớp gối 🦵'},
-    {'value': 'WRIST', 'label': 'Cổ tay 🖐️'},
-    {'value': 'LOWER_BACK', 'label': 'Thắt lưng 🧘'},
-    {'value': 'SHOULDER', 'label': 'Bờ vai 🏋️'},
-    {'value': 'ANKLE', 'label': 'Cổ chân 🦶'},
+    {'value': 'KNEE', 'label': 'Khớp gối'},
+    {'value': 'WRIST', 'label': 'Cổ tay'},
+    {'value': 'LOWER_BACK', 'label': 'Thắt lưng'},
+    {'value': 'SHOULDER', 'label': 'Bờ vai'},
+    {'value': 'ANKLE', 'label': 'Cổ chân'},
   ];
 
   final List<Map<String, String>> _workoutStates = [
-    {'value': 'GOOD', 'label': 'Tập luyện tốt & Phục hồi nhanh ⚡'},
-    {'value': 'MODERATE', 'label': 'Tập luyện vừa sức & Hoàn thành >80% 😃'},
-    {'value': 'SORE', 'label': 'Cơ bắp nhức mỏi dai dẳng 😫'},
-    {'value': 'SKIPPED', 'label': 'Bỏ lỡ nhiều buổi do bận/bệnh 🤒'},
+    {'value': 'GOOD', 'label': 'Tập luyện tốt & Phục hồi nhanh'},
+    {'value': 'MODERATE', 'label': 'Tập luyện vừa sức & Hoàn thành >80%'},
+    {'value': 'SORE', 'label': 'Cơ bắp nhức mỏi dai dẳng'},
+    {'value': 'SKIPPED', 'label': 'Bỏ lỡ nhiều buổi do bận/bệnh'},
   ];
+
+  Future<Map<String, dynamic>> _fetchReal7DayWorkoutStats() async {
+    try {
+      final userId = TokenService.getUserId();
+      if (userId == null || userId.isEmpty) {
+        return {'stepCount': 0, 'caloriesBurned': 0, 'activeMinutes': 0};
+      }
+
+      final now = DateTime.now();
+      final startDate = now.subtract(const Duration(days: 6));
+      final history = await stepRepository.getStepHistory(
+        userId,
+        startDate: startDate,
+        endDate: now,
+      );
+
+      int total7DaySteps = 0;
+      double total7DayCal = 0.0;
+
+      for (var item in history) {
+        total7DaySteps += item.stepCount;
+        total7DayCal += item.caloriesBurned;
+      }
+
+      if (total7DaySteps == 0 && mounted) {
+        try {
+          final liveSteps = context.read<StepCubit>().state.steps;
+          if (liveSteps > 0) {
+            total7DaySteps = liveSteps;
+            total7DayCal = liveSteps * 0.04;
+          }
+        } catch (_) {}
+      }
+
+      int activeMinutes = (total7DaySteps / 200).round();
+
+      return {
+        'stepCount': total7DaySteps,
+        'caloriesBurned': total7DayCal.round(),
+        'activeMinutes': activeMinutes,
+      };
+    } catch (e) {
+      return {'stepCount': 0, 'caloriesBurned': 0, 'activeMinutes': 0};
+    }
+  }
 
   void _toggleInjuryPart(String code) {
     setState(() {
@@ -73,20 +120,38 @@ class _WorkoutCheckInSheetState extends State<WorkoutCheckInSheet> {
       final checkInCubit = context.read<CheckInCubit>();
       final userCubit = context.read<UserCubit>();
 
-      Navigator.pop(context); // Close sheet
+      final result = await checkInCubit.submitCheckIn(request);
+      if (result != null) {
+        final realStats = await _fetchReal7DayWorkoutStats();
 
-      await checkInCubit.submitCheckIn(request);
-      await userCubit.fetchUserProfile();
-      await checkInCubit.fetchCheckInStatus();
+        await TokenService.setWorkoutCheckInDone(true, summary: {
+          'weight': result.newWeight,
+          'weightChange': result.weightChange,
+          'activeMinutes': realStats['activeMinutes'],
+          'targetActiveMinutes': 150,
+          'stepCount': realStats['stepCount'],
+          'caloriesBurned': realStats['caloriesBurned'],
+          'recoveryStatus': _hasNewInjury ? 'Cần chú ý chấn thương 🩹' : 'Phục hồi tốt ⚡',
+          'aiFeedback': result.aiFeedback.isNotEmpty ? result.aiFeedback : result.advice,
+        });
 
-      if (mounted) {
-        final state = checkInCubit.state;
-        if (state is CheckInSuccess) {
+        await userCubit.fetchUserProfile();
+        await checkInCubit.fetchCheckInStatus();
+
+        if (mounted) {
+          final navigator = Navigator.of(context);
+          final rootContext = navigator.context;
+          navigator.pop(); // Close sheet
+
           showDialog(
-            context: context,
-            builder: (_) => CheckInResultDialog(result: state.result),
+            context: rootContext,
+            builder: (_) => CheckInResultDialog(result: result),
           );
         }
+      } else {
+        setState(() {
+          _isSubmitting = false;
+        });
       }
     } catch (e) {
       setState(() {

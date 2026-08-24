@@ -268,38 +268,42 @@ public class CheckInServiceImpl implements CheckInService {
 
     private String generateAiCheckInFeedback(Double prevWeight, Double newWeight, double weightChange,
                                               CheckInRequest request, CalorieCalculationResult calc) {
-        if (geminiClient.isApiKeyConfigured()) {
-            try {
-                String prompt = String.format(
-                        "Người dùng vừa hoàn thành khảo sát check-in định kỳ:\n" +
-                        "- Cân nặng trước: %.1f kg, Cân nặng mới: %.1f kg (Thay đổi: %+.1f kg)\n" +
-                        "- Mức độ tuân thủ: %s, Thể trạng: %s, Mức độ đói: %s\n" +
-                        "- TDEE mới: %.0f kcal, Calo mục tiêu mới: %.0f kcal\n\n" +
-                        "Hãy viết một nhận xét ngắn (3-4 câu bằng tiếng Việt) đánh giá tiến độ của người dùng, đưa ra lời khuyên chân thành và truyền động lực cho tuần tiếp theo.",
-                        prevWeight, newWeight, weightChange,
-                        translateAdherence(request.getAdherenceLevel()),
-                        translateEnergy(request.getEnergyLevel()),
-                        translateHunger(request.getHungerLevel()),
-                        calc.getTdee(), calc.getTargetCalories()
-                );
-                String systemInstruction = "Bạn là chuyên gia huấn luyện viên thể hình và dinh dưỡng AI cá nhân. Hãy đưa ra nhận xét ngắn gọn, chu đáo, tích cực và truyền cảm hứng.";
-                return geminiClient.callGemini(prompt, systemInstruction);
-            } catch (Exception e) {
-                log.warn("Gemini AI call failed during check-in feedback, using fallback response: {}", e.getMessage());
-            }
-        }
-
-        // Fallback feedback logic
         StringBuilder sb = new StringBuilder();
-        if (weightChange < 0) {
-            sb.append(String.format("Chúc mừng bạn đã giảm được %.1f kg trong chu kỳ vừa qua! ", Math.abs(weightChange)));
-        } else if (weightChange > 0) {
-            sb.append(String.format("Cân nặng của bạn đã tăng %.1f kg. ", weightChange));
-        } else {
-            sb.append("Cân nặng của bạn đang giữ mức ổn định tuyệt vời! ");
-        }
-        sb.append(String.format("Năng lượng tiêu thụ hàng ngày (TDEE) mới của bạn được điều chỉnh là %.0f kcal với mức calo mục tiêu %.0f kcal/ngày. Hãy giữ vững phong độ cho chu kỳ tiếp theo!", calc.getTdee(), calc.getTargetCalories()));
 
+        // 1. Phân tích xu hướng biến động cân nặng
+        if (weightChange < -0.1) {
+            double absChange = Math.abs(weightChange);
+            if (absChange >= 0.3 && absChange <= 1.0) {
+                sb.append(String.format("Chúc mừng bạn! Cân nặng đã giảm %.1f kg theo tốc độ an toàn và khoa học (0.5 - 1 kg/tuần). ", absChange));
+            } else if (absChange > 1.0) {
+                sb.append(String.format("Bạn đã giảm %.1f kg trong tuần qua. Tốc độ này khá nhanh, hãy chú ý nạp đủ protein để bảo toàn khối lượng cơ bắp. ", absChange));
+            } else {
+                sb.append(String.format("Cân nặng của bạn giảm nhẹ %.1f kg, tiến trình đang đi đúng hướng! ", absChange));
+            }
+        } else if (weightChange > 0.1) {
+            if (weightChange >= 0.3 && weightChange <= 0.8) {
+                sb.append(String.format("Cân nặng tăng %.1f kg, rất phù hợp với tiến trình phát triển cơ bắp và thể trạng. ", weightChange));
+            } else {
+                sb.append(String.format("Cân nặng của bạn đã tăng %.1f kg so với chu kỳ trước. ", weightChange));
+            }
+        } else {
+            sb.append("Cân nặng của bạn đang giữ ở mức duy trì rất ổn định! ");
+        }
+
+        // 2. Phân tích chỉ số Calo & TDEE theo công thức Mifflin-St Jeor chuẩn khoa học
+        sb.append(String.format("Dựa trên chỉ số sinh học mới (BMR: %.0f kcal, TDEE: %.0f kcal), mục tiêu calo mỗi ngày được điều chỉnh là %.0f kcal/ngày. ",
+                calc.getBmr(), calc.getTdee(), calc.getTargetCalories()));
+
+        // 3. Đánh giá tình trạng thể trạng & chấn thương
+        if (Boolean.TRUE.equals(request.getHasInjury()) && request.getInjuredParts() != null && !request.getInjuredParts().isEmpty()) {
+            sb.append("Hệ thống đã ghi nhận tình trạng chấn thương và tự động loại bỏ các bài tập có rủi ro cho các vùng bị ảnh hưởng. ");
+        } else if ("ENERGETIC".equalsIgnoreCase(request.getEnergyLevel())) {
+            sb.append("Tuần qua bạn tràn đầy năng lượng, hãy tiếp tục duy trì nhịp độ thể lực tuyệt vời này nhé! ");
+        } else if ("TIRED".equalsIgnoreCase(request.getEnergyLevel())) {
+            sb.append("Bạn ghi nhận có dấu hiệu mệt mỏi; hãy chú ý nghỉ ngơi, ngủ đủ 7-8 tiếng và uống đủ nước. ");
+        }
+
+        sb.append("Hãy giữ vững phong độ cho tuần tiếp theo!");
         return sb.toString();
     }
 
