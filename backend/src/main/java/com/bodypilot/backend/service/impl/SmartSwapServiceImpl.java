@@ -35,6 +35,8 @@ import com.bodypilot.backend.service.impl.diet.DietSuggestionHelper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+import com.bodypilot.backend.model.enums.FoodType;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -82,10 +84,11 @@ public class SmartSwapServiceImpl implements SmartSwapService {
         String targetCategoryCode = resolveCategoryCode(targetFood);
         List<String> allowedTargetCategories = CATEGORY_SWAP_MAP.getOrDefault(targetCategoryCode, List.of(targetCategoryCode));
 
-        // Lọc món ăn: khác món hiện tại, không dị ứng, calo > 0, và BẮT BUỘC thuộc nhóm ngành hàng tương đương
+        // Lọc món ăn: khác món hiện tại, không dị ứng, BẮT BUỘC thuộc kiểu DISH / BOTH (bỏ INGREDIENT), calo > 0, và thuộc nhóm tương đương
         List<Food> filteredFoods = candidatePool.stream()
                 .filter(food -> !food.getId().equals(targetFood.getId()))
                 .filter(food -> !allergicFoodIds.contains(food.getId()))
+                .filter(food -> food.getType() == FoodType.DISH || food.getType() == FoodType.BOTH)
                 .filter(food -> food.getCaloriesPer100g() != null
                         && food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) > 0)
                 .filter(food -> {
@@ -94,12 +97,13 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                 })
                 .collect(Collectors.toList());
 
-        // Nếu quá ít món thuộc cùng nhóm, nới lỏng theo đặc tính protein / carbs để luôn có gợi ý
+        // Nếu quá ít món thuộc cùng nhóm, nới lỏng theo đặc tính protein / carbs nhưng vẫn BẮT BUỘC là DISH / BOTH
         if (filteredFoods.size() < 3) {
             boolean isHighProtein = targetFood.getProteinPer100g() != null && targetFood.getProteinPer100g().doubleValue() >= 8.0;
             filteredFoods = candidatePool.stream()
                     .filter(food -> !food.getId().equals(targetFood.getId()))
                     .filter(food -> !allergicFoodIds.contains(food.getId()))
+                    .filter(food -> food.getType() == FoodType.DISH || food.getType() == FoodType.BOTH)
                     .filter(food -> food.getCaloriesPer100g() != null && food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) > 0)
                     .filter(food -> {
                         if (isHighProtein) {
@@ -249,63 +253,13 @@ public class SmartSwapServiceImpl implements SmartSwapService {
     }
 
     private String resolveCategoryCode(Food food) {
-        if (food == null) return "OTHER";
-        if (food.getCategory() != null && food.getCategory().getCode() != null) {
-            String code = food.getCategory().getCode().toUpperCase().trim();
-            if ("VEG".equals(code)) return "VEGETABLE";
-            if (CATEGORY_SWAP_MAP.containsKey(code)) return code;
+        if (food == null || food.getCategory() == null || food.getCategory().getCode() == null) {
+            return "OTHERS";
         }
-
-        String name = "";
-        if (food.getCategory() != null && food.getCategory().getName() != null) {
-            name += " " + food.getCategory().getName().toLowerCase();
-        }
-        if (food.getName() != null) {
-            name += " " + food.getName().toLowerCase();
-        }
-
-        if (name.contains("thịt") || name.contains("gà") || name.contains("trứng") || name.contains("lợn") || name.contains("heo") || name.contains("bò") || name.contains("chả")) {
-            return "MEAT";
-        }
-        if (name.contains("hải sản") || name.contains("cá") || name.contains("tôm") || name.contains("mực") || name.contains("cua") || name.contains("ốc")) {
-            return "SEAFOOD";
-        }
-        if (name.contains("trái cây") || name.contains("hoa quả") || name.contains("táo") || name.contains("chuối") || name.contains("cam") || name.contains("dưa")) {
-            return "FRUIT";
-        }
-        if (name.contains("đồ uống") || name.contains("sinh tố") || name.contains("nước ép") || name.contains("trà") || name.contains("cà phê")) {
-            return "BEVERAGE";
-        }
-        if (name.contains("sữa") || name.contains("hạt") || name.contains("sữa chua") || name.contains("phô mai")) {
-            return "DAIRY";
-        }
-        if (name.contains("rau") || name.contains("củ") || name.contains("salad") || name.contains("nấm") || name.contains("su su") || name.contains("cà rốt")) {
+        String code = food.getCategory().getCode().toUpperCase().trim();
+        if ("VEG".equals(code)) {
             return "VEGETABLE";
         }
-        if (name.contains("cơm") || name.contains("ngũ cốc") || name.contains("yến mạch") || name.contains("xôi") || name.contains("cháo")) {
-            return "GRAIN";
-        }
-        if (name.contains("phở") || name.contains("bún") || name.contains("mì") || name.contains("hủ tiếu") || name.contains("canh") || name.contains("bánh canh")) {
-            return "NOODLE_SOUP";
-        }
-        if (name.contains("bánh mì") || name.contains("món khô") || name.contains("bánh")) {
-            return "DRY_DISH";
-        }
-
-        double p = food.getProteinPer100g() != null ? food.getProteinPer100g().doubleValue() : 0.0;
-        double c = food.getCarbsPer100g() != null ? food.getCarbsPer100g().doubleValue() : 0.0;
-        double cal = food.getCaloriesPer100g() != null ? food.getCaloriesPer100g().doubleValue() : 0.0;
-
-        if (p >= 8.0 || (cal > 0 && p / cal > 0.04)) {
-            return "MEAT";
-        }
-        if (c >= 20.0) {
-            return "GRAIN";
-        }
-        if (cal > 0 && cal < 50.0 && c < 10.0 && p < 3.0) {
-            return "VEGETABLE";
-        }
-
-        return "MEAT";
+        return code;
     }
 }

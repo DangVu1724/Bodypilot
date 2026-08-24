@@ -96,7 +96,8 @@ class FoodDatabaseHelper {
   Future<List<FoodModel>> searchFoodsOffline(
     String query, {
     String? categoryId,
-    int limit = 10,
+    String? type,
+    int limit = 100,
     int offset = 0,
   }) async {
     final db = await database;
@@ -113,6 +114,12 @@ class FoodDatabaseHelper {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
       whereClause += 'categoryId = ?';
       whereArgs.add(categoryId);
+    }
+
+    if (type != null && type.isNotEmpty) {
+      if (whereClause.isNotEmpty) whereClause += ' AND ';
+      whereClause += '(type = ? OR type = "BOTH")';
+      whereArgs.add(type);
     }
     
     final List<Map<String, dynamic>> maps = await db.query(

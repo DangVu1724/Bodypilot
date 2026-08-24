@@ -17,8 +17,9 @@ class FoodRepository {
   Future<PaginatedResponse<FoodModel>> searchFoods(
     String query, {
     String? categoryId,
+    String? type,
     int page = 0,
-    int size = 10,
+    int size = 50,
     bool forceRefresh = false,
   }) async {
     final trimmedQuery = query.trim();
@@ -50,7 +51,8 @@ class FoodRepository {
         final localFoods = await FoodDatabaseHelper.instance.searchFoodsOffline(
           trimmedQuery,
           categoryId: categoryId,
-          limit: size,
+          type: type,
+          limit: size < 50 ? 50 : size,
           offset: page * size,
         );
 
