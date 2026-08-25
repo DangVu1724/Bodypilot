@@ -8,8 +8,10 @@ RUN mvn clean package -DskipTests
 # Run Stage
 FROM eclipse-temurin:17-jre
 WORKDIR /app
+RUN apt-get update && apt-get install -y libgomp1 && rm -rf /var/lib/apt/lists/*
 COPY --from=build /app/target/*.jar app.jar
 RUN mkdir -p secrets
 EXPOSE 8080
 ENV PORT=8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
+
