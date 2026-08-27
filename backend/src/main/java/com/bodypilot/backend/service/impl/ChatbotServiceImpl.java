@@ -26,6 +26,7 @@ import com.bodypilot.backend.rag.FitnessAiAssistant;
 @Slf4j
 public class ChatbotServiceImpl implements ChatbotService {
 
+    private final UserCheckInHistoryRepository userCheckInHistoryRepository;
     private final UserRepository userRepository;
     private final UserGoalRepository goalRepository;
     private final UserMetricHistoryRepository metricHistoryRepository;
@@ -53,9 +54,10 @@ public class ChatbotServiceImpl implements ChatbotService {
 
         List<UserAllergy> allergies = allergyRepository.findAllByUserIdAndIsActiveTrue(userId);
         List<UserInjury> injuries = userInjuryRepository.findAllByUserId(userId);
+        UserCheckInHistory latestCheckIn = userCheckInHistoryRepository.findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
 
-        // 1. Grounding Context String (Hồ sơ người dùng)
-        String userContext = buildUserContext(profile, activeGoal, latestMetric, allergies, injuries);
+        // 1. Grounding Context String (Hồ sơ người dùng + Lần Check-in mới nhất)
+        String userContext = buildUserContext(profile, activeGoal, latestMetric, allergies, injuries, latestCheckIn);
 
         // 2. Hybrid RAG Retrieval Step: Kết hợp SQL Relational Search + Vector Similarity Search
         String retrievedDbContext = retrieveRelevantDatabaseContext(request.getUserQuery());
@@ -232,7 +234,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         return trimmed;
     }
 
-    private String buildUserContext(UserProfile profile, UserGoal goal, UserMetricHistory metric, List<UserAllergy> allergies, List<UserInjury> injuries) {
+    private String buildUserContext(UserProfile profile, UserGoal goal, UserMetricHistory metric, List<UserAllergy> allergies, List<UserInjury> injuries, UserCheckInHistory latestCheckIn) {
         StringBuilder sb = new StringBuilder();
         sb.append("Tên: ").append(profile != null && profile.getFullName() != null ? profile.getFullName() : "Người dùng BodyPilot").append("\n");
 
@@ -261,6 +263,22 @@ public class ChatbotServiceImpl implements ChatbotService {
                     .map(i -> i.getInjury().getName())
                     .collect(Collectors.joining(", "));
             sb.append("Chấn thương hiện tại: ").append(injuryList).append("\n");
+        }
+
+        if (latestCheckIn != null) {
+            sb.append("[TRẠNG THÁI SỨC KHỎE & CHECK-IN GẦN NHẤT (").append(latestCheckIn.getCheckInDate()).append(")]:\n");
+            if (latestCheckIn.getEnergyLevel() != null) {
+                sb.append("- Mức năng lượng/thể trạng: ").append(latestCheckIn.getEnergyLevel()).append("\n");
+            }
+            if (latestCheckIn.getWorkoutState() != null) {
+                sb.append("- Trạng thái cơ bắp/tập luyện: ").append(latestCheckIn.getWorkoutState()).append("\n");
+            }
+            if (latestCheckIn.getHungerLevel() != null) {
+                sb.append("- Cảm giác thèm ăn/đói: ").append(latestCheckIn.getHungerLevel()).append("\n");
+            }
+            if (latestCheckIn.getNotes() != null && !latestCheckIn.getNotes().trim().isEmpty()) {
+                sb.append("- Ghi chú mệt mỏi/thể trạng từ người dùng: ").append(latestCheckIn.getNotes()).append("\n");
+            }
         }
 
         return sb.toString();

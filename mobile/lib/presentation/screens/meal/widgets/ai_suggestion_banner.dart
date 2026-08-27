@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/app_theme.dart';
-import 'package:mobile/presentation/screens/meal/allergy_survey_screen.dart';
-import 'package:mobile/presentation/screens/meal/ai_meal_suggestion_screen.dart';
-import 'package:mobile/data/services/token_service.dart';
 import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
+import 'package:mobile/data/services/token_service.dart';
+import 'package:mobile/presentation/screens/meal/ai_meal_suggestion_screen.dart';
+import 'package:mobile/presentation/screens/meal/allergy_survey_screen.dart';
 
 class AiSuggestionBanner extends StatelessWidget {
   const AiSuggestionBanner({super.key});
@@ -24,47 +24,90 @@ class AiSuggestionBanner extends StatelessWidget {
         final dateStr = "${DateFormat('dd/MM').format(startDate)} - ${DateFormat('dd/MM').format(endDate)}";
         final bool? shouldProceed = await showDialog<bool>(
           context: context,
-          builder: (dialogContext) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius: BorderRadius.circular(10),
+          builder: (dialogContext) => Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            backgroundColor: Colors.white,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Top Icon
+                  Container(
+                    width: 76,
+                    height: 76,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFF2EC),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.edit_calendar_rounded,
+                      color: Color(0xFFFF6B2C),
+                      size: 38,
+                    ),
                   ),
-                  child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 24),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Phát hiện thực đơn sẵn',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  const SizedBox(height: 20),
+
+                  // Title
+                  const Text(
+                    'Đã phát hiện thực đơn sẵn',
+                    style: TextStyle(
+                      fontSize: 19,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1E293B),
+                    ),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-              ],
-            ),
-            content: Text(
-              'Bạn đang có thực đơn sẵn trong ${daysWithFood.length} ngày (khoảng $dateStr).\n\nNếu tiếp tục, AI sẽ lên thực đơn gợi ý mới cho bạn xem trước. Thực đơn cũ sẽ bị thay thế khi bạn bấm Áp dụng.\n\nBạn có muốn tiếp tục nhờ AI tạo thực đơn không?',
-              style: const TextStyle(fontSize: 14, color: Color(0xFF475569), height: 1.4),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+
+                  // Subtitle Content
+                  Column(
+                    children: [
+                      Text(
+                        'Bạn đang có thực đơn sẵn trong ${daysWithFood.length} ngày\n($dateStr).',
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.45),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Tiếp tục, AI sẽ lên thực đơn gợi ý mới\ncho bạn xem trước.',
+                        style: TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.45),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Action Buttons
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF6B2C),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Tiếp tục tạo với AI',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text(
+                      'Hủy',
+                      style: TextStyle(fontSize: 15, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
               ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: const Text('Tiếp tục tạo với AI', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ],
+            ),
           ),
         );
 
@@ -75,10 +118,11 @@ class AiSuggestionBanner extends StatelessWidget {
     }
 
     if (context.mounted) {
-      Navigator.of(
-        context,
-        rootNavigator: true,
-      ).push(MaterialPageRoute(builder: (context) => AiMealSuggestionScreen(days: days, startTomorrow: startTomorrow)));
+      Navigator.of(context, rootNavigator: true).push(
+        MaterialPageRoute(
+          builder: (context) => AiMealSuggestionScreen(days: days, startTomorrow: startTomorrow),
+        ),
+      );
     }
   }
 
@@ -319,10 +363,7 @@ class AiSuggestionBanner extends StatelessWidget {
           onCompleted: () {
             Navigator.of(surveyContext).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => AiMealSuggestionScreen(
-                  days: days,
-                  startTomorrow: startTomorrow,
-                ),
+                builder: (context) => AiMealSuggestionScreen(days: days, startTomorrow: startTomorrow),
               ),
             );
           },
@@ -345,7 +386,7 @@ class AiSuggestionBanner extends StatelessWidget {
             color: const Color(0xFF1E293B), // Dark blue/slate color
             borderRadius: BorderRadius.circular(24),
             image: const DecorationImage(
-              image: AssetImage('assets/images/fruit.png'), // Add an abstract or dark texture here if available
+              image: AssetImage('assets/images/ai_meal.png'), 
               fit: BoxFit.cover,
               opacity: 0.3,
             ),

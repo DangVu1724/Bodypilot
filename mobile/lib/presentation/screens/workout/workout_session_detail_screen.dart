@@ -267,11 +267,28 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
                   const SizedBox(height: 4),
                   Row(
                     children: [
-                      const Icon(Icons.access_time, size: 14, color: AppTheme.textSecondary),
+                      if (ex.sets != null && ex.sets! > 0) ...[
+                        const Icon(Icons.fitness_center, size: 13, color: AppTheme.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${ex.sets} sets ${ex.reps != null ? '× ${ex.reps} reps' : ''}',
+                          style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 12),
+                        ),
+                        const SizedBox(width: 10),
+                      ] else if (ex.durationMinutes != null && ex.durationMinutes! > 0) ...[
+                        const Icon(Icons.access_time, size: 13, color: AppTheme.primary),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Tập: ${ex.durationMinutes}m',
+                          style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 12),
+                        ),
+                        const SizedBox(width: 10),
+                      ],
+                      const Icon(Icons.timer_outlined, size: 13, color: Colors.blue),
                       const SizedBox(width: 4),
                       Text(
-                        '${ex.durationMinutes ?? 10}:00',
-                        style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 12),
+                        'Nghỉ: ${ex.restSeconds ?? 60}s',
+                        style: AppTheme.bodyStyle.copyWith(color: Colors.blue.shade700, fontSize: 12, fontWeight: FontWeight.w500),
                       ),
                     ],
                   ),

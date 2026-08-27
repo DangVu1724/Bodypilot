@@ -25,6 +25,7 @@ import com.bodypilot.backend.model.entity.user.User;
 import com.bodypilot.backend.model.entity.user.UserAllergy;
 import com.bodypilot.backend.model.entity.user.UserInjury;
 import com.bodypilot.backend.model.entity.workout.Exercise;
+import com.bodypilot.backend.model.enums.FoodType;
 import com.bodypilot.backend.repository.ExerciseRepository;
 import com.bodypilot.backend.repository.FoodRepository;
 import com.bodypilot.backend.repository.UserAllergyRepository;
@@ -34,8 +35,6 @@ import com.bodypilot.backend.service.impl.diet.DietSuggestionHelper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import com.bodypilot.backend.model.enums.FoodType;
 
 @Service
 @RequiredArgsConstructor
@@ -82,9 +81,11 @@ public class SmartSwapServiceImpl implements SmartSwapService {
         List<Food> candidatePool = foodRepository.findAllWithRelations();
 
         String targetCategoryCode = resolveCategoryCode(targetFood);
-        List<String> allowedTargetCategories = CATEGORY_SWAP_MAP.getOrDefault(targetCategoryCode, List.of(targetCategoryCode));
+        List<String> allowedTargetCategories = CATEGORY_SWAP_MAP.getOrDefault(targetCategoryCode,
+                List.of(targetCategoryCode));
 
-        // Lọc món ăn: khác món hiện tại, không dị ứng, BẮT BUỘC thuộc kiểu DISH / BOTH (bỏ INGREDIENT), calo > 0, và thuộc nhóm tương đương
+        // Lọc món ăn: khác món hiện tại, không dị ứng, BẮT BUỘC thuộc kiểu DISH / BOTH
+        // (bỏ INGREDIENT), calo > 0, và thuộc nhóm tương đương
         List<Food> filteredFoods = candidatePool.stream()
                 .filter(food -> !food.getId().equals(targetFood.getId()))
                 .filter(food -> !allergicFoodIds.contains(food.getId()))
@@ -97,14 +98,17 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                 })
                 .collect(Collectors.toList());
 
-        // Nếu quá ít món thuộc cùng nhóm, nới lỏng theo đặc tính protein / carbs nhưng vẫn BẮT BUỘC là DISH / BOTH
+        // Nếu quá ít món thuộc cùng nhóm, nới lỏng theo đặc tính protein / carbs nhưng
+        // vẫn BẮT BUỘC là DISH / BOTH
         if (filteredFoods.size() < 3) {
-            boolean isHighProtein = targetFood.getProteinPer100g() != null && targetFood.getProteinPer100g().doubleValue() >= 8.0;
+            boolean isHighProtein = targetFood.getProteinPer100g() != null
+                    && targetFood.getProteinPer100g().doubleValue() >= 8.0;
             filteredFoods = candidatePool.stream()
                     .filter(food -> !food.getId().equals(targetFood.getId()))
                     .filter(food -> !allergicFoodIds.contains(food.getId()))
                     .filter(food -> food.getType() == FoodType.DISH || food.getType() == FoodType.BOTH)
-                    .filter(food -> food.getCaloriesPer100g() != null && food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) > 0)
+                    .filter(food -> food.getCaloriesPer100g() != null
+                            && food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) > 0)
                     .filter(food -> {
                         if (isHighProtein) {
                             return food.getProteinPer100g() != null && food.getProteinPer100g().doubleValue() >= 6.0;
@@ -114,13 +118,9 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                     .collect(Collectors.toList());
         }
 
-        // Xáo trộn nhẹ để đa dạng danh sách nhưng vẫn ưu tiên các món hàng đầu
-        Collections.shuffle(filteredFoods);
-        List<Food> selectedFoods = filteredFoods.stream().limit(15).collect(Collectors.toList());
-
         List<FoodSmartSwapCandidateDTO> candidates = new ArrayList<>();
 
-        for (Food food : selectedFoods) {
+        for (Food food : filteredFoods) {
             BigDecimal recFactor = targetCal.divide(food.getCaloriesPer100g(), 4, RoundingMode.HALF_UP);
             BigDecimal recQuantity = recFactor.multiply(new BigDecimal("100")).setScale(1, RoundingMode.HALF_UP);
 
@@ -185,6 +185,7 @@ public class SmartSwapServiceImpl implements SmartSwapService {
 
         return candidates.stream()
                 .sorted(Comparator.comparing(FoodSmartSwapCandidateDTO::getMatchScore).reversed())
+                .limit(15)
                 .collect(Collectors.toList());
     }
 

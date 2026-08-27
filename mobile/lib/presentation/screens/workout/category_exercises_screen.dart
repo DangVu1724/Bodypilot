@@ -8,7 +8,6 @@ import 'package:mobile/presentation/widgets/smooth_loading_overlay.dart';
 import '../../../data/repositories/exercise_repository.dart';
 import '../../bloc/workout/exercise_cubit.dart';
 import '../../bloc/workout/exercise_state.dart';
-import 'widgets/workout_skeleton.dart';
 import 'exercise_detail_screen.dart';
 
 class CategoryExercisesScreen extends StatefulWidget {
@@ -213,7 +212,10 @@ class _CategoryExercisesScreenState extends State<CategoryExercisesScreen> {
                             child: SizedBox(
                               width: 24,
                               height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2.5, valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary)),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2.5,
+                                valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primary),
+                              ),
                             ),
                           ),
                           const SizedBox(height: 10),
@@ -222,7 +224,47 @@ class _CategoryExercisesScreenState extends State<CategoryExercisesScreen> {
                     );
                   }
                   if (state is ExerciseError) {
-                    return Center(child: Text(state.message));
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(20),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.withValues(alpha: 0.12),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(Icons.wifi_off_rounded, color: Colors.orange, size: 40),
+                          ),
+                          const SizedBox(height: 16),
+                          Text('Chế độ Ngoại Tuyến (Offline)', style: AppTheme.headlineStyle.copyWith(fontSize: 16)),
+                          const SizedBox(height: 8),
+                          Text(
+                            state.message,
+                            textAlign: TextAlign.center,
+                            style: AppTheme.bodyStyle.copyWith(color: Colors.grey.shade600, fontSize: 13),
+                          ),
+                          const SizedBox(height: 20),
+                          ElevatedButton.icon(
+                            onPressed: () {
+                              context.read<ExerciseCubit>().fetchExercisesByCategory(
+                                widget.category.id,
+                                forceRefresh: true,
+                              );
+                            },
+                            icon: const Icon(Icons.refresh_rounded, size: 18),
+                            label: const Text('Thử Lại'),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppTheme.primary,
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
                   }
                   return const SizedBox.shrink();
                 },
@@ -236,8 +278,10 @@ class _CategoryExercisesScreenState extends State<CategoryExercisesScreen> {
 
   Widget _buildExerciseCard(BuildContext context, ExerciseModel exercise) {
     return InkWell(
-      onTap: () => Navigator.of(context, rootNavigator: true)
-          .push(MaterialPageRoute(builder: (context) => ExerciseDetailScreen(exercise: exercise))),
+      onTap: () => Navigator.of(
+        context,
+        rootNavigator: true,
+      ).push(MaterialPageRoute(builder: (context) => ExerciseDetailScreen(exercise: exercise))),
       borderRadius: BorderRadius.circular(20),
       child: Container(
         padding: const EdgeInsets.all(12),

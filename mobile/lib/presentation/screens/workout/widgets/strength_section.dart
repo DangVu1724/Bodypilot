@@ -17,7 +17,50 @@ class StrengthSection extends StatelessWidget {
         if (state is ExerciseLoading) {
           return const ExerciseHorizontalSkeleton();
         } else if (state is ExerciseError) {
-          return SizedBox(height: 200, child: Center(child: Text('Error: ${state.message}')));
+          return Container(
+            margin: const EdgeInsets.only(top: 8),
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.9),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.white.withValues(alpha: 0.5)),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.wifi_off_rounded, color: Colors.orange, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Chưa thể tải bài tập',
+                        style: AppTheme.headlineStyle.copyWith(fontSize: 14, color: const Color(0xFF1E293B)),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        state.message,
+                        style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: const Color(0xFF64748B)),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.refresh_rounded, color: AppTheme.primary),
+                  onPressed: () {
+                    context.read<ExerciseCubit>().fetchStrengthExercises(forceRefresh: true);
+                  },
+                ),
+              ],
+            ),
+          );
         } else if (state is ExerciseLoaded) {
           final exercises = state.exercises;
 
@@ -27,7 +70,7 @@ class StrengthSection extends StatelessWidget {
 
           return Column(
             children: [
-              SectionTitle(title: 'Sức Mạnh & Cơ Bắp', subtitle: '(${state.totalElements})', actionText: 'Xem tất cả'),
+              SectionTitle(title: 'Sức Mạnh & Cơ Bắp', subtitle: '(${state.totalElements})'),
               const SizedBox(height: 12),
               SizedBox(
                 height: 180,

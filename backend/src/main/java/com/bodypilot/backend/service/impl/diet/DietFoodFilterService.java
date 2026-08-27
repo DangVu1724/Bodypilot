@@ -86,7 +86,8 @@ public class DietFoodFilterService {
 
         return foods.stream()
                 .filter(f -> (f.getId() != null && f.getId().equals(MANDATORY_RICE_ID)) || (
-                        (allergies == null || allergies.stream().noneMatch(allergy -> isAllergicFood(f, allergy)))
+                        Boolean.TRUE.equals(f.getIsRecommended())
+                        && (allergies == null || allergies.stream().noneMatch(allergy -> isAllergicFood(f, allergy)))
                         && (diets == null || diets.stream().allMatch(diet -> isDietCompliant(f, diet)))
                         && (dislikes == null || dislikes.stream().noneMatch(dislike -> isDislikedFood(f, dislike)))
                 ))

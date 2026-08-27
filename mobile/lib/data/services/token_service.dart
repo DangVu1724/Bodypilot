@@ -137,4 +137,51 @@ class TokenService {
   static String getFocusBodyPart() {
     return _prefs?.getString('focus_body_part') ?? 'NONE';
   }
+
+  static const String _mealCheckInSummaryKey = 'meal_checkin_summary';
+  static const String _workoutCheckInSummaryKey = 'workout_checkin_summary';
+  static const String _isMealCheckInDoneKey = 'is_meal_checkin_done';
+  static const String _isWorkoutCheckInDoneKey = 'is_workout_checkin_done';
+
+  static bool isMealCheckInDone() {
+    return _prefs?.getBool(_isMealCheckInDoneKey) ?? false;
+  }
+
+  static Future<void> setMealCheckInDone(bool isDone, {Map<String, dynamic>? summary}) async {
+    await _prefs?.setBool(_isMealCheckInDoneKey, isDone);
+    if (summary != null) {
+      await _prefs?.setString(_mealCheckInSummaryKey, jsonEncode(summary));
+    }
+  }
+
+  static Map<String, dynamic>? getMealCheckInSummary() {
+    final raw = _prefs?.getString(_mealCheckInSummaryKey);
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        return jsonDecode(raw) as Map<String, dynamic>;
+      } catch (_) {}
+    }
+    return null;
+  }
+
+  static bool isWorkoutCheckInDone() {
+    return _prefs?.getBool(_isWorkoutCheckInDoneKey) ?? false;
+  }
+
+  static Future<void> setWorkoutCheckInDone(bool isDone, {Map<String, dynamic>? summary}) async {
+    await _prefs?.setBool(_isWorkoutCheckInDoneKey, isDone);
+    if (summary != null) {
+      await _prefs?.setString(_workoutCheckInSummaryKey, jsonEncode(summary));
+    }
+  }
+
+  static Map<String, dynamic>? getWorkoutCheckInSummary() {
+    final raw = _prefs?.getString(_workoutCheckInSummaryKey);
+    if (raw != null && raw.isNotEmpty) {
+      try {
+        return jsonDecode(raw) as Map<String, dynamic>;
+      } catch (_) {}
+    }
+    return null;
+  }
 }

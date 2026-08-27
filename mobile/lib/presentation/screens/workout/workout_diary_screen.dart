@@ -96,6 +96,7 @@ class _WorkoutDiaryScreenState extends State<WorkoutDiaryScreen> {
               final selectedDate = state.selectedDate ?? DateTime.now();
               showModalBottomSheet(
                 context: context,
+                useRootNavigator: true,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
                 builder: (context) => AddExerciseBottomSheet(selectedDate: selectedDate),
@@ -413,6 +414,9 @@ class _WorkoutDiaryScreenState extends State<WorkoutDiaryScreen> {
                   exercise: exercise,
                   dailyWorkoutItemId: item.id,
                   selectedDate: selectedDate,
+                  sets: item.setsSnapshot,
+                  reps: item.repsSnapshot,
+                  restSeconds: item.restSecondsSnapshot,
                 ),
               ),
             );
@@ -522,7 +526,11 @@ class _WorkoutDiaryScreenState extends State<WorkoutDiaryScreen> {
     }
     if (item.durationMinutesSnapshot != null && item.durationMinutesSnapshot! > 0) {
       if (sb.isNotEmpty) sb.write(' • ');
-      sb.write('${item.durationMinutesSnapshot}m');
+      sb.write('Tập: ${item.durationMinutesSnapshot}m');
+    }
+    if (item.restSecondsSnapshot != null && item.restSecondsSnapshot! > 0) {
+      if (sb.isNotEmpty) sb.write(' • ');
+      sb.write('Nghỉ: ${item.restSecondsSnapshot}s');
     }
     if (item.distanceKmSnapshot != null && item.distanceKmSnapshot! > 0) {
       if (sb.isNotEmpty) sb.write(' • ');

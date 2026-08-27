@@ -57,8 +57,16 @@ class SignupCubit extends Cubit<SignupState> {
       await authRepository.register(state.email, state.password, state.fullName);
       emit(state.copyWith(status: SignupStatus.success));
     } catch (e) {
-      emit(state.copyWith(status: SignupStatus.failure, errorMessage: e.toString().replaceAll('Exception: ', '')));
+      emit(state.copyWith(status: SignupStatus.failure, errorMessage: _formatErrorMessage(e)));
     }
+  }
+
+  String _formatErrorMessage(dynamic error) {
+    final str = error.toString();
+    if (str.contains('DioException') || str.contains('SocketException') || str.contains('connection error') || str.contains('Failed to connect') || str.contains('NetworkException') || str.contains('network_error')) {
+      return 'Không có kết nối mạng. Vui lòng kiểm tra Wifi/4G và thử lại.';
+    }
+    return str.replaceAll('Exception: ', '');
   }
 
   void reset() {

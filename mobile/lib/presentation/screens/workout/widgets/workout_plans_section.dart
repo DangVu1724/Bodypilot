@@ -16,7 +16,7 @@ class WorkoutPlansSection extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const SectionTitle(title: 'Lịch Tập Gợi Ý', actionText: 'Xem tất cả'),
+        const SectionTitle(title: 'Lịch Tập Gợi Ý'),
         const SizedBox(height: 12),
         BlocBuilder<WorkoutPlanCubit, WorkoutPlanState>(
           builder: (context, state) {
@@ -37,7 +37,49 @@ class WorkoutPlansSection extends StatelessWidget {
                 ),
               );
             } else if (state is WorkoutPlanError) {
-              return Center(child: Text('Lỗi: ${state.message}'));
+              return Container(
+                margin: const EdgeInsets.only(top: 8),
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.wifi_off_rounded, color: Colors.blue, size: 24),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Chưa thể tải lịch tập',
+                            style: AppTheme.headlineStyle.copyWith(fontSize: 14, color: const Color(0xFF1E293B)),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            state.message,
+                            style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: const Color(0xFF64748B)),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.refresh_rounded, color: AppTheme.primary),
+                      onPressed: () {
+                        context.read<WorkoutPlanCubit>().fetchPlansFull(forceRefresh: true);
+                      },
+                    ),
+                  ],
+                ),
+              );
             }
             return const SizedBox.shrink();
           },

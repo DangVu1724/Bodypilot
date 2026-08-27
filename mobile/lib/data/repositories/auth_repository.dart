@@ -57,7 +57,8 @@ class AuthRepository {
         throw Exception(response.data['message'] ?? 'Google login failed');
       }
     } on DioException catch (e) {
-      throw Exception(e.response?.data['message'] ?? 'Network error');
+      final msg = e.response?.data is Map ? e.response?.data['message'] : null;
+      throw Exception(msg ?? e.message ?? 'Lỗi kết nối máy chủ backend');
     }
   }
 

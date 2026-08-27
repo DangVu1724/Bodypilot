@@ -4,6 +4,7 @@ import 'package:path/path.dart';
 import 'package:core_shared/models/food_model.dart';
 import 'package:core_shared/models/food_category_model.dart';
 
+/// Quản lý cơ sở dữ liệu SQLite cục bộ cho món ăn
 class FoodDatabaseHelper {
   static final FoodDatabaseHelper instance = FoodDatabaseHelper._init();
   static Database? _database;
@@ -23,7 +24,7 @@ class FoodDatabaseHelper {
   }
 
   Future<void> _createDB(Database db, int version) async {
-    // 1. Table for categories
+    // Bảng danh mục món ăn
     await db.execute('''
       CREATE TABLE food_categories (
         id TEXT PRIMARY KEY,
@@ -32,7 +33,7 @@ class FoodDatabaseHelper {
       )
     ''');
 
-    // 2. Table for foods
+    // Bảng món ăn
     await db.execute('''
       CREATE TABLE foods (
         id TEXT PRIMARY KEY,
@@ -43,36 +44,42 @@ class FoodDatabaseHelper {
       )
     ''');
 
-    // Create indexes for high-speed offline searching
+    // Tạo chỉ mục giúp tìm kiếm nhanh
     await db.execute('CREATE INDEX idx_foods_name ON foods(name)');
     await db.execute('CREATE INDEX idx_foods_category ON foods(categoryId)');
     await db.execute('CREATE INDEX idx_foods_type ON foods(type)');
     await db.execute('CREATE INDEX idx_categories_name ON food_categories(name)');
   }
 
-  // Insert foods in batches (Optimized for multiple records)
+  /// Thêm danh sách món ăn vào SQLite theo lô 1,000 món/lần
   Future<void> insertFoods(List<FoodModel> foodsList) async {
     final db = await database;
-    final batch = db.batch();
-    
-    for (final food in foodsList) {
-      batch.insert(
-        'foods',
-        {
-          'id': food.id,
-          'name': food.name,
-          'type': food.type,
-          'categoryId': food.category?.id ?? '',
-          'rawJson': jsonEncode(food.toJson()),
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+    const chunkSize = 1000;
+
+    for (var i = 0; i < foodsList.length; i += chunkSize) {
+      final end = (i + chunkSize < foodsList.length) ? i + chunkSize : foodsList.length;
+      final chunk = foodsList.sublist(i, end);
+      final batch = db.batch();
+
+      for (final food in chunk) {
+        batch.insert(
+          'foods',
+          {
+            'id': food.id,
+            'name': food.name,
+            'type': food.type,
+            'categoryId': food.category?.id ?? '',
+            'rawJson': jsonEncode(food.toJson()),
+          },
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
+
+      await batch.commit(noResult: true);
     }
-    
-    await batch.commit(noResult: true);
   }
 
-  // Insert categories
+  /// Thêm danh mục món ăn vào SQLite
   Future<void> insertCategories(List<FoodCategoryModel> categoriesList) async {
     final db = await database;
     final batch = db.batch();
@@ -92,7 +99,7 @@ class FoodDatabaseHelper {
     await batch.commit(noResult: true);
   }
 
-  // Search foods with filter and paging
+  /// Tìm kiếm món ăn ngoại tuyến trong SQLite
   Future<List<FoodModel>> searchFoodsOffline(
     String query, {
     String? categoryId,
@@ -114,9 +121,7 @@ class FoodDatabaseHelper {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
       whereClause += 'categoryId = ?';
       whereArgs.add(categoryId);
-    }
-
-    if (type != null && type.isNotEmpty) {
+    } else if (type != null && type.isNotEmpty) {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
       whereClause += '(type = ? OR type = "BOTH")';
       whereArgs.add(type);
@@ -137,7 +142,7 @@ class FoodDatabaseHelper {
     }).toList();
   }
 
-  // Get categories offline
+  /// Lấy danh mục món ăn ngoại tuyến
   Future<List<FoodCategoryModel>> getCategoriesOffline() async {
     final db = await database;
     final List<Map<String, dynamic>> maps = await db.query(
@@ -151,7 +156,7 @@ class FoodDatabaseHelper {
     }).toList();
   }
 
-  // Clear cached data
+  /// Xóa dữ liệu bộ nhớ tạm SQLite
   Future<void> clearCache() async {
     final db = await database;
     await db.delete('foods');

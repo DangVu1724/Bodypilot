@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:core_shared/models/exercise_model.dart';
@@ -6,6 +7,7 @@ import 'package:mobile/presentation/bloc/workout/workout_category_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_category_state.dart';
 import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
 import 'package:mobile/data/repositories/exercise_repository.dart';
+import 'package:mobile/data/repositories/workout_repository.dart';
 
 class AddExerciseBottomSheet extends StatefulWidget {
   final DateTime selectedDate;
@@ -21,6 +23,7 @@ class AddExerciseBottomSheet extends StatefulWidget {
 
 class _AddExerciseBottomSheetState extends State<AddExerciseBottomSheet> {
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
   String _searchQuery = '';
   String? _selectedCategoryId;
 
@@ -50,6 +53,7 @@ class _AddExerciseBottomSheetState extends State<AddExerciseBottomSheet> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _customNameController.dispose();
     _notesController.dispose();
@@ -57,25 +61,47 @@ class _AddExerciseBottomSheetState extends State<AddExerciseBottomSheet> {
   }
 
   Future<void> _searchExercises() async {
-    setState(() {
-      _isLoading = true;
-    });
+    if (_searchResults.isEmpty) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
 
     try {
-      final response = await exerciseRepository.searchExercises(
-        name: _searchQuery.isNotEmpty ? _searchQuery : null,
+      // 1. Try Local-First SQLite Cache
+      final response = await workoutRepository.searchExercises(
+        _searchQuery,
         categoryId: _selectedCategoryId,
-        size: 1000,
+        size: 100,
       );
-      setState(() {
-        _searchResults = response.content;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _searchResults = response.content;
+          _isLoading = false;
+        });
+      }
     } catch (_) {
-      setState(() {
-        _searchResults = [];
-        _isLoading = false;
-      });
+      // 2. Fallback to ExerciseRepository with optimized page size (50 items)
+      try {
+        final response = await exerciseRepository.searchExercises(
+          name: _searchQuery.isNotEmpty ? _searchQuery : null,
+          categoryId: _selectedCategoryId,
+          size: 50,
+        );
+        if (mounted) {
+          setState(() {
+            _searchResults = response.content;
+            _isLoading = false;
+          });
+        }
+      } catch (_) {
+        if (mounted) {
+          setState(() {
+            _searchResults = [];
+            _isLoading = false;
+          });
+        }
+      }
     }
   }
 
@@ -189,7 +215,10 @@ class _AddExerciseBottomSheetState extends State<AddExerciseBottomSheet> {
                   setState(() {
                     _searchQuery = val;
                   });
-                  _searchExercises();
+                  _debounceTimer?.cancel();
+                  _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+                    if (mounted) _searchExercises();
+                  });
                 },
                 decoration: InputDecoration(
                   hintText: 'Search exercises...',

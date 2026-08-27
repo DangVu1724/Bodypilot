@@ -20,100 +20,106 @@ class _GenderStepState extends State<GenderStep> {
     final state = context.watch<AssessmentCubit>().state;
     final selectedGender = state.selectedGender;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      child: Column(
-        children: [
-          const SizedBox(height: 20),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const ClampingScrollPhysics(),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: IntrinsicHeight(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 16),
+                    AnimatedOpacity(
+                      duration: const Duration(milliseconds: 500),
+                      opacity: 1,
+                      child: Column(
+                        children: [
+                          Text('Giới tính', style: AppTheme.headlineStyle, textAlign: TextAlign.center),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Giới tính của bạn là gì?',
+                            style: AppTheme.semiboldStyle.copyWith(fontSize: 18),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Thông tin này giúp chúng tôi cá nhân hóa trải nghiệm tập luyện',
+                            style: AppTheme.bodyStyle.copyWith(color: Colors.grey),
+                            textAlign: TextAlign.center,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    ...AssessmentState.genderOptions.asMap().entries.map((entry) {
+                      final option = entry.value;
+                      final isSelected = selectedGender == option.title;
 
-          // HEADER (simple fade)
-          AnimatedOpacity(
-            duration: const Duration(milliseconds: 500),
-            opacity: 1,
-            child: Column(
-              children: [
-                Text('Giới tính', style: AppTheme.headlineStyle, textAlign: TextAlign.center),
-                const SizedBox(height: 12),
-                Text(
-                  'Giới tính của bạn là gì?',
-                  style: AppTheme.semiboldStyle.copyWith(fontSize: 18),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Thông tin này giúp chúng tôi cá nhân hóa trải nghiệm tập luyện',
-                  style: AppTheme.bodyStyle.copyWith(color: Colors.grey),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-
-          const SizedBox(height: 32),
-
-          // OPTIONS
-          ...AssessmentState.genderOptions.asMap().entries.map((entry) {
-            final option = entry.value;
-            final isSelected = selectedGender == option.title;
-
-            return AnimatedOpacity(
-              duration: const Duration(milliseconds: 400),
-              opacity: 1,
-              child: AnimatedSlide(
-                duration: const Duration(milliseconds: 400),
-                offset: const Offset(0, 0),
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: _buildGenderOptionWithImage(
-                    context: context,
-                    title: option.title,
-                    description: option.description,
-                    imagePath: option.imagePath,
-                    isSelected: isSelected,
-                    onTap: () {
-                      context.read<AssessmentCubit>().selectGender(option.title);
-                    },
-                  ),
+                      return AnimatedOpacity(
+                        duration: const Duration(milliseconds: 400),
+                        opacity: 1,
+                        child: AnimatedSlide(
+                          duration: const Duration(milliseconds: 400),
+                          offset: const Offset(0, 0),
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 16),
+                            child: _buildGenderOptionWithImage(
+                              context: context,
+                              title: option.title,
+                              description: option.description,
+                              imagePath: option.imagePath,
+                              isSelected: isSelected,
+                              onTap: () {
+                                context.read<AssessmentCubit>().selectGender(option.title);
+                              },
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                    const Spacer(),
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                      decoration: const BoxDecoration(
+                        color: Colors.transparent,
+                      ),
+                      child: Column(
+                        children: [
+                          if (selectedGender != null)
+                            Container(
+                              margin: const EdgeInsets.only(bottom: 16),
+                              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppTheme.primary.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Text(
+                                'Giới tính: $selectedGender',
+                                style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: AppTheme.primary),
+                              ),
+                            ),
+                          SizedBox(
+                            width: double.infinity,
+                            child: BlackButton2(
+                              label: 'Tiếp tục',
+                              onPressed: selectedGender != null ? widget.onNext : null,
+                              borderRadius: 16,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            );
-          }),
-
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            decoration: const BoxDecoration(
-              color: Colors.transparent,
-            ),
-            child: Column(
-              children: [
-                if (selectedGender != null)
-                  Container(
-                    margin: const EdgeInsets.only(bottom: 16),
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: AppTheme.primary.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Text(
-                      'Giới tính: $selectedGender',
-                      style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: AppTheme.primary),
-                    ),
-                  ),
-                SizedBox(
-                  width: double.infinity,
-                  child: BlackButton2(
-                    label: 'Tiếp tục',
-                    onPressed: selectedGender != null ? widget.onNext : null,
-                    borderRadius: 16,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                  ),
-                ),
-              ],
             ),
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

@@ -11,9 +11,9 @@ final _logger = Logger();
 class FoodRepository {
   final Map<String, PaginatedResponse<FoodModel>> _foodCategoryCache = {};
   bool _isSyncing = false;
-
   bool _isSyncCompleted = false;
 
+  /// Tìm kiếm món ăn (Ưu tiên SQLite local -> Backend API)
   Future<PaginatedResponse<FoodModel>> searchFoods(
     String query, {
     String? categoryId,
@@ -24,9 +24,8 @@ class FoodRepository {
   }) async {
     final trimmedQuery = query.trim();
 
-    // 0. Sanitize Query: If query contains ONLY special characters (!@#$%^&*...), return 0 items immediately
+    // Kiểm tra ký tự đặc biệt
     if (trimmedQuery.isNotEmpty && RegExp(r'^[^a-zA-Z0-9àáâãèéêìíòóôõùúăđĩũơưăạảấầẩẫậắằẳẵặẹẻẽềềểễệỉịọỏốồổỗộớờởỡợụủứừửữựỳỵỷỹ\s]+$').hasMatch(trimmedQuery)) {
-      _logger.d('🚫 [SanitizeQuery] Query "$query" contains only special characters. Returning 0 results instantly.');
       return PaginatedResponse<FoodModel>(
         content: [],
         pageNumber: page,
@@ -37,15 +36,14 @@ class FoodRepository {
       );
     }
 
-    // 1. RAM Cache check
+    // 1. Kiểm tra bộ nhớ RAM Cache
     if (page == 0 && categoryId != null && trimmedQuery.isEmpty && !forceRefresh) {
       if (_foodCategoryCache.containsKey(categoryId)) {
-        _logger.d('Serving food category $categoryId from RAM cache');
         return _foodCategoryCache[categoryId]!;
       }
     }
 
-    // 2. Local SQLite First (Instant UX response)
+    // 2. Tìm kiếm trong SQLite cục bộ (Local-First)
     if (!forceRefresh) {
       try {
         final localFoods = await FoodDatabaseHelper.instance.searchFoodsOffline(
@@ -57,9 +55,7 @@ class FoodRepository {
         );
 
         if (localFoods.isNotEmpty) {
-          _logger.i('⚡ [Local-First] Serving ${localFoods.length} foods from SQLite for query "$trimmedQuery"');
-
-          // Trigger background revalidation silently
+          // Đồng bộ ngầm dữ liệu mới từ Backend
           _revalidateFoodsInBackground(query: trimmedQuery, categoryId: categoryId, page: page, size: size);
 
           return PaginatedResponse<FoodModel>(
@@ -68,13 +64,11 @@ class FoodRepository {
             pageSize: size,
             totalElements: localFoods.length,
             totalPages: 1,
-            last: true,
+            last: localFoods.length < size,
           );
         }
 
-        // If SQLite returned 0 items AND full background sync is completed, NO need to hit backend!
         if (_isSyncCompleted) {
-          _logger.i('ℹ️ [FullSyncCompleted] Query "$trimmedQuery" not found in SQLite. Returning 0 results without hitting backend.');
           return PaginatedResponse<FoodModel>(
             content: [],
             pageNumber: page,
@@ -85,12 +79,11 @@ class FoodRepository {
           );
         }
       } catch (dbError) {
-        _logger.e('Failed local SQLite read: $dbError');
+        _logger.e('Lỗi đọc dữ liệu SQLite: $dbError');
       }
     }
 
-    // 3. Fallback/Primary Backend Search
-    _logger.d('Searching foods from Backend with query: $query, categoryId: $categoryId, page: $page, size: $size');
+    // 3. Gọi Backend API khi chưa có dữ liệu local
     try {
       final response = await apiClient.get(
         '/foods/search',
@@ -109,21 +102,21 @@ class FoodRepository {
         _foodCategoryCache[categoryId] = paginated;
       }
 
-      // Async cache results in SQLite
+      // Lưu kết quả vào SQLite
       try {
         await FoodDatabaseHelper.instance.insertFoods(paginated.content);
       } catch (dbError) {
-        _logger.e('Failed to cache foods in SQLite: $dbError');
+        _logger.e('Lỗi lưu món ăn vào SQLite: $dbError');
       }
 
       return paginated;
     } on DioException catch (e) {
-      _logger.e('Error searching foods from backend: $e');
-      throw Exception(e.response?.data['message'] ?? 'Network error');
+      _logger.e('Lỗi kết nối máy chủ: $e');
+      throw Exception(e.response?.data['message'] ?? 'Lỗi kết nối mạng');
     }
   }
 
-  /// Background revalidation (Stale-While-Revalidate pattern)
+  /// Cập nhật dữ liệu ngầm từ Backend vào SQLite
   void _revalidateFoodsInBackground({
     required String query,
     String? categoryId,
@@ -140,20 +133,13 @@ class FoodRepository {
         (json) => FoodModel.fromJson(json),
       );
       await FoodDatabaseHelper.instance.insertFoods(paginated.content);
-      _logger.d('🔄 [Background Revalidate] Refreshed SQLite with ${paginated.content.length} items');
-    } catch (_) {
-      // Ignore background errors quietly
-    }
+    } catch (_) {}
   }
 
-  /// Batched Background Sync (Chunks of 100 items with non-blocking pauses)
+  /// Đồng bộ dữ liệu món ăn theo lô khi khởi động
   Future<void> startBatchedFoodSync({int batchSize = 100, int maxBatches = 10}) async {
-    if (_isSyncing) {
-      _logger.d('⏳ [BatchedFoodSync] Sync already in progress, skipping...');
-      return;
-    }
+    if (_isSyncing) return;
     _isSyncing = true;
-    _logger.i('🚀 [BatchedFoodSync] Starting batched background sync (batchSize=$batchSize)...');
 
     try {
       for (int page = 0; page < maxBatches; page++) {
@@ -170,31 +156,25 @@ class FoodRepository {
         if (paginated.content.isEmpty) break;
 
         await FoodDatabaseHelper.instance.insertFoods(paginated.content);
-        _logger.d('📦 [BatchedFoodSync] Batch ${page + 1}/$maxBatches inserted (${paginated.content.length} foods)');
 
         if (paginated.last) break;
 
-        // Non-blocking 100ms pause between batches for smooth 60fps UI
         await Future.delayed(const Duration(milliseconds: 100));
       }
       _isSyncCompleted = true;
-      _logger.i('✅ [BatchedFoodSync] Completed background sync successfully.');
     } catch (e) {
-      _logger.e('Error during batched food sync: $e');
+      _logger.e('Lỗi đồng bộ dữ liệu món ăn ngầm: $e');
     } finally {
       _isSyncing = false;
     }
   }
 
+  /// Lấy chi tiết món ăn (Ưu tiên SQLite -> Backend API)
   Future<FoodModel> getFoodDetails(String foodId) async {
-    // Check local DB first
     try {
       final localFoods = await FoodDatabaseHelper.instance.searchFoodsOffline('');
       for (final food in localFoods) {
-        if (food.id == foodId) {
-          _logger.i('⚡ [Local-First] Found food details offline for ID: $foodId');
-          return food;
-        }
+        if (food.id == foodId) return food;
       }
     } catch (_) {}
 
@@ -204,29 +184,25 @@ class FoodRepository {
 
       try {
         await FoodDatabaseHelper.instance.insertFoods([food]);
-      } catch (dbError) {
-        _logger.e('Failed to cache food details: $dbError');
-      }
+      } catch (_) {}
 
       return food;
     } on DioException catch (e) {
-      _logger.e('Error fetching details: $e');
-      throw Exception(e.response?.data['message'] ?? 'Network error');
+      throw Exception(e.response?.data['message'] ?? 'Lỗi kết nối mạng');
     }
   }
 
+  /// Lấy danh mục món ăn (Ưu tiên SQLite -> Backend API)
   Future<List<FoodCategoryModel>> getFoodCategories({bool forceRefresh = false}) async {
     if (!forceRefresh) {
       try {
         final localCategories = await FoodDatabaseHelper.instance.getCategoriesOffline();
         if (localCategories.isNotEmpty) {
-          _logger.i('⚡ [Local-First] Loaded ${localCategories.length} food categories offline.');
-          // Refresh in background
           _refreshCategoriesInBackground();
           return localCategories;
         }
       } catch (dbError) {
-        _logger.e('Failed to load categories offline: $dbError');
+        _logger.e('Lỗi đọc danh mục từ SQLite: $dbError');
       }
     }
 
@@ -237,14 +213,11 @@ class FoodRepository {
 
       try {
         await FoodDatabaseHelper.instance.insertCategories(categories);
-      } catch (dbError) {
-        _logger.e('Failed to cache categories in SQLite: $dbError');
-      }
+      } catch (_) {}
 
       return categories;
     } on DioException catch (e) {
-      _logger.e('Error fetching categories: $e');
-      throw Exception(e.response?.data['message'] ?? 'Network error');
+      throw Exception(e.response?.data['message'] ?? 'Lỗi kết nối mạng');
     }
   }
 
@@ -265,9 +238,7 @@ class FoodRepository {
           searchFoods('', categoryId: cat.id, page: 0, size: 10);
         }
       }
-    } catch (e) {
-      _logger.w('Prefetch food categories failed: $e');
-    }
+    } catch (_) {}
   }
 
   void clearCache() {

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:core_shared/models/food_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -23,6 +24,7 @@ class FoodListScreen extends StatefulWidget {
 
 class _FoodListScreenState extends State<FoodListScreen> {
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
 
   @override
   void initState() {
@@ -30,6 +32,13 @@ class _FoodListScreenState extends State<FoodListScreen> {
     _initializeFromCache();
     _loadFoods();
     foodRepository.prefetchPopularFoodCategories();
+  }
+
+  @override
+  void dispose() {
+    _debounceTimer?.cancel();
+    _searchController.dispose();
+    super.dispose();
   }
 
   void _initializeFromCache() {
@@ -73,22 +82,13 @@ class _FoodListScreenState extends State<FoodListScreen> {
               builder: (context, state) {
                 final foods = state.foods;
 
-                Widget content;
                 if (state.status == FoodListStatus.loading) {
-                  content = _buildSkeleton();
+                  return _buildSkeleton();
                 } else if (foods.isEmpty) {
-                  content = const Center(child: Text('No items found'));
+                  return const Center(child: Text('No items found'));
                 } else {
-                  content = widget.type == 'DISH' ? _buildDishList(foods) : _buildIngredientGrid(foods);
+                  return widget.type == 'DISH' ? _buildDishList(foods, state) : _buildIngredientGrid(foods, state);
                 }
-
-                return AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 300),
-                  child: KeyedSubtree(
-                    key: ValueKey<int>(state.status == FoodListStatus.loading ? 0 : 1),
-                    child: content,
-                  ),
-                );
               },
             ),
           ),
@@ -113,7 +113,12 @@ class _FoodListScreenState extends State<FoodListScreen> {
             decoration: BoxDecoration(color: Colors.grey[100], borderRadius: BorderRadius.circular(28)),
             child: TextField(
               controller: _searchController,
-              onChanged: (value) => _loadFoods(),
+              onChanged: (value) {
+                _debounceTimer?.cancel();
+                _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+                  if (mounted) _loadFoods();
+                });
+              },
               decoration: InputDecoration(
                 hintText: 'Search delicious ${widget.type.toLowerCase()}s...',
                 hintStyle: AppTheme.bodyStyle.copyWith(color: Colors.grey[400], fontSize: 14),
@@ -146,9 +151,14 @@ class _FoodListScreenState extends State<FoodListScreen> {
   Widget _buildCategoryFilters() {
     return BlocBuilder<FoodCubit, FoodState>(
       builder: (context, globalState) {
-        final filteredCategories = globalState.categories
-            .where((c) => c.appliesTo == widget.type || c.appliesTo == 'BOTH')
-            .toList();
+        final filteredCategories = globalState.categories.where((c) {
+          if (widget.type == 'DISH') {
+            return c.appliesTo == 'DISH' || c.appliesTo == 'BOTH';
+          } else if (widget.type == 'INGREDIENT') {
+            return c.appliesTo == 'INGREDIENT' || c.appliesTo == 'BOTH';
+          }
+          return true;
+        }).toList();
 
         return BlocBuilder<FoodListCubit, FoodListState>(
           builder: (context, listState) {
@@ -198,34 +208,73 @@ class _FoodListScreenState extends State<FoodListScreen> {
     );
   }
 
-  Widget _buildDishList(List<FoodModel> foods) {
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      itemCount: foods.length,
-      itemBuilder: (context, index) {
-        final food = foods[index];
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: _DishListItem(food: food),
-        );
+  Widget _buildDishList(List<FoodModel> foods, FoodListState state) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollInfo) {
+        if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+          context.read<FoodListCubit>().loadMoreFoods(
+                type: widget.type,
+                query: _searchController.text,
+              );
+        }
+        return false;
       },
+      child: ListView.builder(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        itemCount: foods.length + (state.isLoadingMore ? 1 : 0),
+        itemBuilder: (context, index) {
+          if (index == foods.length) {
+            return const Padding(
+              padding: EdgeInsets.symmetric(vertical: 16),
+              child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+            );
+          }
+          final food = foods[index];
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: _DishListItem(food: food),
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildIngredientGrid(List<FoodModel> foods) {
-    return GridView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 24),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 0.8,
-      ),
-      itemCount: foods.length,
-      itemBuilder: (context, index) {
-        final food = foods[index];
-        return _IngredientGridItem(food: food);
+  Widget _buildIngredientGrid(List<FoodModel> foods, FoodListState state) {
+    return NotificationListener<ScrollNotification>(
+      onNotification: (scrollInfo) {
+        if (scrollInfo.metrics.pixels >= scrollInfo.metrics.maxScrollExtent - 200) {
+          context.read<FoodListCubit>().loadMoreFoods(
+                type: widget.type,
+                query: _searchController.text,
+              );
+        }
+        return false;
       },
+      child: Column(
+        children: [
+          Expanded(
+            child: GridView.builder(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 16,
+                mainAxisSpacing: 16,
+                childAspectRatio: 0.8,
+              ),
+              itemCount: foods.length,
+              itemBuilder: (context, index) {
+                final food = foods[index];
+                return _IngredientGridItem(food: food);
+              },
+            ),
+          ),
+          if (state.isLoadingMore)
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 12),
+              child: Center(child: CircularProgressIndicator(color: AppTheme.primary)),
+            ),
+        ],
+      ),
     );
   }
 

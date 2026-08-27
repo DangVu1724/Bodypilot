@@ -35,8 +35,59 @@ class LoginView extends StatelessWidget {
             context.go(AppRoutes.assessment);
           }
         } else if (state.status == LoginStatus.failure) {
+          final isOffline = (state.errorMessage ?? '').contains('kết nối mạng') || 
+                            (state.errorMessage ?? '').contains('Wifi/4G');
+          ScaffoldMessenger.of(context).hideCurrentSnackBar();
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(state.errorMessage ?? 'Đăng nhập thất bại'), backgroundColor: Colors.red),
+            SnackBar(
+              behavior: SnackBarBehavior.floating,
+              margin: const EdgeInsets.all(16),
+              elevation: 6,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+              backgroundColor: const Color(0xFF1E293B),
+              content: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: (isOffline ? Colors.orange : Colors.redAccent).withValues(alpha: 0.2),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      isOffline ? Icons.wifi_off_rounded : Icons.error_outline_rounded,
+                      color: isOffline ? Colors.orangeAccent : Colors.redAccent,
+                      size: 22,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isOffline ? 'Chưa có kết nối Internet' : 'Đăng nhập không thành công',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13.5,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          state.errorMessage ?? 'Đăng nhập thất bại. Vui lòng thử lại.',
+                          style: GoogleFonts.plusJakartaSans(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              duration: const Duration(seconds: 4),
+            ),
           );
         }
       },
@@ -63,14 +114,18 @@ class LoginView extends StatelessWidget {
                           border: Border.all(color: Colors.grey.shade100, width: 1.5),
                           boxShadow: [
                             BoxShadow(
-                              color: Colors.black.withOpacity(0.05),
-                              blurRadius: 15,
-                              offset: const Offset(0, 5),
+                              color: AppTheme.primary.withValues(alpha: 0.15),
+                              blurRadius: 20,
+                              offset: const Offset(0, 6),
                             ),
                           ],
                         ),
-                        padding: const EdgeInsets.all(16),
-                        child: Image.asset('assets/images/logo.png', fit: BoxFit.contain),
+                        child: ClipOval(
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 32),
@@ -189,7 +244,35 @@ class LoginView extends StatelessWidget {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+
+                    if (state.errorMessage != null && (state.errorMessage!.contains('kết nối mạng') || state.errorMessage!.contains('Wifi/4G'))) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFFFF7ED),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(color: const Color(0xFFFFEDD5)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.wifi_off_rounded, color: Color(0xFFEA580C), size: 20),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Thiết bị đang ngoại tuyến. Hãy bật Wifi/4G để đăng nhập.',
+                                style: GoogleFonts.plusJakartaSans(
+                                  fontSize: 12.5,
+                                  color: const Color(0xFFC2410C),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
 
                     SizedBox(
                       width: double.infinity,

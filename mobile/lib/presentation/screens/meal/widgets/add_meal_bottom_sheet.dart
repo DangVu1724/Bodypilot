@@ -1,23 +1,20 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
+import 'dart:async';
+import 'package:core_shared/models/daily_eating_model.dart';
 import 'package:core_shared/models/food_category_model.dart';
 import 'package:core_shared/models/food_model.dart';
-import 'package:core_shared/models/daily_eating_model.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
-import 'package:mobile/core/utils/category_image_helper.dart';
 
 class AddMealBottomSheet extends StatefulWidget {
   final DateTime selectedDate;
   final MealType selectedMealType;
 
-  const AddMealBottomSheet({
-    super.key,
-    required this.selectedDate,
-    required this.selectedMealType,
-  });
+  const AddMealBottomSheet({super.key, required this.selectedDate, required this.selectedMealType});
 
   @override
   State<AddMealBottomSheet> createState() => _AddMealBottomSheetState();
@@ -25,14 +22,13 @@ class AddMealBottomSheet extends StatefulWidget {
 
 class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
   final TextEditingController _searchController = TextEditingController();
+  Timer? _debounceTimer;
   String _searchQuery = '';
   String? _selectedCategoryId;
 
   FoodModel? _selectedFood;
   double _quantity = 100; // default quantity in grams
-  final TextEditingController _quantityController = TextEditingController(
-    text: '100',
-  );
+  final TextEditingController _quantityController = TextEditingController(text: '100');
 
   // Custom Food Form State
   bool _isCustomMode = false;
@@ -55,6 +51,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
 
   @override
   void dispose() {
+    _debounceTimer?.cancel();
     _searchController.dispose();
     _quantityController.dispose();
     _customNameController.dispose();
@@ -81,10 +78,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
     }
   }
 
-  String? _categoryAppliesTo(
-    FoodModel food,
-    List<FoodCategoryModel> categories,
-  ) {
+  String? _categoryAppliesTo(FoodModel food, List<FoodCategoryModel> categories) {
     final directAppliesTo = food.category?.appliesTo;
     if (directAppliesTo != null && directAppliesTo.isNotEmpty) {
       return directAppliesTo.toUpperCase();
@@ -108,9 +102,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
     final isDishOrBoth = foodType == 'DISH' || foodType == 'BOTH';
 
     if (appliesTo != null) {
-      return appliesTo == 'DISH' ||
-          (appliesTo == 'BOTH' && isDishOrBoth) ||
-          appliesTo == 'INGREDIENT';
+      return appliesTo == 'DISH' || (appliesTo == 'BOTH' && isDishOrBoth) || appliesTo == 'INGREDIENT';
     }
 
     return isDishOrBoth;
@@ -139,10 +131,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                   setState(() {
                     _selectedCategoryId = category?.id;
                   });
-                  context.read<FoodCubit>().searchFoods(
-                        query: _searchQuery,
-                        categoryId: category?.id,
-                      );
+                  context.read<FoodCubit>().searchFoods(query: _searchQuery, categoryId: category?.id);
                 },
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 200),
@@ -152,9 +141,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                   decoration: BoxDecoration(
                     color: isSelected ? AppTheme.primary : Colors.grey[100],
                     borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: isSelected ? AppTheme.primary : Colors.transparent,
-                    ),
+                    border: Border.all(color: isSelected ? AppTheme.primary : Colors.transparent),
                   ),
                   child: Text(
                     isAll ? 'All' : category!.name,
@@ -188,10 +175,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
           Container(
             width: 40,
             height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
+            decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 16),
           Padding(
@@ -200,18 +184,10 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
-                  _isCustomMode
-                      ? 'Custom Food'
-                      : 'Add to ${_getMealTypeName(widget.selectedMealType)}',
-                  style: AppTheme.headlineStyle.copyWith(
-                    fontSize: 22,
-                    color: AppTheme.textPrimary,
-                  ),
+                  _isCustomMode ? 'Custom Food' : 'Add to ${_getMealTypeName(widget.selectedMealType)}',
+                  style: AppTheme.headlineStyle.copyWith(fontSize: 22, color: AppTheme.textPrimary),
                 ),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
+                IconButton(icon: const Icon(Icons.close), onPressed: () => Navigator.of(context).pop()),
               ],
             ),
           ),
@@ -227,17 +203,16 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                   setState(() {
                     _searchQuery = val;
                   });
-                  context.read<FoodCubit>().searchFoods(
-                        query: val,
-                        categoryId: _selectedCategoryId,
-                      );
+                  _debounceTimer?.cancel();
+                  _debounceTimer = Timer(const Duration(milliseconds: 300), () {
+                    if (mounted) {
+                      context.read<FoodCubit>().searchFoods(query: val, categoryId: _selectedCategoryId);
+                    }
+                  });
                 },
                 decoration: InputDecoration(
                   hintText: 'Search food...',
-                  prefixIcon: const Icon(
-                    Icons.search,
-                    color: AppTheme.textSecondary,
-                  ),
+                  prefixIcon: const Icon(Icons.search, color: AppTheme.textSecondary),
                   suffixIcon: _searchQuery.isNotEmpty
                       ? IconButton(
                           icon: const Icon(Icons.clear),
@@ -246,10 +221,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                             setState(() {
                               _searchQuery = '';
                             });
-                            context.read<FoodCubit>().searchFoods(
-                                  query: '',
-                                  categoryId: _selectedCategoryId,
-                                );
+                            context.read<FoodCubit>().searchFoods(query: '', categoryId: _selectedCategoryId);
                           },
                         )
                       : null,
@@ -280,9 +252,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
           Expanded(
             child: _isCustomMode
                 ? _buildCustomFoodForm()
-                : (_selectedFood == null
-                    ? _buildFoodList()
-                    : _buildQuantityConfig()),
+                : (_selectedFood == null ? _buildFoodList() : _buildQuantityConfig()),
           ),
         ],
       ),
@@ -302,25 +272,16 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         leading: Container(
           padding: const EdgeInsets.all(10),
-          decoration: BoxDecoration(
-            color: AppTheme.primary,
-            borderRadius: BorderRadius.circular(12),
-          ),
+          decoration: BoxDecoration(color: AppTheme.primary, borderRadius: BorderRadius.circular(12)),
           child: const Icon(Icons.add_task, color: Colors.white, size: 22),
         ),
         title: Text(
           'Tự thêm món tùy chỉnh',
-          style: AppTheme.semiboldStyle.copyWith(
-            fontSize: 15,
-            color: AppTheme.primary,
-          ),
+          style: AppTheme.semiboldStyle.copyWith(fontSize: 15, color: AppTheme.primary),
         ),
         subtitle: Text(
           'Nhập thủ công calo và dinh dưỡng',
-          style: AppTheme.bodyStyle.copyWith(
-            fontSize: 12,
-            color: AppTheme.textSecondary,
-          ),
+          style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: AppTheme.textSecondary),
         ),
         trailing: const Icon(Icons.chevron_right, color: AppTheme.primary),
         onTap: () {
@@ -342,13 +303,11 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
           return const Center(child: CircularProgressIndicator());
         }
 
-        final mealFoods = state.foods
-            .where((food) => _canAddToMeal(food, state.categories))
-            .toList();
+        final mealFoods = state.foods.where((food) => _canAddToMeal(food, state.categories)).toList();
 
         final filteredFoods = mealFoods.where((food) {
-          if (_selectedCategoryId != null &&
-              food.category?.id != _selectedCategoryId) {
+          final foodCatId = food.category?.id;
+          if (_selectedCategoryId != null && foodCatId != null && foodCatId != _selectedCategoryId) {
             return false;
           }
           if (_searchQuery.isEmpty) return true;
@@ -366,19 +325,13 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                   const SizedBox(height: 16),
                   Text(
                     'Không tìm thấy món phù hợp',
-                    style: AppTheme.semiboldStyle.copyWith(
-                      color: AppTheme.textSecondary,
-                      fontSize: 16,
-                    ),
+                    style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary, fontSize: 16),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Bạn có thể tự thêm món ăn này vào thực đơn của mình.',
                     textAlign: TextAlign.center,
-                    style: AppTheme.bodyStyle.copyWith(
-                      color: Colors.grey[600],
-                      fontSize: 13,
-                    ),
+                    style: AppTheme.bodyStyle.copyWith(color: Colors.grey[600], fontSize: 13),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
@@ -391,18 +344,12 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                       });
                     },
                     icon: const Icon(Icons.add_circle_outline),
-                    label: Text(
-                      _searchQuery.isNotEmpty
-                          ? 'Tạo món "$_searchQuery"'
-                          : 'Tạo món tùy chỉnh',
-                    ),
+                    label: Text(_searchQuery.isNotEmpty ? 'Tạo món "$_searchQuery"' : 'Tạo món tùy chỉnh'),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppTheme.primary,
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                     ),
                   ),
                 ],
@@ -424,16 +371,11 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
 
             return Card(
               margin: const EdgeInsets.only(bottom: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
               elevation: 0,
               color: Colors.grey[50],
               child: ListTile(
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 8,
-                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                 leading: CategoryFoodImage(
                   imageUrl: food.imageUrl,
                   categoryCode: food.category?.code,
@@ -451,30 +393,18 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                 ),
                 subtitle: Text(
                   '${food.caloriesPer100g.toStringAsFixed(0)} kcal • 100g',
-                  style: AppTheme.bodyStyle.copyWith(
-                    fontSize: 13,
-                    color: AppTheme.textSecondary,
-                  ),
+                  style: AppTheme.bodyStyle.copyWith(fontSize: 13, color: AppTheme.textSecondary),
                 ),
                 trailing: Container(
                   decoration: BoxDecoration(
-                    color: isDish
-                        ? Colors.green.withValues(alpha: 0.1)
-                        : AppTheme.primary.withValues(alpha: 0.1),
+                    color: isDish ? Colors.green.withValues(alpha: 0.1) : AppTheme.primary.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 10,
-                    vertical: 6,
-                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        Icons.add,
-                        size: 16,
-                        color: isDish ? Colors.green[800] : AppTheme.primary,
-                      ),
+                      Icon(Icons.add, size: 16, color: isDish ? Colors.green[800] : AppTheme.primary),
                       const SizedBox(width: 4),
                       Text(
                         isDish ? 'Dish' : 'Add',
@@ -521,19 +451,13 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                   },
                 ),
                 const SizedBox(width: 8),
-                Text(
-                  'Tạo món ăn tùy chỉnh',
-                  style: AppTheme.headlineStyle.copyWith(fontSize: 18),
-                ),
+                Text('Tạo món ăn tùy chỉnh', style: AppTheme.headlineStyle.copyWith(fontSize: 18)),
               ],
             ),
             const SizedBox(height: 16),
 
             // Tên món ăn
-            Text(
-              'Tên món ăn *',
-              style: AppTheme.semiboldStyle.copyWith(fontSize: 14),
-            ),
+            Text('Tên món ăn *', style: AppTheme.semiboldStyle.copyWith(fontSize: 14)),
             const SizedBox(height: 6),
             TextFormField(
               controller: _customNameController,
@@ -569,10 +493,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Số lượng *',
-                        style: AppTheme.semiboldStyle.copyWith(fontSize: 14),
-                      ),
+                      Text('Số lượng *', style: AppTheme.semiboldStyle.copyWith(fontSize: 14)),
                       const SizedBox(height: 6),
                       TextFormField(
                         controller: _customQuantityController,
@@ -611,10 +532,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        'Đơn vị tính *',
-                        style: AppTheme.semiboldStyle.copyWith(fontSize: 14),
-                      ),
+                      Text('Đơn vị tính *', style: AppTheme.semiboldStyle.copyWith(fontSize: 14)),
                       const SizedBox(height: 6),
                       DropdownButtonFormField<String>(
                         initialValue: _unitPresets.contains(_customUnit) ? _customUnit : _unitPresets.first,
@@ -666,9 +584,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
               decoration: InputDecoration(
                 labelText: 'Calo (kcal) *',
                 prefixIcon: const Icon(Icons.local_fire_department, color: Colors.orange),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                 filled: true,
                 fillColor: Colors.orange.withValues(alpha: 0.05),
               ),
@@ -692,9 +608,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
               decoration: InputDecoration(
                 labelText: 'Đạm / Protein (g)',
                 prefixIcon: const Icon(Icons.fitness_center, color: Colors.blue),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                 filled: true,
                 fillColor: Colors.blue.withValues(alpha: 0.05),
               ),
@@ -708,9 +622,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
               decoration: InputDecoration(
                 labelText: 'Tinh bột / Carbs (g)',
                 prefixIcon: const Icon(Icons.grain, color: Colors.amber),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                 filled: true,
                 fillColor: Colors.amber.withValues(alpha: 0.05),
               ),
@@ -724,9 +636,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
               decoration: InputDecoration(
                 labelText: 'Chất béo / Fat (g)',
                 prefixIcon: const Icon(Icons.opacity, color: Colors.red),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
                 filled: true,
                 fillColor: Colors.red.withValues(alpha: 0.05),
               ),
@@ -740,18 +650,12 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
               child: ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 ),
                 onPressed: _submitCustomFood,
                 child: const Text(
                   'Thêm vào thực đơn',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
               ),
             ),
@@ -791,16 +695,12 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
 
       if (!mounted) return;
 
-      await context.read<MealCubit>().fetchDailyEating(
-        widget.selectedDate,
-      );
+      await context.read<MealCubit>().fetchDailyEating(widget.selectedDate);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              'Đã thêm món "$name" vào ${_getMealTypeName(widget.selectedMealType)}',
-            ),
+            content: Text('Đã thêm món "$name" vào ${_getMealTypeName(widget.selectedMealType)}'),
             backgroundColor: Colors.green,
           ),
         );
@@ -845,9 +745,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                     ),
                     Text(
                       '${food.caloriesPer100g.toStringAsFixed(0)} kcal / 100g',
-                      style: AppTheme.bodyStyle.copyWith(
-                        color: AppTheme.textSecondary,
-                      ),
+                      style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary),
                     ),
                   ],
                 ),
@@ -857,10 +755,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
           const SizedBox(height: 24),
 
           // Portion size configuration
-          Text(
-            'Portion Size (g)',
-            style: AppTheme.semiboldStyle.copyWith(fontSize: 16),
-          ),
+          Text('Portion Size (g)', style: AppTheme.semiboldStyle.copyWith(fontSize: 16)),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -873,11 +768,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                     });
                   }
                 },
-                icon: const Icon(
-                  Icons.remove_circle_outline,
-                  color: AppTheme.primary,
-                  size: 28,
-                ),
+                icon: const Icon(Icons.remove_circle_outline, color: AppTheme.primary, size: 28),
               ),
               Expanded(
                 child: TextField(
@@ -893,11 +784,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                       });
                     }
                   },
-                  decoration: const InputDecoration(
-                    suffixText: 'g',
-                    border: InputBorder.none,
-                    filled: false,
-                  ),
+                  decoration: const InputDecoration(suffixText: 'g', border: InputBorder.none, filled: false),
                 ),
               ),
               IconButton(
@@ -907,11 +794,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                     _quantityController.text = _quantity.toStringAsFixed(0);
                   });
                 },
-                icon: const Icon(
-                  Icons.add_circle_outline,
-                  color: AppTheme.primary,
-                  size: 28,
-                ),
+                icon: const Icon(Icons.add_circle_outline, color: AppTheme.primary, size: 28),
               ),
             ],
           ),
@@ -934,10 +817,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                       });
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 14,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: isSelected ? AppTheme.primary : Colors.grey[100],
                         borderRadius: BorderRadius.circular(12),
@@ -959,42 +839,20 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
           const SizedBox(height: 32),
 
           // Dynamic Nutrition Info based on current quantity
-          Text(
-            'Nutrients for this portion',
-            style: AppTheme.semiboldStyle.copyWith(fontSize: 16),
-          ),
+          Text('Nutrients for this portion', style: AppTheme.semiboldStyle.copyWith(fontSize: 16)),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(16),
-            ),
+            decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(16)),
             child: Column(
               children: [
-                _buildNutritionRow(
-                  'Calories',
-                  '${calories.toStringAsFixed(0)} kcal',
-                  Colors.orange,
-                ),
+                _buildNutritionRow('Calories', '${calories.toStringAsFixed(0)} kcal', Colors.orange),
                 const Divider(),
-                _buildNutritionRow(
-                  'Protein',
-                  '${protein.toStringAsFixed(1)} g',
-                  Colors.blue,
-                ),
+                _buildNutritionRow('Protein', '${protein.toStringAsFixed(1)} g', Colors.blue),
                 const Divider(),
-                _buildNutritionRow(
-                  'Carbs',
-                  '${carbs.toStringAsFixed(1)} g',
-                  Colors.amber,
-                ),
+                _buildNutritionRow('Carbs', '${carbs.toStringAsFixed(1)} g', Colors.amber),
                 const Divider(),
-                _buildNutritionRow(
-                  'Fats',
-                  '${fat.toStringAsFixed(1)} g',
-                  Colors.red,
-                ),
+                _buildNutritionRow('Fats', '${fat.toStringAsFixed(1)} g', Colors.red),
               ],
             ),
           ),
@@ -1016,9 +874,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
                   'protein': protein,
                   'fat': fat,
                   'carbs': carbs,
-                  'servingUnit': food.servings.isNotEmpty
-                      ? food.servings.first.name
-                      : 'grams',
+                  'servingUnit': food.servings.isNotEmpty ? food.servings.first.name : 'grams',
                   'imageUrl': food.imageUrl,
                 };
 
@@ -1030,16 +886,12 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
 
                 if (!mounted) return;
 
-                await context.read<MealCubit>().fetchDailyEating(
-                  widget.selectedDate,
-                );
+                await context.read<MealCubit>().fetchDailyEating(widget.selectedDate);
 
                 if (mounted) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(
-                        'Added ${food.name} to ${_getMealTypeName(widget.selectedMealType)}',
-                      ),
+                      content: Text('Added ${food.name} to ${_getMealTypeName(widget.selectedMealType)}'),
                       backgroundColor: Colors.green,
                     ),
                   );
@@ -1065,19 +917,13 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
               Container(
                 width: 8,
                 height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: indicatorColor,
-                ),
+                decoration: BoxDecoration(shape: BoxShape.circle, color: indicatorColor),
               ),
               const SizedBox(width: 8),
               Text(label, style: AppTheme.bodyStyle),
             ],
           ),
-          Text(
-            value,
-            style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textPrimary),
-          ),
+          Text(value, style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textPrimary)),
         ],
       ),
     );

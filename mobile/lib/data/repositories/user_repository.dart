@@ -1,10 +1,12 @@
+import 'dart:convert';
+
+import 'package:core_shared/models/allergy_model.dart';
+import 'package:core_shared/models/check_in_model.dart';
+import 'package:core_shared/models/daily_eating_model.dart';
+import 'package:core_shared/models/diet_tag_model.dart';
 import 'package:core_shared/models/health_condition_model.dart';
 import 'package:core_shared/models/injury_model.dart';
-import 'package:core_shared/models/allergy_model.dart';
-import 'package:core_shared/models/diet_tag_model.dart';
 import 'package:core_shared/models/user_model.dart';
-import 'package:core_shared/models/check_in_model.dart';
-
 import 'package:dio/dio.dart';
 import 'package:mobile/core/network/api_client.dart';
 import 'package:mobile/data/services/token_service.dart';
@@ -61,10 +63,7 @@ class UserRepository {
 
   Future<void> submitAssessment(String userId, Map<String, dynamic> data) async {
     try {
-      final response = await apiClient.post(
-        '/users/$userId/assessment',
-        data: data,
-      );
+      final response = await apiClient.post('/users/$userId/assessment', data: data);
 
       if (response.data['success'] == true) {
         await TokenService.setAssessmentCompleted(true);
@@ -80,10 +79,7 @@ class UserRepository {
     try {
       await apiClient.post(
         '/users/$userId/allergies',
-        data: {
-          'selectedAllergies': selectedAllergies,
-          'allergyNote': allergyNote,
-        },
+        data: {'selectedAllergies': selectedAllergies, 'allergyNote': allergyNote},
       );
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? 'Network error');
@@ -92,16 +88,13 @@ class UserRepository {
 
   Future<void> updateUserPreferences(String userId, Map<String, dynamic> data) async {
     try {
-      await apiClient.post(
-        '/users/$userId/preferences',
-        data: data,
-      );
+      await apiClient.post('/users/$userId/preferences', data: data);
     } on DioException catch (e) {
       throw Exception(e.response?.data['message'] ?? 'Network error');
     }
   }
 
-  Future<String> getAiDietSuggestion(String userId, {int? days, String? userFeedback, String? startDate}) async {
+  Future<List<DailyEatingModel>> getAiDietSuggestion(String userId, {int? days, String? userFeedback, String? startDate}) async {
     try {
       final Map<String, dynamic> queryParams = {};
       if (days != null) queryParams['days'] = days;
@@ -114,7 +107,9 @@ class UserRepository {
         queryParameters: queryParams.isNotEmpty ? queryParams : null,
       );
       if (response.data['success'] == true) {
-        return response.data['data'] as String;
+        final jsonString = response.data['data'] as String;
+        final List<dynamic> decoded = jsonDecode(jsonString) as List<dynamic>;
+        return decoded.map((e) => DailyEatingModel.fromJson(e as Map<String, dynamic>)).toList();
       } else {
         throw Exception(response.data['message'] ?? 'Failed to load AI suggestion');
       }
@@ -187,10 +182,7 @@ class UserRepository {
 
   Future<CheckInResultModel> submitCheckIn(String userId, CheckInRequestModel request) async {
     try {
-      final response = await apiClient.post(
-        '/users/$userId/check-in/submit',
-        data: request.toJson(),
-      );
+      final response = await apiClient.post('/users/$userId/check-in/submit', data: request.toJson());
       if (response.data['success'] == true) {
         return CheckInResultModel.fromJson(response.data['data']);
       } else {
@@ -201,15 +193,16 @@ class UserRepository {
     }
   }
 
-  Future<Map<String, dynamic>> sendChatMessage(String userId, String userQuery, List<Map<String, String>> history, {String? selectedModel}) async {
+  Future<Map<String, dynamic>> sendChatMessage(
+    String userId,
+    String userQuery,
+    List<Map<String, String>> history, {
+    String? selectedModel,
+  }) async {
     try {
       final response = await apiClient.post(
         '/users/$userId/chat',
-        data: {
-          'userQuery': userQuery,
-          'history': history,
-          if (selectedModel != null) 'selectedModel': selectedModel,
-        },
+        data: {'userQuery': userQuery, 'history': history, if (selectedModel != null) 'selectedModel': selectedModel},
       );
       if (response.data['success'] == true) {
         return response.data['data'] as Map<String, dynamic>;
@@ -223,4 +216,3 @@ class UserRepository {
 }
 
 final userRepository = UserRepository();
-

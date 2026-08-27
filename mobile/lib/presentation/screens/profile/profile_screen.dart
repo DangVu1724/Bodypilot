@@ -2,21 +2,20 @@ import 'package:core_shared/models/user_metrics_model.dart';
 import 'package:core_shared/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/data/repositories/auth_repository.dart';
+import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
-import 'package:mobile/data/repositories/auth_repository.dart';
-import 'package:mobile/core/routes/app_routes.dart';
-import 'package:go_router/go_router.dart';
-import 'package:mobile/presentation/bloc/food/food_cubit.dart';
-import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
-
-import 'package:mobile/presentation/screens/profile/edit_profile_screen.dart';
-import 'package:mobile/presentation/screens/profile/privacy_screen.dart';
-import 'package:mobile/presentation/screens/profile/help_center_screen.dart';
-import 'package:mobile/presentation/screens/profile/about_screen.dart';
-import 'package:mobile/presentation/screens/profile/scientific_basis_screen.dart';
 import 'package:mobile/presentation/screens/assessment/assessment_screen.dart';
+import 'package:mobile/presentation/screens/profile/about_screen.dart';
+import 'package:mobile/presentation/screens/profile/edit_profile_screen.dart';
+import 'package:mobile/presentation/screens/profile/help_center_screen.dart';
+import 'package:mobile/presentation/screens/profile/privacy_screen.dart';
+import 'package:mobile/presentation/screens/profile/scientific_basis_screen.dart';
+import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({super.key});
@@ -43,9 +42,9 @@ class ProfileScreen extends StatelessWidget {
             } else if (state is UserLoaded) {
               return _buildProfileContent(context, state.user);
             } else if (state is UserError) {
-              return Center(child: Text('Error: ${state.message}'));
+              return Center(child: Text('Lỗi: ${state.message}'));
             }
-            return const Center(child: Text('No user data found'));
+            return const Center(child: Text('Không tìm thấy dữ liệu người dùng'));
           },
         ),
       ),
@@ -69,7 +68,7 @@ class ProfileScreen extends StatelessWidget {
           backgroundColor: Colors.transparent,
           flexibleSpace: FlexibleSpaceBar(
             titlePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            title: Text('Profile', style: AppTheme.headlineStyle.copyWith(fontSize: 24, letterSpacing: -0.5)),
+            title: Text('Hồ Sơ Cá Nhân', style: AppTheme.headlineStyle.copyWith(fontSize: 24, letterSpacing: -0.5)),
           ),
           automaticallyImplyLeading: false,
         ),
@@ -79,61 +78,71 @@ class ProfileScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildHeader(profile?.fullName ?? 'User', user.email, profile?.avatarUrl),
+                _buildHeader(profile?.fullName ?? 'Người dùng', user.email, profile?.avatarUrl),
                 const SizedBox(height: 32),
 
                 _buildHighlightMetricsCard(metrics),
                 const SizedBox(height: 32),
 
-                _buildSectionTitle('Current Goal'),
+                _buildSectionTitle('Mục Tiêu Hiện Tại'),
                 const SizedBox(height: 16),
                 _buildGoalCard(context, goal, metrics?.weight),
                 const SizedBox(height: 32),
 
-                _buildSectionTitle('Health Metrics'),
+                _buildSectionTitle('Chỉ Số Sức Khỏe'),
                 const SizedBox(height: 16),
                 _buildAdvancedMetricsGrid(metrics),
                 const SizedBox(height: 32),
 
-                _buildSettingsGroup('Account', [
-                  _buildSettingsTile(Icons.person_outline, 'Edit Profile', () {
-                    Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(builder: (context) => EditProfileScreen(user: user)),
-                    );
+                _buildSettingsGroup('TÀI KHOẢN', [
+                  _buildSettingsTile(Icons.person_outline, 'Chỉnh Sửa Hồ Sơ', () {
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).push(MaterialPageRoute(builder: (context) => EditProfileScreen(user: user)));
                   }),
                   _buildSettingsTile(Icons.assignment_outlined, 'Làm Lại Khảo Sát Thể Trạng', () {
-                    Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(builder: (context) => const AssessmentScreen()),
-                    );
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).push(MaterialPageRoute(builder: (context) => const AssessmentScreen()));
                   }),
-                  _buildSettingsTile(Icons.notifications_none, 'Notifications', () => context.push(AppRoutes.notifications)),
-                  _buildSettingsTile(Icons.security, 'Privacy & Security', () {
-                    Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(builder: (context) => const PrivacyScreen()),
-                    );
+                  _buildSettingsTile(
+                    Icons.notifications_none,
+                    'Thông Báo',
+                    () => context.push(AppRoutes.notifications),
+                  ),
+                  _buildSettingsTile(Icons.security, 'Quyền Riêng Tư & Bảo Mật', () {
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).push(MaterialPageRoute(builder: (context) => const PrivacyScreen()));
                   }),
                 ]),
                 const SizedBox(height: 24),
-                _buildSettingsGroup('Support', [
+                _buildSettingsGroup('HỖ TRỢ', [
                   _buildSettingsTile(Icons.science_outlined, 'Cơ Sở Khoa Học & Dữ Liệu', () {
-                    Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(builder: (context) => const ScientificBasisScreen()),
-                    );
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).push(MaterialPageRoute(builder: (context) => const ScientificBasisScreen()));
                   }),
-                  _buildSettingsTile(Icons.help_outline, 'Help Center', () {
-                    Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(builder: (context) => const HelpCenterScreen()),
-                    );
+                  _buildSettingsTile(Icons.help_outline, 'Trung Tâm Trợ Giúp', () {
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).push(MaterialPageRoute(builder: (context) => const HelpCenterScreen()));
                   }),
-                  _buildSettingsTile(Icons.info_outline, 'About BodyPilot', () {
-                    Navigator.of(context, rootNavigator: true).push(
-                      MaterialPageRoute(builder: (context) => const AboutScreen()),
-                    );
+                  _buildSettingsTile(Icons.info_outline, 'Về BodyPilot', () {
+                    Navigator.of(
+                      context,
+                      rootNavigator: true,
+                    ).push(MaterialPageRoute(builder: (context) => const AboutScreen()));
                   }),
                 ]),
                 const SizedBox(height: 24),
-                _buildSettingsGroup('Danger Zone', [
-                  _buildSettingsTile(Icons.logout, 'Logout', () => _showLogoutDialog(context), isDanger: true),
+                _buildSettingsGroup('ĐĂNG XUẤT', [
+                  _buildSettingsTile(Icons.logout, 'Đăng Xuất', () => _showLogoutDialog(context), isDanger: true),
                 ], showDivider: false),
                 const SizedBox(height: 60),
               ],
@@ -175,7 +184,7 @@ class ProfileScreen extends StatelessWidget {
                     const Text('🔥', style: TextStyle(fontSize: 14)),
                     const SizedBox(width: 6),
                     Text(
-                      '15 Day Streak',
+                      'Chuỗi 15 Ngày',
                       style: AppTheme.semiboldStyle.copyWith(fontSize: 12, color: const Color(0xFFB45309)),
                     ),
                   ],
@@ -199,11 +208,11 @@ class ProfileScreen extends StatelessWidget {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
-          _buildMetricItem('Weight', '${metrics?.weight ?? '--'}', 'kg'),
+          _buildMetricItem('Cân nặng', '${metrics?.weight ?? '--'}', 'kg'),
           _buildVerticalDivider(),
-          _buildMetricItem('Height', '${metrics?.heightCm?.toInt() ?? '--'}', 'cm'),
+          _buildMetricItem('Chiều cao', '${metrics?.heightCm?.toInt() ?? '--'}', 'cm'),
           _buildVerticalDivider(),
-          _buildMetricItem('Age', '${metrics?.age ?? '--'}', 'yo'),
+          _buildMetricItem('Tuổi', '${metrics?.age ?? '--'}', 'tuổi'),
         ],
       ),
     );
@@ -244,8 +253,21 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  String _formatGoalType(String? rawType) {
+    if (rawType == null || rawType.isEmpty) return 'Chưa thiết lập mục tiêu';
+    final g = rawType.toUpperCase();
+    if (g.contains('LOSE') || g.contains('CUT') || g.contains('GIAM') || g.contains('WEIGHT_LOSS')) {
+      return 'Giảm cân';
+    } else if (g.contains('GAIN') || g.contains('BUILD') || g.contains('TANG') || g.contains('MUSCLE')) {
+      return 'Tăng cơ / Tăng cân';
+    } else if (g.contains('MAINTAIN') || g.contains('DUY_TRI')) {
+      return 'Duy trì vóc dáng';
+    }
+    return rawType;
+  }
+
   Widget _buildGoalCard(BuildContext context, dynamic goal, double? currentWeight) {
-    final type = goal?.type ?? 'No active goal';
+    final type = _formatGoalType(goal?.type);
     final targetWeight = goal?.targetWeight;
     double progress = 0.65; // Mock progress
 
@@ -280,7 +302,7 @@ class ProfileScreen extends StatelessWidget {
                     Text(type, style: AppTheme.semiboldStyle.copyWith(fontSize: 18)),
                     const SizedBox(height: 2),
                     Text(
-                      targetWeight != null ? 'Target: $targetWeight kg' : 'Tap to set target',
+                      targetWeight != null ? 'Mục tiêu: $targetWeight kg' : 'Nhấn để đặt mục tiêu',
                       style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 14),
                     ),
                   ],
@@ -314,7 +336,7 @@ class ProfileScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                 padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text('Update Progress'),
+              child: const Text('Cập Nhật Tiến Độ'),
             ),
           ),
         ],
@@ -331,10 +353,15 @@ class ProfileScreen extends StatelessWidget {
       crossAxisSpacing: 16,
       childAspectRatio: 1.35,
       children: [
-        _buildMetricCard('BMI', metrics?.bmi?.toStringAsFixed(1) ?? '--', 'Index', Icons.speed),
-        _buildMetricCard('BMR', metrics?.bmr?.toInt().toString() ?? '--', 'kcal/day', Icons.local_fire_department),
-        _buildMetricCard('TDEE', metrics?.tdee?.toInt().toString() ?? '--', 'kcal/day', Icons.flash_on),
-        _buildMetricCard('Daily Cal', metrics?.targetCalories?.toInt().toString() ?? '--', 'kcal', Icons.restaurant),
+        _buildMetricCard('BMI', metrics?.bmi?.toStringAsFixed(1) ?? '--', 'Chỉ số', Icons.speed),
+        _buildMetricCard('BMR', metrics?.bmr?.toInt().toString() ?? '--', 'kcal/ngày', Icons.local_fire_department),
+        _buildMetricCard('TDEE', metrics?.tdee?.toInt().toString() ?? '--', 'kcal/ngày', Icons.flash_on),
+        _buildMetricCard(
+          'Calo Hàng Ngày',
+          metrics?.targetCalories?.toInt().toString() ?? '--',
+          'kcal',
+          Icons.restaurant,
+        ),
       ],
     );
   }
@@ -436,7 +463,11 @@ class ProfileScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
-                child: Container(width: 40, height: 4, decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2))),
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+                ),
               ),
               const SizedBox(height: 20),
               const Text(
@@ -479,7 +510,10 @@ class ProfileScreen extends StatelessWidget {
                     Navigator.pop(context);
                     context.read<UserCubit>().fetchUserProfile();
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(content: Text('Đã cập nhật tiến độ mục tiêu thành công!'), backgroundColor: Colors.green),
+                      const SnackBar(
+                        content: Text('Đã cập nhật tiến độ mục tiêu thành công!'),
+                        backgroundColor: Colors.green,
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -503,12 +537,12 @@ class ProfileScreen extends StatelessWidget {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
-        title: Text('Logout', style: AppTheme.headlineStyle.copyWith(fontSize: 18)),
-        content: const Text('Are you sure you want to sign out from your account?'),
+        title: Text('Đăng xuất', style: AppTheme.headlineStyle.copyWith(fontSize: 18)),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi tài khoản không?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel', style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary)),
+            child: Text('Hủy', style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary)),
           ),
           Container(
             margin: const EdgeInsets.only(right: 8),
@@ -529,7 +563,7 @@ class ProfileScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 padding: const EdgeInsets.symmetric(horizontal: 20),
               ),
-              child: const Text('Logout'),
+              child: const Text('Đăng xuất'),
             ),
           ),
         ],

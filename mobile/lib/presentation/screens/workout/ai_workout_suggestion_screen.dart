@@ -557,14 +557,6 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
   }
 
   Widget _buildErrorState() {
-    final rawMsg = _errorMessage ?? '';
-    final isGeminiQuotaError = rawMsg.contains('429') ||
-        rawMsg.toLowerCase().contains('quota') ||
-        rawMsg.toLowerCase().contains('rate limit') ||
-        rawMsg.toLowerCase().contains('exhausted') ||
-        rawMsg.toLowerCase().contains('token') ||
-        rawMsg.toLowerCase().contains('gemini');
-
     return Center(
       child: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 32.0),
@@ -574,24 +566,18 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: isGeminiQuotaError
-                    ? Colors.amber.withValues(alpha: 0.12)
-                    : Colors.red.withValues(alpha: 0.12),
+                color: Colors.red.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
-              child: Icon(
-                isGeminiQuotaError
-                    ? Icons.hourglass_top_rounded
-                    : Icons.cloud_off_rounded,
+              child: const Icon(
+                Icons.cloud_off_rounded,
                 size: 56,
-                color: isGeminiQuotaError ? Colors.amber[800] : Colors.red,
+                color: Colors.red,
               ),
             ),
             const SizedBox(height: 24),
             Text(
-              isGeminiQuotaError
-                  ? 'Lỗi Hạn Ngạch AI (Gemini Quota Exceeded)'
-                  : 'Không thể khởi tạo lịch tập AI',
+              'Không thể khởi tạo lịch tập AI',
               style: GoogleFonts.workSans(
                 fontSize: 20,
                 fontWeight: FontWeight.bold,
@@ -601,9 +587,7 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
             ),
             const SizedBox(height: 10),
             Text(
-              isGeminiQuotaError
-                  ? 'Dịch vụ AI Gemini hiện tại đã hết lượt dùng miễn phí hoặc vượt quá hạn ngạch cho phép (HTTP 429).'
-                  : 'Đã xảy ra sự cố trong quá trình tạo gợi ý lịch tập từ AI.',
+              'Đã xảy ra sự cố trong quá trình tạo gợi ý lịch tập từ AI. Vui lòng thử lại sau.',
               style: AppTheme.bodyStyle.copyWith(
                 color: const Color(0xFF64748B),
                 fontSize: 14,
@@ -611,70 +595,7 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
               ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 20),
-
-            // Diagnostic & Tips Card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: isGeminiQuotaError
-                    ? Colors.amber.withValues(alpha: 0.08)
-                    : Colors.grey.withValues(alpha: 0.08),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: isGeminiQuotaError
-                      ? Colors.amber.withValues(alpha: 0.3)
-                      : Colors.grey.withValues(alpha: 0.3),
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.lightbulb_outline,
-                        color: isGeminiQuotaError
-                            ? Colors.amber[800]
-                            : AppTheme.primary,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        'Hướng dẫn xử lý:',
-                        style: AppTheme.semiboldStyle.copyWith(
-                          fontSize: 14,
-                          color: AppTheme.textPrimary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    '1. Thử lại sau 1 - 2 phút (Google AI sẽ tự động reset lượt gọi).',
-                    style: AppTheme.bodyStyle.copyWith(fontSize: 13, color: const Color(0xFF334155)),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '2. Thay thế API Key Gemini mới trong backend local nếu liên tục lỗi.',
-                    style: AppTheme.bodyStyle.copyWith(fontSize: 13, color: const Color(0xFF334155)),
-                  ),
-                  if (rawMsg.isNotEmpty) ...[
-                    const Divider(height: 20),
-                    Text(
-                      'Chi tiết lỗi: $rawMsg',
-                      style: AppTheme.bodyStyle.copyWith(
-                        fontSize: 12,
-                        color: Colors.red[700],
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-            ),
-
-            const SizedBox(height: 28),
+            const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,
               height: 48,
@@ -683,17 +604,11 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
                 icon: const Icon(Icons.refresh, color: Colors.white),
                 label: const Text(
                   'Thử lại ngay',
-                  style: TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: AppTheme.primary,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(16),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   elevation: 0,
                 ),
               ),
@@ -701,10 +616,7 @@ class _AiWorkoutSuggestionScreenState extends State<AiWorkoutSuggestionScreen> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text(
-                'Quay lại',
-                style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary),
-              ),
+              child: Text('Quay lại', style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary)),
             ),
           ],
         ),

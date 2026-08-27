@@ -227,15 +227,21 @@ class WorkoutRepository {
     }
 
     try {
-      final queryParams = <String, dynamic>{'query': query, 'page': page, 'size': size};
+      final queryParams = <String, dynamic>{'page': page, 'size': size};
+      if (query.isNotEmpty) queryParams['name'] = query;
       if (bodyPartId != null) queryParams['bodyPartId'] = bodyPartId;
       if (categoryId != null) queryParams['categoryId'] = categoryId;
       if (difficulty != null) queryParams['difficulty'] = difficulty;
 
-      final response = await apiClient.get('/exercises/search', queryParameters: queryParams);
+      final response = await apiClient.get('/exercises', queryParameters: queryParams);
+
+      final rawData = response.data;
+      final dataMap = (rawData is Map<String, dynamic> && rawData.containsKey('data'))
+          ? rawData['data'] as Map<String, dynamic>
+          : rawData as Map<String, dynamic>;
 
       final paginated = PaginatedResponse<ExerciseModel>.fromJson(
-        response.data['data'] as Map<String, dynamic>,
+        dataMap,
         (json) => ExerciseModel.fromJson(json),
       );
 
@@ -261,14 +267,21 @@ class WorkoutRepository {
     required int size,
   }) async {
     try {
-      final queryParams = <String, dynamic>{'query': query, 'page': page, 'size': size};
+      final queryParams = <String, dynamic>{'page': page, 'size': size};
+      if (query.isNotEmpty) queryParams['name'] = query;
       if (bodyPartId != null) queryParams['bodyPartId'] = bodyPartId;
       if (categoryId != null) queryParams['categoryId'] = categoryId;
       if (difficulty != null) queryParams['difficulty'] = difficulty;
 
-      final response = await apiClient.get('/exercises/search', queryParameters: queryParams);
+      final response = await apiClient.get('/exercises', queryParameters: queryParams);
+
+      final rawData = response.data;
+      final dataMap = (rawData is Map<String, dynamic> && rawData.containsKey('data'))
+          ? rawData['data'] as Map<String, dynamic>
+          : rawData as Map<String, dynamic>;
+
       final paginated = PaginatedResponse<ExerciseModel>.fromJson(
-        response.data['data'] as Map<String, dynamic>,
+        dataMap,
         (json) => ExerciseModel.fromJson(json),
       );
       await WorkoutDatabaseHelper.instance.insertExercises(paginated.content);
@@ -288,12 +301,17 @@ class WorkoutRepository {
     try {
       for (int page = 0; page < maxBatches; page++) {
         final response = await apiClient.get(
-          '/exercises/search',
-          queryParameters: {'query': '', 'page': page, 'size': batchSize},
+          '/exercises',
+          queryParameters: {'page': page, 'size': batchSize},
         );
 
+        final rawData = response.data;
+        final dataMap = (rawData is Map<String, dynamic> && rawData.containsKey('data'))
+            ? rawData['data'] as Map<String, dynamic>
+            : rawData as Map<String, dynamic>;
+
         final paginated = PaginatedResponse<ExerciseModel>.fromJson(
-          response.data['data'] as Map<String, dynamic>,
+          dataMap,
           (json) => ExerciseModel.fromJson(json),
         );
 

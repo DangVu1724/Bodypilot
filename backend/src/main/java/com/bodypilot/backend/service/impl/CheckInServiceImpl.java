@@ -1,23 +1,5 @@
 package com.bodypilot.backend.service.impl;
 
-import com.bodypilot.backend.exception.ResourceNotFoundException;
-import com.bodypilot.backend.model.dto.checkin.CheckInRequest;
-import com.bodypilot.backend.model.dto.checkin.CheckInResultResponse;
-import com.bodypilot.backend.model.dto.checkin.CheckInStatusResponse;
-import com.bodypilot.backend.model.dto.nutrition.CalorieCalculationResult;
-import com.bodypilot.backend.model.entity.user.*;
-import com.bodypilot.backend.model.enums.ActivityLevel;
-import com.bodypilot.backend.model.enums.Gender;
-import com.bodypilot.backend.model.enums.Goal;
-import com.bodypilot.backend.repository.*;
-import com.bodypilot.backend.service.CalorieCalculatorService;
-import com.bodypilot.backend.service.CheckInService;
-import com.bodypilot.backend.service.NotificationService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
@@ -27,6 +9,37 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.bodypilot.backend.exception.ResourceNotFoundException;
+import com.bodypilot.backend.model.dto.checkin.CheckInRequest;
+import com.bodypilot.backend.model.dto.checkin.CheckInResultResponse;
+import com.bodypilot.backend.model.dto.checkin.CheckInStatusResponse;
+import com.bodypilot.backend.model.dto.nutrition.CalorieCalculationResult;
+import com.bodypilot.backend.model.entity.user.User;
+import com.bodypilot.backend.model.entity.user.UserCheckInHistory;
+import com.bodypilot.backend.model.entity.user.UserGoal;
+import com.bodypilot.backend.model.entity.user.UserInjury;
+import com.bodypilot.backend.model.entity.user.UserMetricHistory;
+import com.bodypilot.backend.model.entity.user.UserProfile;
+import com.bodypilot.backend.model.enums.ActivityLevel;
+import com.bodypilot.backend.model.enums.Gender;
+import com.bodypilot.backend.model.enums.Goal;
+import com.bodypilot.backend.repository.InjuryRepository;
+import com.bodypilot.backend.repository.UserCheckInHistoryRepository;
+import com.bodypilot.backend.repository.UserGoalRepository;
+import com.bodypilot.backend.repository.UserInjuryRepository;
+import com.bodypilot.backend.repository.UserMetricHistoryRepository;
+import com.bodypilot.backend.repository.UserProfileRepository;
+import com.bodypilot.backend.repository.UserRepository;
+import com.bodypilot.backend.service.CalorieCalculatorService;
+import com.bodypilot.backend.service.CheckInService;
+import com.bodypilot.backend.service.NotificationService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -41,45 +54,45 @@ public class CheckInServiceImpl implements CheckInService {
     private final UserInjuryRepository userInjuryRepository;
     private final InjuryRepository injuryRepository;
     private final CalorieCalculatorService calorieCalculatorService;
-    private final GeminiClient geminiClient;
     private final NotificationService notificationService;
 
     @Override
     public CheckInStatusResponse getCheckInStatus(UUID userId) {
+        // 1. Truy vấn thông tin người dùng & hồ sơ cơ bản
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("Không tìm thấy người dùng với ID: " + userId));
+        UserProfile profile = profileRepository.findByUserId(userId).orElse(null);
 
-        UserProfile profile = profileRepository.findByUserId(userId)
-                .orElse(null);
-
-        UserCheckInHistory latestCheckIn = userCheckInHistoryRepository.findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
+        // 2. Lấy thông tin lần check-in gần nhất
+        UserCheckInHistory latestCheckIn = userCheckInHistoryRepository
+                .findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
         LocalDate lastCheckInDate = latestCheckIn != null ? latestCheckIn.getCheckInDate() : null;
 
+        // 3. Tính toán thời gian & kiểm tra điều kiện Check-in tuần
         LocalDate today = LocalDate.now();
-        java.time.DayOfWeek dayOfWeek = today.getDayOfWeek();
-        boolean isSundayOrMonday = dayOfWeek == java.time.DayOfWeek.SUNDAY || dayOfWeek == java.time.DayOfWeek.MONDAY;
+        boolean isSundayOrMonday = today.getDayOfWeek() == java.time.DayOfWeek.SUNDAY 
+                || today.getDayOfWeek() == java.time.DayOfWeek.MONDAY;
+        
+        LocalDate sundayThisWeek = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.SUNDAY));
+        boolean checkedInThisWeek = userCheckInHistoryRepository.existsByUserIdAndCheckInDateBetween(userId, sundayThisWeek, today);
 
-        LocalDate sundayOfThisWeek = today.with(java.time.temporal.TemporalAdjusters.previousOrSame(java.time.DayOfWeek.SUNDAY));
-
-        boolean checkedInThisWeek = userCheckInHistoryRepository.existsByUserIdAndCheckInDateBetween(userId, sundayOfThisWeek, today);
-
-        // User is considered new if they have never checked in and registered within the last 7 days
-        boolean hasNeverCheckedIn = (lastCheckInDate == null);
+        // 4. Xác định trạng thái tài khoản mới (Onboarding) & Hạn Check-in (isDue)
         LocalDate registrationDate = user.getCreatedAt() != null ? user.getCreatedAt().toLocalDate() : today;
         long daysSinceRegistration = ChronoUnit.DAYS.between(registrationDate, today);
 
-        boolean onboardingNeeded = hasNeverCheckedIn && daysSinceRegistration < 7;
+        boolean onboardingNeeded = (lastCheckInDate == null) && (daysSinceRegistration < 7);
         boolean isDue = !onboardingNeeded && isSundayOrMonday && !checkedInThisWeek;
-
         long daysSinceLastCheckIn = lastCheckInDate != null ? ChronoUnit.DAYS.between(lastCheckInDate, today) : daysSinceRegistration;
 
-        Double currentWeight = profile != null && profile.getWeight() != null ? profile.getWeight() : 60.0;
-        Double currentHeight = profile != null && profile.getHeightCm() != null ? profile.getHeightCm() : 170.0;
+        // 5. Lấy mục tiêu hoạt động & thông số thể trạng hiện tại
+        Double currentWeight = (profile != null && profile.getWeight() != null) ? profile.getWeight() : 60.0;
+        Double currentHeight = (profile != null && profile.getHeightCm() != null) ? profile.getHeightCm() : 170.0;
 
         UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
                 .stream().findFirst().orElse(null);
         String goalStr = activeGoal != null ? activeGoal.getType() : "LOSE_0_5KG";
 
+        // 6. Trả về DTO kết quả trạng thái Check-in
         return CheckInStatusResponse.builder()
                 .isCheckInDue(isDue)
                 .onboardingNeeded(onboardingNeeded)
@@ -103,7 +116,8 @@ public class CheckInServiceImpl implements CheckInService {
 
         Double previousWeight = profile.getWeight() != null ? profile.getWeight() : request.getNewWeight();
         Double newWeight = request.getNewWeight() != null ? request.getNewWeight() : previousWeight;
-        Double heightCm = request.getNewHeightCm() != null ? request.getNewHeightCm() : (profile.getHeightCm() != null ? profile.getHeightCm() : 170.0);
+        Double heightCm = request.getNewHeightCm() != null ? request.getNewHeightCm()
+                : (profile.getHeightCm() != null ? profile.getHeightCm() : 170.0);
 
         profile.setWeight(newWeight);
         if (request.getNewHeightCm() != null) {
@@ -117,7 +131,8 @@ public class CheckInServiceImpl implements CheckInService {
 
         String requestedGoal = request.getGoalChoice();
         boolean hasNewGoal = requestedGoal != null && !"KEEP_SAME".equalsIgnoreCase(requestedGoal);
-        String selectedGoalStr = hasNewGoal ? requestedGoal : (activeGoal != null ? activeGoal.getType() : "LOSE_0_5KG");
+        String selectedGoalStr = hasNewGoal ? requestedGoal
+                : (activeGoal != null ? activeGoal.getType() : "LOSE_0_5KG");
 
         if (hasNewGoal && activeGoal != null) {
             activeGoal.setType(selectedGoalStr);
@@ -146,8 +161,7 @@ public class CheckInServiceImpl implements CheckInService {
         int age = profile.getAge() != null ? profile.getAge() : 25;
 
         CalorieCalculationResult calculationResult = calorieCalculatorService.calculateMetrics(
-                newWeight, heightCm, age, genderEnum, activityEnum, goalEnum
-        );
+                newWeight, heightCm, age, genderEnum, activityEnum, goalEnum);
 
         // Save new UserMetricHistory
         UserMetricHistory newMetric = UserMetricHistory.builder()
@@ -169,7 +183,8 @@ public class CheckInServiceImpl implements CheckInService {
                 .doubleValue();
 
         // Generate AI Feedback
-        String aiFeedback = generateAiCheckInFeedback(previousWeight, newWeight, weightChange, request, calculationResult);
+        String aiFeedback = generateAiCheckInFeedback(previousWeight, newWeight, weightChange, request,
+                calculationResult);
 
         // Save UserCheckInHistory
         String injuredPartsStr = (request.getInjuredParts() != null && !request.getInjuredParts().isEmpty())
@@ -200,7 +215,8 @@ public class CheckInServiceImpl implements CheckInService {
         // Sync UserInjuries in database (Optimized Batch Sync)
         if (request.getHasInjury() != null) {
             List<UserInjury> existingInjuries = userInjuryRepository.findAllByUserId(userId);
-            boolean hasNoInjuries = Boolean.FALSE.equals(request.getHasInjury()) || request.getInjuredParts() == null || request.getInjuredParts().isEmpty();
+            boolean hasNoInjuries = Boolean.FALSE.equals(request.getHasInjury()) || request.getInjuredParts() == null
+                    || request.getInjuredParts().isEmpty();
 
             if (hasNoInjuries) {
                 if (!existingInjuries.isEmpty()) {
@@ -245,11 +261,13 @@ public class CheckInServiceImpl implements CheckInService {
         }
 
         try {
-            notificationService.createNotification(userId, com.bodypilot.backend.model.dto.notification.CreateNotificationRequest.builder()
-                    .title("Khảo sát Check-in tuần đã hoàn tất! 📊🎉")
-                    .body("Chỉ số TDEE mới của bạn là " + Math.round(calculationResult.getTdee()) + " kcal/ngày. AI đã cập nhật nhận xét và kế hoạch phù hợp.")
-                    .category("CHECKIN")
-                    .build());
+            notificationService.createNotification(userId,
+                    com.bodypilot.backend.model.dto.notification.CreateNotificationRequest.builder()
+                            .title("Khảo sát Check-in tuần đã hoàn tất! 📊🎉")
+                            .body("Chỉ số TDEE mới của bạn là " + Math.round(calculationResult.getTdee())
+                                    + " kcal/ngày. AI đã cập nhật nhận xét và kế hoạch phù hợp.")
+                            .category("CHECKIN")
+                            .build());
         } catch (Exception e) {
             log.warn("Failed to create notification on check-in submit: {}", e.getMessage());
         }
@@ -267,22 +285,29 @@ public class CheckInServiceImpl implements CheckInService {
     }
 
     private String generateAiCheckInFeedback(Double prevWeight, Double newWeight, double weightChange,
-                                              CheckInRequest request, CalorieCalculationResult calc) {
+            CheckInRequest request, CalorieCalculationResult calc) {
         StringBuilder sb = new StringBuilder();
 
         // 1. Phân tích xu hướng biến động cân nặng
         if (weightChange < -0.1) {
             double absChange = Math.abs(weightChange);
             if (absChange >= 0.3 && absChange <= 1.0) {
-                sb.append(String.format("Chúc mừng bạn! Cân nặng đã giảm %.1f kg theo tốc độ an toàn và khoa học (0.5 - 1 kg/tuần). ", absChange));
+                sb.append(String.format(
+                        "Chúc mừng bạn! Cân nặng đã giảm %.1f kg theo tốc độ an toàn và khoa học (0.5 - 1 kg/tuần). ",
+                        absChange));
             } else if (absChange > 1.0) {
-                sb.append(String.format("Bạn đã giảm %.1f kg trong tuần qua. Tốc độ này khá nhanh, hãy chú ý nạp đủ protein để bảo toàn khối lượng cơ bắp. ", absChange));
+                sb.append(String.format(
+                        "Bạn đã giảm %.1f kg trong tuần qua. Tốc độ này khá nhanh, hãy chú ý nạp đủ protein để bảo toàn khối lượng cơ bắp. ",
+                        absChange));
             } else {
-                sb.append(String.format("Cân nặng của bạn giảm nhẹ %.1f kg, tiến trình đang đi đúng hướng! ", absChange));
+                sb.append(
+                        String.format("Cân nặng của bạn giảm nhẹ %.1f kg, tiến trình đang đi đúng hướng! ", absChange));
             }
         } else if (weightChange > 0.1) {
             if (weightChange >= 0.3 && weightChange <= 0.8) {
-                sb.append(String.format("Cân nặng tăng %.1f kg, rất phù hợp với tiến trình phát triển cơ bắp và thể trạng. ", weightChange));
+                sb.append(String.format(
+                        "Cân nặng tăng %.1f kg, rất phù hợp với tiến trình phát triển cơ bắp và thể trạng. ",
+                        weightChange));
             } else {
                 sb.append(String.format("Cân nặng của bạn đã tăng %.1f kg so với chu kỳ trước. ", weightChange));
             }
@@ -291,12 +316,15 @@ public class CheckInServiceImpl implements CheckInService {
         }
 
         // 2. Phân tích chỉ số Calo & TDEE theo công thức Mifflin-St Jeor chuẩn khoa học
-        sb.append(String.format("Dựa trên chỉ số sinh học mới (BMR: %.0f kcal, TDEE: %.0f kcal), mục tiêu calo mỗi ngày được điều chỉnh là %.0f kcal/ngày. ",
+        sb.append(String.format(
+                "Dựa trên chỉ số sinh học mới (BMR: %.0f kcal, TDEE: %.0f kcal), mục tiêu calo mỗi ngày được điều chỉnh là %.0f kcal/ngày. ",
                 calc.getBmr(), calc.getTdee(), calc.getTargetCalories()));
 
         // 3. Đánh giá tình trạng thể trạng & chấn thương
-        if (Boolean.TRUE.equals(request.getHasInjury()) && request.getInjuredParts() != null && !request.getInjuredParts().isEmpty()) {
-            sb.append("Hệ thống đã ghi nhận tình trạng chấn thương và tự động loại bỏ các bài tập có rủi ro cho các vùng bị ảnh hưởng. ");
+        if (Boolean.TRUE.equals(request.getHasInjury()) && request.getInjuredParts() != null
+                && !request.getInjuredParts().isEmpty()) {
+            sb.append(
+                    "Hệ thống đã ghi nhận tình trạng chấn thương và tự động loại bỏ các bài tập có rủi ro cho các vùng bị ảnh hưởng. ");
         } else if ("ENERGETIC".equalsIgnoreCase(request.getEnergyLevel())) {
             sb.append("Tuần qua bạn tràn đầy năng lượng, hãy tiếp tục duy trì nhịp độ thể lực tuyệt vời này nhé! ");
         } else if ("TIRED".equalsIgnoreCase(request.getEnergyLevel())) {
@@ -308,7 +336,8 @@ public class CheckInServiceImpl implements CheckInService {
     }
 
     private String translateGoal(String goalStr) {
-        if (goalStr == null) return "Giảm cân nhẹ nhàng";
+        if (goalStr == null)
+            return "Giảm cân nhẹ nhàng";
         return switch (goalStr) {
             case "LOSE_0_5KG" -> "Giảm 0.5kg / tuần";
             case "LOSE_1KG" -> "Giảm 1kg / tuần";
@@ -317,36 +346,6 @@ public class CheckInServiceImpl implements CheckInService {
             case "GAIN_1KG" -> "Tăng 1kg / tuần";
             case "GAIN_MUSCLE" -> "Tăng cơ giảm mỡ";
             default -> goalStr;
-        };
-    }
-
-    private String translateAdherence(String val) {
-        if (val == null) return "Khá tốt";
-        return switch (val) {
-            case "EXCELLENT" -> "Rất tốt (90-100%)";
-            case "GOOD" -> "Khá tốt (70-80%)";
-            case "NEEDS_WORK" -> "Cần cố gắng thêm (<50%)";
-            default -> val;
-        };
-    }
-
-    private String translateEnergy(String val) {
-        if (val == null) return "Bình thường";
-        return switch (val) {
-            case "ENERGETIC" -> "Sung sức, tràn đầy năng lượng";
-            case "NORMAL" -> "Bình thường, ổn định";
-            case "TIRED" -> "Có mệt mỏi nhẹ";
-            default -> val;
-        };
-    }
-
-    private String translateHunger(String val) {
-        if (val == null) return "Vừa đủ";
-        return switch (val) {
-            case "SATISFIED" -> "No đủ, thoải mái";
-            case "NORMAL" -> "Bình thường";
-            case "HUNGRY" -> "Nhanh đói";
-            default -> val;
         };
     }
 }

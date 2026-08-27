@@ -47,6 +47,18 @@ class FoodModel {
   });
 
   factory FoodModel.fromJson(Map<String, dynamic> json) {
+    FoodCategoryModel? category;
+    if (json['category'] != null) {
+      category = FoodCategoryModel.fromJson(json['category'] as Map<String, dynamic>);
+    } else if (json['categoryId'] != null) {
+      category = FoodCategoryModel(
+        id: json['categoryId'] as String,
+        name: json['categoryName'] as String? ?? '',
+        code: json['categoryCode'] as String? ?? json['code'] as String? ?? '',
+        appliesTo: json['categoryAppliesTo'] as String? ?? 'DISH',
+      );
+    }
+
     return FoodModel(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -58,10 +70,8 @@ class FoodModel {
       fiberPer100g: (json['fiberPer100g'] as num?)?.toDouble(),
       sugarPer100g: (json['sugarPer100g'] as num?)?.toDouble(),
       sodiumMgPer100g: (json['sodiumMgPer100g'] as num?)?.toDouble(),
-      category: json['category'] != null
-          ? FoodCategoryModel.fromJson(json['category'] as Map<String, dynamic>)
-          : null,
-      categoryName: json['categoryName'] as String?,
+      category: category,
+      categoryName: json['categoryName'] as String? ?? category?.name,
       defaultServingId: json['defaultServingId'] as String? ?? 
           (json['defaultServing'] != null ? (json['defaultServing'] as Map<String, dynamic>)['id'] as String? : null),
       imageUrl: json['imageUrl'] as String?,
@@ -93,8 +103,9 @@ class FoodModel {
       'fiberPer100g': fiberPer100g,
       'sugarPer100g': sugarPer100g,
       'sodiumMgPer100g': sodiumMgPer100g,
+      'category': category?.toJson(),
       'categoryId': category?.id,
-      'categoryName': categoryName,
+      'categoryName': categoryName ?? category?.name,
       'defaultServingId': defaultServingId,
       'imageUrl': imageUrl,
       'description': description,

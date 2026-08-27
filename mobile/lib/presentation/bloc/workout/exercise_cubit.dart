@@ -23,7 +23,7 @@ class ExerciseCubit extends Cubit<ExerciseState> {
         ));
       }
     } catch (e) {
-      if (!isClosed) emit(ExerciseError(e.toString()));
+      if (!isClosed) emit(ExerciseError(_formatErrorMessage(e)));
     }
   }
 
@@ -45,8 +45,16 @@ class ExerciseCubit extends Cubit<ExerciseState> {
         ));
       }
     } catch (e) {
-      if (!isClosed) emit(ExerciseError(e.toString()));
+      if (!isClosed) emit(ExerciseError(_formatErrorMessage(e)));
     }
+  }
+
+  String _formatErrorMessage(dynamic error) {
+    final str = error.toString();
+    if (str.contains('DioException') || str.contains('SocketException') || str.contains('connection error') || str.contains('Failed to connect') || str.contains('NetworkException')) {
+      return 'Không có kết nối mạng. Vui lòng kiểm tra lại Wifi/4G.';
+    }
+    return 'Không thể tải danh sách bài tập. Vui lòng thử lại sau.';
   }
 
   Future<void> loadMoreExercises(String categoryId) async {

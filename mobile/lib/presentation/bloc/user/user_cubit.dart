@@ -28,6 +28,9 @@ class UserCubit extends Cubit<UserState> {
     try {
       final user = await _userRepository.getUserDetails(userId);
       await TokenService.saveUserCache(user);
+      if (user.profile != null) {
+        await TokenService.setAssessmentCompleted(user.profile!.isAssessmentCompleted);
+      }
       emit(UserLoaded(user));
       return true;
     } catch (e) {

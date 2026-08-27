@@ -86,9 +86,14 @@ public class VectorRagService {
                 return TextSegment.from(text);
             }).collect(Collectors.toList());
 
+            int batchSize = 500;
+
             if (!foodSegments.isEmpty()) {
-                Response<List<Embedding>> response = model.embedAll(foodSegments);
-                embeddingStore.addAll(response.content(), foodSegments);
+                for (int i = 0; i < foodSegments.size(); i += batchSize) {
+                    List<TextSegment> batch = foodSegments.subList(i, Math.min(i + batchSize, foodSegments.size()));
+                    Response<List<Embedding>> response = model.embedAll(batch);
+                    embeddingStore.addAll(response.content(), batch);
+                }
             }
 
             // 2. Chuyển đổi dữ liệu Bài tập song song (Parallel Stream)
@@ -105,8 +110,11 @@ public class VectorRagService {
             }).collect(Collectors.toList());
 
             if (!exerciseSegments.isEmpty()) {
-                Response<List<Embedding>> response = model.embedAll(exerciseSegments);
-                embeddingStore.addAll(response.content(), exerciseSegments);
+                for (int i = 0; i < exerciseSegments.size(); i += batchSize) {
+                    List<TextSegment> batch = exerciseSegments.subList(i, Math.min(i + batchSize, exerciseSegments.size()));
+                    Response<List<Embedding>> response = model.embedAll(batch);
+                    embeddingStore.addAll(response.content(), batch);
+                }
             }
 
             isIndexed = true;

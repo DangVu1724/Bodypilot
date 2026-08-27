@@ -1,17 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/presentation/bloc/step/step_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
-import 'package:mobile/presentation/bloc/step/step_cubit.dart';
-import 'package:intl/intl.dart';
-import 'widgets/calorie_dashboard_card.dart';
-import 'widgets/weight_goal_card.dart';
+import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
+
 import 'widgets/ai_suggestion_banner.dart';
 import 'widgets/browse_meals_list.dart';
+import 'widgets/calorie_dashboard_card.dart';
 import 'widgets/meal_plan_section.dart';
-import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
+import 'widgets/weight_goal_card.dart';
 
 class MealScreen extends StatefulWidget {
   const MealScreen({super.key});

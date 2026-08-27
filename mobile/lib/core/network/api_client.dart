@@ -22,6 +22,7 @@ class ApiClient {
   // - Nếu dùng Render Cloud: trả về renderCloudUrl
   // - Nếu dùng máy giả lập: chọn localAndroidUrl hoặc localIosUrl
   static String get baseUrl {
+    // Kết nối Render Cloud Backend
     return renderCloudUrl;
   }
 

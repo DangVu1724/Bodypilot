@@ -15,7 +15,7 @@ class WorkoutPlanCubit extends Cubit<WorkoutPlanState> {
       final plans = await _workoutRepository.getAllPlans();
       if (!isClosed) emit(WorkoutPlanLoaded(plans));
     } catch (e) {
-      if (!isClosed) emit(WorkoutPlanError(e.toString()));
+      if (!isClosed) emit(WorkoutPlanError(_formatErrorMessage(e)));
     }
   }
 
@@ -30,7 +30,15 @@ class WorkoutPlanCubit extends Cubit<WorkoutPlanState> {
       final plans = await _workoutRepository.getAllPlansFull();
       if (!isClosed) emit(WorkoutPlanLoaded(plans));
     } catch (e) {
-      if (!isClosed) emit(WorkoutPlanError(e.toString()));
+      if (!isClosed) emit(WorkoutPlanError(_formatErrorMessage(e)));
     }
+  }
+
+  String _formatErrorMessage(dynamic error) {
+    final str = error.toString();
+    if (str.contains('DioException') || str.contains('SocketException') || str.contains('connection error') || str.contains('Failed to connect') || str.contains('NetworkException')) {
+      return 'Không có kết nối mạng. Vui lòng kiểm tra lại Wifi/4G.';
+    }
+    return 'Không thể tải lịch tập gợi ý. Vui lòng thử lại sau.';
   }
 }

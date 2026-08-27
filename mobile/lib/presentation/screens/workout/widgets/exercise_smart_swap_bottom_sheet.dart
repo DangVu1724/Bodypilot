@@ -157,7 +157,35 @@ class _ExerciseSmartSwapBottomSheetState extends State<ExerciseSmartSwapBottomSh
                     ),
                   )
                 : _error != null
-                    ? Center(child: Text('Lỗi: $_error', style: const TextStyle(color: Colors.redAccent)))
+                    ? Center(
+                        child: Padding(
+                          padding: const EdgeInsets.all(20),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(Icons.wifi_off_rounded, color: Color(0xFF38BDF8), size: 36),
+                              const SizedBox(height: 12),
+                              Text(
+                                _error!.contains('DioException') || _error!.contains('connection error')
+                                    ? 'Không có kết nối mạng.'
+                                    : 'Không thể kết nối máy chủ.',
+                                style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
+                              ),
+                              const SizedBox(height: 14),
+                              OutlinedButton.icon(
+                                onPressed: _fetchCandidates,
+                                icon: const Icon(Icons.refresh_rounded, size: 16),
+                                label: const Text('Thử lại'),
+                                style: OutlinedButton.styleFrom(
+                                  foregroundColor: const Color(0xFF38BDF8),
+                                  side: const BorderSide(color: Color(0xFF38BDF8)),
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      )
                     : _candidates.isEmpty
                         ? const Center(
                             child: Text(

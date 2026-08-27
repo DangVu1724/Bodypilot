@@ -44,7 +44,7 @@ class LoginCubit extends Cubit<LoginState> {
       final isComplete = await authRepository.login(state.email, state.password);
       emit(state.copyWith(status: LoginStatus.success, isProfileComplete: isComplete));
     } catch (e) {
-      emit(state.copyWith(status: LoginStatus.failure, errorMessage: e.toString().replaceAll('Exception: ', '')));
+      emit(state.copyWith(status: LoginStatus.failure, errorMessage: _formatErrorMessage(e)));
     }
   }
 
@@ -52,22 +52,35 @@ class LoginCubit extends Cubit<LoginState> {
     emit(state.copyWith(status: LoginStatus.loading, errorMessage: null));
 
     try {
-      await GoogleSignIn.instance.initialize();
+      await GoogleSignIn.instance.initialize(
+        serverClientId: '517107633218-u5u15mb0iuc8j6po8s6mblrc37c6vvd2.apps.googleusercontent.com',
+      );
 
       final GoogleSignInAccount googleUser = await GoogleSignIn.instance.authenticate();
 
       final GoogleSignInAuthentication googleAuth = googleUser.authentication;
       final String? idToken = googleAuth.idToken;
 
-      if (idToken == null) {
-        throw Exception("Không thể lấy Google ID Token");
+      if (idToken == null || idToken.isEmpty) {
+        throw Exception("Không thể lấy Google ID Token từ tài khoản của bạn.");
       }
 
       final isComplete = await authRepository.loginWithGoogle(idToken);
       emit(state.copyWith(status: LoginStatus.success, isProfileComplete: isComplete));
     } catch (e) {
-      emit(state.copyWith(status: LoginStatus.failure, errorMessage: e.toString().replaceAll('Exception: ', '')));
+      emit(state.copyWith(status: LoginStatus.failure, errorMessage: _formatErrorMessage(e)));
     }
+  }
+
+  String _formatErrorMessage(dynamic error) {
+    final str = error.toString();
+    if (str.contains('DioException') || str.contains('SocketException') || str.contains('connection error') || str.contains('Failed to connect') || str.contains('NetworkException') || str.contains('network_error')) {
+      return 'Không thể kết nối đến máy chủ Backend. Vui lòng kiểm tra lại IP/Wifi hoặc môi trường chạy.';
+    }
+    if (str.contains('Bad credentials') || str.contains('401') || str.contains('Invalid email or password')) {
+      return 'Email hoặc mật khẩu không chính xác.';
+    }
+    return str.replaceAll('Exception: ', '');
   }
 
   void reset() {

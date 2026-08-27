@@ -1,15 +1,16 @@
+import 'package:core_shared/models/daily_eating_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:intl/intl.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/presentation/bloc/meal/meal_state.dart';
-import 'package:core_shared/models/daily_eating_model.dart';
 import 'package:mobile/presentation/screens/meal/widgets/calender_meal.dart';
+
 import 'widgets/add_meal_bottom_sheet.dart';
 import 'widgets/smart_swap_bottom_sheet.dart';
-import 'package:mobile/core/utils/category_image_helper.dart';
 
 class MealPlanScreen extends StatefulWidget {
   const MealPlanScreen({super.key, this.initialDate});
@@ -35,7 +36,6 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
       final selectedDate = widget.initialDate ?? DateTime.now();
       context.read<MealCubit>().selectDate(selectedDate);
 
-      // Fetch weekly data starting from Monday of the selected week
       final monday = selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
       final sunday = monday.add(const Duration(days: 6));
       context.read<MealCubit>().fetchWeeklyEating(monday, sunday);
@@ -66,7 +66,6 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
       backgroundColor: Colors.white,
       body: BlocBuilder<MealCubit, MealState>(
         builder: (context, state) {
-          // Calculate weekDays based on selected date
           final selectedDate = state.selectedDate ?? DateTime.now();
           final monday = selectedDate.subtract(Duration(days: selectedDate.weekday - 1));
           final weekDays = List.generate(7, (index) => monday.add(Duration(days: index)));
@@ -74,13 +73,10 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Custom Dark Header block
               _buildDarkHeader(state, weekDays),
 
-              // Category Pills Selector
               _buildMealTypeSelector(),
 
-              // Section Title (All Meals)
               _buildSectionTitle(state),
 
               // Expanded Meal List
@@ -101,6 +97,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
 
               showModalBottomSheet(
                 context: context,
+                useRootNavigator: true,
                 isScrollControlled: true,
                 backgroundColor: Colors.transparent,
                 builder: (context) =>
@@ -464,13 +461,13 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
                                 context.read<MealCubit>().removeFoodFromDiary(item.id!, state.selectedDate!);
                               }
                               context.read<MealCubit>().addFoodToDiary(
-                                    date: state.selectedDate!,
-                                    mealType: slot.mealType,
-                                    itemData: {
-                                      'foodId': candidate.foodId,
-                                      'servingQuantity': candidate.recommendedServingQuantity,
-                                    },
-                                  );
+                                date: state.selectedDate!,
+                                mealType: slot.mealType,
+                                itemData: {
+                                  'foodId': candidate.foodId,
+                                  'servingQuantity': candidate.recommendedServingQuantity,
+                                },
+                              );
                             },
                           );
                         }
@@ -615,13 +612,13 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
                           context.read<MealCubit>().removeFoodFromDiary(item.id!, date);
                         }
                         context.read<MealCubit>().addFoodToDiary(
-                              date: date,
-                              mealType: _selectedMealType,
-                              itemData: {
-                                'foodId': candidate.foodId,
-                                'servingQuantity': candidate.recommendedServingQuantity,
-                              },
-                            );
+                          date: date,
+                          mealType: _selectedMealType,
+                          itemData: {
+                            'foodId': candidate.foodId,
+                            'servingQuantity': candidate.recommendedServingQuantity,
+                          },
+                        );
                       },
                     );
                   }

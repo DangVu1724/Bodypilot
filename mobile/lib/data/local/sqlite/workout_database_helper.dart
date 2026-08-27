@@ -4,6 +4,7 @@ import 'package:path/path.dart';
 import 'package:core_shared/models/exercise_model.dart';
 import 'package:core_shared/models/workout_plan_model.dart';
 
+/// Quản lý cơ sở dữ liệu SQLite cục bộ cho bài tập và lịch tập
 class WorkoutDatabaseHelper {
   static final WorkoutDatabaseHelper instance = WorkoutDatabaseHelper._init();
   static Database? _database;
@@ -23,7 +24,7 @@ class WorkoutDatabaseHelper {
   }
 
   Future<void> _createDB(Database db, int version) async {
-    // 1. Table for Exercises (Nearly 1000 items)
+    // Bảng bài tập
     await db.execute('''
       CREATE TABLE exercises (
         id TEXT PRIMARY KEY,
@@ -37,7 +38,7 @@ class WorkoutDatabaseHelper {
       )
     ''');
 
-    // 2. Table for Workout Plans
+    // Bảng kế hoạch tập
     await db.execute('''
       CREATE TABLE workout_plans (
         id TEXT PRIMARY KEY,
@@ -48,7 +49,7 @@ class WorkoutDatabaseHelper {
       )
     ''');
 
-    // Create indexes for high-speed offline searching
+    // Tạo chỉ mục giúp tìm kiếm nhanh
     await db.execute('CREATE INDEX idx_exercises_name ON exercises(name)');
     await db.execute('CREATE INDEX idx_exercises_bodypart ON exercises(bodyPartId)');
     await db.execute('CREATE INDEX idx_exercises_difficulty ON exercises(difficulty)');
@@ -56,7 +57,7 @@ class WorkoutDatabaseHelper {
     await db.execute('CREATE INDEX idx_plans_goal ON workout_plans(goal)');
   }
 
-  // Insert exercises in batches (Optimized for 1000+ records)
+  /// Thêm danh sách bài tập vào SQLite theo lô
   Future<void> insertExercises(List<ExerciseModel> exercisesList) async {
     final db = await database;
     final batch = db.batch();
@@ -81,7 +82,7 @@ class WorkoutDatabaseHelper {
     await batch.commit(noResult: true);
   }
 
-  // Insert plans
+  /// Thêm danh sách kế hoạch tập vào SQLite
   Future<void> insertPlans(List<WorkoutPlanModel> plansList) async {
     final db = await database;
     final batch = db.batch();
@@ -103,7 +104,7 @@ class WorkoutDatabaseHelper {
     await batch.commit(noResult: true);
   }
 
-  // Search exercises with filter and paging
+  /// Tìm kiếm bài tập ngoại tuyến trong SQLite
   Future<List<ExerciseModel>> searchExercisesOffline(
     String query, {
     String? bodyPartId,
@@ -155,7 +156,7 @@ class WorkoutDatabaseHelper {
     }).toList();
   }
 
-  // Get plans offline
+  /// Lấy danh sách kế hoạch tập ngoại tuyến
   Future<List<WorkoutPlanModel>> getPlansOffline({String? goal}) async {
     final db = await database;
     String? whereClause;
@@ -179,7 +180,7 @@ class WorkoutDatabaseHelper {
     }).toList();
   }
 
-  // Clear cached data
+  /// Xóa dữ liệu bộ nhớ tạm SQLite
   Future<void> clearCache() async {
     final db = await database;
     await db.delete('exercises');

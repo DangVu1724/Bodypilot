@@ -79,7 +79,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       Text('BodyPilot', style: AppTheme.headlineStyle.copyWith(fontSize: 40, color: Colors.white)),
                       const SizedBox(height: 8),
                       Text(
-                        'Trợ lý Sức khỏe & Dinh dưỡng AI',
+                        'Quản lý Dinh dưỡng & Luyện tập Cá nhân hóa',
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           color: Colors.white.withOpacity(0.85),

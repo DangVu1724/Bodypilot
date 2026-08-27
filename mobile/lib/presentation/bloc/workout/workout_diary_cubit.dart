@@ -25,33 +25,13 @@ class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
     emit(state.copyWith(status: WorkoutDiaryStatus.loading));
     try {
       final dailyWorkout = await _repository.getDailyWorkout(date);
-      
+
       final updatedDailyWorkouts = Map<String, DailyWorkoutModel>.from(state.dailyWorkouts);
       updatedDailyWorkouts[_formatDate(date)] = dailyWorkout;
 
-      emit(state.copyWith(
-        status: WorkoutDiaryStatus.success,
-        dailyWorkouts: updatedDailyWorkouts,
-      ));
-
-      // If checking today's workout and there are pending exercise items, schedule dynamic reminder
-      final now = DateTime.now();
-      if (date.year == now.year && date.month == now.month && date.day == now.day) {
-        if (dailyWorkout.workoutItems.isNotEmpty && !dailyWorkout.isCompleted) {
-          final workoutName = dailyWorkout.note ?? 
-              dailyWorkout.workoutItems.map((e) => e.exerciseNameSnapshot).where((name) => name.isNotEmpty).take(2).join(', ');
-          if (workoutName.isNotEmpty) {
-            PushNotificationService.scheduleTodayWorkoutReminder(
-              workoutName: workoutName,
-            );
-          }
-        }
-      }
+      emit(state.copyWith(status: WorkoutDiaryStatus.success, dailyWorkouts: updatedDailyWorkouts));
     } catch (e) {
-      emit(state.copyWith(
-        status: WorkoutDiaryStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: WorkoutDiaryStatus.failure, errorMessage: e.toString()));
     }
   }
 
@@ -59,47 +39,29 @@ class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
     emit(state.copyWith(status: WorkoutDiaryStatus.loading));
     try {
       final dailyWorkoutsList = await _repository.getDailyWorkoutRange(startDate, endDate);
-      
+
       final updatedDailyWorkouts = Map<String, DailyWorkoutModel>.from(state.dailyWorkouts);
       for (var workout in dailyWorkoutsList) {
         updatedDailyWorkouts[_formatDate(workout.date)] = workout;
       }
 
-      emit(state.copyWith(
-        status: WorkoutDiaryStatus.success,
-        dailyWorkouts: updatedDailyWorkouts,
-      ));
+      emit(state.copyWith(status: WorkoutDiaryStatus.success, dailyWorkouts: updatedDailyWorkouts));
     } catch (e) {
-      emit(state.copyWith(
-        status: WorkoutDiaryStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: WorkoutDiaryStatus.failure, errorMessage: e.toString()));
     }
   }
 
-  Future<void> addExerciseToDiary({
-    required DateTime date,
-    required Map<String, dynamic> itemData,
-  }) async {
+  Future<void> addExerciseToDiary({required DateTime date, required Map<String, dynamic> itemData}) async {
     emit(state.copyWith(status: WorkoutDiaryStatus.loading));
     try {
-      final updatedDailyWorkout = await _repository.addExerciseToDiary(
-        date: date,
-        itemData: itemData,
-      );
+      final updatedDailyWorkout = await _repository.addExerciseToDiary(date: date, itemData: itemData);
 
       final updatedDailyWorkouts = Map<String, DailyWorkoutModel>.from(state.dailyWorkouts);
       updatedDailyWorkouts[_formatDate(date)] = updatedDailyWorkout;
 
-      emit(state.copyWith(
-        status: WorkoutDiaryStatus.success,
-        dailyWorkouts: updatedDailyWorkouts,
-      ));
+      emit(state.copyWith(status: WorkoutDiaryStatus.success, dailyWorkouts: updatedDailyWorkouts));
     } catch (e) {
-      emit(state.copyWith(
-        status: WorkoutDiaryStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: WorkoutDiaryStatus.failure, errorMessage: e.toString()));
     }
   }
 
@@ -109,10 +71,7 @@ class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
       await _repository.removeExerciseFromDiary(itemId);
       await fetchDailyWorkout(date);
     } catch (e) {
-      emit(state.copyWith(
-        status: WorkoutDiaryStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: WorkoutDiaryStatus.failure, errorMessage: e.toString()));
     }
   }
 
@@ -122,10 +81,7 @@ class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
       await _repository.updateExerciseInDiary(itemId, itemData);
       await fetchDailyWorkout(date);
     } catch (e) {
-      emit(state.copyWith(
-        status: WorkoutDiaryStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: WorkoutDiaryStatus.failure, errorMessage: e.toString()));
     }
   }
 
@@ -133,19 +89,13 @@ class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
     emit(state.copyWith(status: WorkoutDiaryStatus.loading));
     try {
       await _repository.clearDay(date);
-      
+
       final updatedDailyWorkouts = Map<String, DailyWorkoutModel>.from(state.dailyWorkouts);
       updatedDailyWorkouts.remove(_formatDate(date));
 
-      emit(state.copyWith(
-        status: WorkoutDiaryStatus.success,
-        dailyWorkouts: updatedDailyWorkouts,
-      ));
+      emit(state.copyWith(status: WorkoutDiaryStatus.success, dailyWorkouts: updatedDailyWorkouts));
     } catch (e) {
-      emit(state.copyWith(
-        status: WorkoutDiaryStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: WorkoutDiaryStatus.failure, errorMessage: e.toString()));
     }
   }
 
@@ -155,10 +105,7 @@ class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
       await _repository.updateDailyNote(date, note);
       await fetchDailyWorkout(date);
     } catch (e) {
-      emit(state.copyWith(
-        status: WorkoutDiaryStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: WorkoutDiaryStatus.failure, errorMessage: e.toString()));
     }
   }
 

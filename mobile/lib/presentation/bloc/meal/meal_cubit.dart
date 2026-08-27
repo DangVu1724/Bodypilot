@@ -2,7 +2,6 @@ import 'package:core_shared/models/daily_eating_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
-import 'package:mobile/data/services/push_notification_service.dart';
 import 'package:mobile/presentation/bloc/meal/meal_state.dart';
 
 class MealCubit extends Cubit<MealState> {
@@ -24,28 +23,13 @@ class MealCubit extends Cubit<MealState> {
     emit(state.copyWith(status: MealStatus.loading));
     try {
       final dailyEating = await _repository.getDailyEating(date);
-      
+
       final updatedDailyEatings = Map<String, DailyEatingModel>.from(state.dailyEatings);
       updatedDailyEatings[_formatDate(date)] = dailyEating;
 
-      emit(state.copyWith(
-        status: MealStatus.success,
-        dailyEatings: updatedDailyEatings,
-      ));
-
-      // If checking today's eating log and no food items recorded yet, schedule reminder
-      final now = DateTime.now();
-      if (date.year == now.year && date.month == now.month && date.day == now.day) {
-        final totalItems = dailyEating.mealSlots.fold<int>(0, (sum, slot) => sum + slot.items.length);
-        if (totalItems == 0) {
-          PushNotificationService.scheduleUnloggedMealReminder();
-        }
-      }
+      emit(state.copyWith(status: MealStatus.success, dailyEatings: updatedDailyEatings));
     } catch (e) {
-      emit(state.copyWith(
-        status: MealStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: MealStatus.failure, errorMessage: e.toString()));
     }
   }
 
@@ -53,21 +37,15 @@ class MealCubit extends Cubit<MealState> {
     emit(state.copyWith(status: MealStatus.loading));
     try {
       final dailyEatingsList = await _repository.getDailyEatingRange(startDate, endDate);
-      
+
       final updatedDailyEatings = Map<String, DailyEatingModel>.from(state.dailyEatings);
       for (var eating in dailyEatingsList) {
         updatedDailyEatings[_formatDate(eating.date)] = eating;
       }
 
-      emit(state.copyWith(
-        status: MealStatus.success,
-        dailyEatings: updatedDailyEatings,
-      ));
+      emit(state.copyWith(status: MealStatus.success, dailyEatings: updatedDailyEatings));
     } catch (e) {
-      emit(state.copyWith(
-        status: MealStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: MealStatus.failure, errorMessage: e.toString()));
     }
   }
 
@@ -78,24 +56,14 @@ class MealCubit extends Cubit<MealState> {
   }) async {
     emit(state.copyWith(status: MealStatus.loading));
     try {
-      final updatedDailyEating = await _repository.addFoodToDiary(
-        date: date,
-        mealType: mealType,
-        itemData: itemData,
-      );
+      final updatedDailyEating = await _repository.addFoodToDiary(date: date, mealType: mealType, itemData: itemData);
 
       final updatedDailyEatings = Map<String, DailyEatingModel>.from(state.dailyEatings);
       updatedDailyEatings[_formatDate(date)] = updatedDailyEating;
 
-      emit(state.copyWith(
-        status: MealStatus.success,
-        dailyEatings: updatedDailyEatings,
-      ));
+      emit(state.copyWith(status: MealStatus.success, dailyEatings: updatedDailyEatings));
     } catch (e) {
-      emit(state.copyWith(
-        status: MealStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: MealStatus.failure, errorMessage: e.toString()));
     }
   }
 
@@ -105,10 +73,7 @@ class MealCubit extends Cubit<MealState> {
       await _repository.removeFoodFromDiary(itemId);
       await fetchDailyEating(date);
     } catch (e) {
-      emit(state.copyWith(
-        status: MealStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: MealStatus.failure, errorMessage: e.toString()));
     }
   }
 
@@ -118,10 +83,7 @@ class MealCubit extends Cubit<MealState> {
       await _repository.clearMeal(date, mealType);
       await fetchDailyEating(date);
     } catch (e) {
-      emit(state.copyWith(
-        status: MealStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: MealStatus.failure, errorMessage: e.toString()));
     }
   }
 
@@ -129,19 +91,13 @@ class MealCubit extends Cubit<MealState> {
     emit(state.copyWith(status: MealStatus.loading));
     try {
       await _repository.clearDay(date);
-      
+
       final updatedDailyEatings = Map<String, DailyEatingModel>.from(state.dailyEatings);
       updatedDailyEatings.remove(_formatDate(date));
 
-      emit(state.copyWith(
-        status: MealStatus.success,
-        dailyEatings: updatedDailyEatings,
-      ));
+      emit(state.copyWith(status: MealStatus.success, dailyEatings: updatedDailyEatings));
     } catch (e) {
-      emit(state.copyWith(
-        status: MealStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: MealStatus.failure, errorMessage: e.toString()));
     }
   }
 
@@ -151,10 +107,7 @@ class MealCubit extends Cubit<MealState> {
       await _repository.updateDailyNote(date, note);
       await fetchDailyEating(date);
     } catch (e) {
-      emit(state.copyWith(
-        status: MealStatus.failure,
-        errorMessage: e.toString(),
-      ));
+      emit(state.copyWith(status: MealStatus.failure, errorMessage: e.toString()));
     }
   }
 

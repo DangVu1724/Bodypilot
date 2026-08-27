@@ -1,8 +1,9 @@
 import 'package:core_shared/models/exercise_model.dart';
 import 'package:core_shared/models/paginated_response.dart';
 import 'package:core_shared/models/workout_category_model.dart';
-import '../../core/network/api_client.dart';
 import 'package:logger/logger.dart';
+import 'package:mobile/data/local/sqlite/workout_database_helper.dart';
+import '../../core/network/api_client.dart';
 
 final _logger = Logger();
 
@@ -10,6 +11,7 @@ class ExerciseRepository {
   List<WorkoutCategoryModel>? _cachedCategories;
   final Map<String, PaginatedResponse<ExerciseModel>> _categoryCache = {};
 
+  /// Tìm kiếm bài tập (Ưu tiên SQLite local -> Backend API)
   Future<PaginatedResponse<ExerciseModel>> searchExercises({
     String? name,
     String? categoryId,
@@ -20,40 +22,114 @@ class ExerciseRepository {
     int size = 50,
     bool forceRefresh = false,
   }) async {
-    if (page == 0 && categoryId != null && !forceRefresh && name == null && bodyPartCode == null && muscleCode == null) {
+    final trimmedName = name?.trim() ?? '';
+
+    // 1. Kiểm tra bộ nhớ RAM Cache
+    if (page == 0 && categoryId != null && !forceRefresh && trimmedName.isEmpty && bodyPartCode == null && muscleCode == null) {
       if (_categoryCache.containsKey(categoryId)) {
-        _logger.d('Serving exercise category $categoryId from RAM cache');
         return _categoryCache[categoryId]!;
       }
     }
 
+    // 2. Tìm kiếm trong SQLite cục bộ (Local-First)
+    if (!forceRefresh && categoryCode == null && muscleCode == null && bodyPartCode == null) {
+      try {
+        final localExercises = await WorkoutDatabaseHelper.instance.searchExercisesOffline(
+          trimmedName,
+          categoryId: categoryId,
+          limit: size < 50 ? 50 : size,
+          offset: page * size,
+        );
+
+        if (localExercises.isNotEmpty) {
+          // Đồng bộ ngầm dữ liệu mới từ Backend
+          _revalidateExercisesInBackground(
+            name: name,
+            categoryId: categoryId,
+            categoryCode: categoryCode,
+            bodyPartCode: bodyPartCode,
+            muscleCode: muscleCode,
+            page: page,
+            size: size,
+          );
+
+          return PaginatedResponse<ExerciseModel>(
+            content: localExercises,
+            pageNumber: page,
+            pageSize: size,
+            totalElements: localExercises.length,
+            totalPages: 1,
+            last: localExercises.length < size,
+          );
+        }
+      } catch (dbError) {
+        _logger.e('Lỗi đọc dữ liệu SQLite: $dbError');
+      }
+    }
+
+    // 3. Gọi Backend API khi chưa có dữ liệu local
     try {
       final queryParams = <String, dynamic>{'page': page, 'size': size};
 
-      if (name != null) queryParams['name'] = name;
-      if (categoryId != null) queryParams['categoryId'] = categoryId;
-      if (categoryCode != null) queryParams['categoryCode'] = categoryCode;
-      if (bodyPartCode != null) queryParams['bodyPartCode'] = bodyPartCode;
-      if (muscleCode != null) queryParams['muscleCode'] = muscleCode;
+      if (name != null && name.isNotEmpty) queryParams['name'] = name;
+      if (categoryId != null && categoryId.isNotEmpty) queryParams['categoryId'] = categoryId;
+      if (categoryCode != null && categoryCode.isNotEmpty) queryParams['categoryCode'] = categoryCode;
+      if (bodyPartCode != null && bodyPartCode.isNotEmpty) queryParams['bodyPartCode'] = bodyPartCode;
+      if (muscleCode != null && muscleCode.isNotEmpty) queryParams['muscleCode'] = muscleCode;
 
-      _logger.d('Fetching exercises with params: $queryParams');
       final response = await apiClient.get('/exercises', queryParameters: queryParams);
-      _logger.d('Fetch exercises response data: ${response.data}');
 
-      final paginated = PaginatedResponse<ExerciseModel>.fromJson(response.data, (json) => ExerciseModel.fromJson(json));
+      final paginated = PaginatedResponse<ExerciseModel>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => ExerciseModel.fromJson(json as Map<String, dynamic>),
+      );
 
-      if (page == 0 && categoryId != null && name == null && bodyPartCode == null && muscleCode == null) {
+      if (page == 0 && categoryId != null && trimmedName.isEmpty && bodyPartCode == null && muscleCode == null) {
         if (_categoryCache.length > 20) {
           _categoryCache.remove(_categoryCache.keys.first);
         }
         _categoryCache[categoryId] = paginated;
       }
 
+      // Lưu kết quả vào SQLite
+      try {
+        await WorkoutDatabaseHelper.instance.insertExercises(paginated.content);
+      } catch (dbError) {
+        _logger.e('Lỗi lưu bài tập vào SQLite: $dbError');
+      }
+
       return paginated;
     } catch (e) {
-      _logger.e('Error fetching exercises: $e');
+      _logger.e('Lỗi kết nối máy chủ: $e');
       throw Exception('Failed to load exercises: $e');
     }
+  }
+
+  /// Cập nhật dữ liệu ngầm từ Backend vào SQLite
+  void _revalidateExercisesInBackground({
+    String? name,
+    String? categoryId,
+    String? categoryCode,
+    String? bodyPartCode,
+    String? muscleCode,
+    required int page,
+    required int size,
+  }) async {
+    try {
+      final queryParams = <String, dynamic>{'page': page, 'size': size};
+      if (name != null && name.isNotEmpty) queryParams['name'] = name;
+      if (categoryId != null && categoryId.isNotEmpty) queryParams['categoryId'] = categoryId;
+      if (categoryCode != null && categoryCode.isNotEmpty) queryParams['categoryCode'] = categoryCode;
+      if (bodyPartCode != null && bodyPartCode.isNotEmpty) queryParams['bodyPartCode'] = bodyPartCode;
+      if (muscleCode != null && muscleCode.isNotEmpty) queryParams['muscleCode'] = muscleCode;
+
+      final response = await apiClient.get('/exercises', queryParameters: queryParams);
+      final paginated = PaginatedResponse<ExerciseModel>.fromJson(
+        response.data as Map<String, dynamic>,
+        (json) => ExerciseModel.fromJson(json as Map<String, dynamic>),
+      );
+      await WorkoutDatabaseHelper.instance.insertExercises(paginated.content);
+    } catch (_) {}
   }
 
   Future<void> prefetchPopularCategories() async {
@@ -64,9 +140,7 @@ class ExerciseRepository {
           searchExercises(categoryId: cat.id, page: 0, size: 20);
         }
       }
-    } catch (e) {
-      _logger.w('Prefetch categories failed: $e');
-    }
+    } catch (_) {}
   }
 
   void clearCache() {
@@ -83,7 +157,7 @@ class ExerciseRepository {
       _cachedCategories = data.map((e) => WorkoutCategoryModel.fromJson(e as Map<String, dynamic>)).toList();
       return _cachedCategories!;
     } catch (e) {
-      _logger.e('Error fetching workout categories: $e');
+      _logger.e('Lỗi tải danh mục bài tập: $e');
       throw Exception('Failed to load workout categories: $e');
     }
   }

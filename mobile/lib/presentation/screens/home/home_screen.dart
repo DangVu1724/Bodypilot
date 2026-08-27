@@ -1,21 +1,21 @@
 import 'package:flutter/material.dart';
-import 'package:mobile/core/routes/app_routes.dart';
-import 'package:go_router/go_router.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
-import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
+import 'package:go_router/go_router.dart';
+import 'package:mobile/core/routes/app_routes.dart';
+import 'package:mobile/presentation/bloc/checkin/checkin_cubit.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
-import 'package:mobile/presentation/bloc/checkin/checkin_cubit.dart';
-import 'widgets/home_header.dart';
-import 'widgets/home_calendar_section.dart';
-import 'widgets/checkin_card.dart';
-import 'widgets/ai_coach_card.dart';
-
-import 'widgets/metric_section.dart';
-import 'widgets/food_sections.dart';
-import 'widgets/section_header.dart';
+import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
+import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
 import 'package:mobile/presentation/screens/workout/widgets/workout_plans_section.dart';
+
+import 'widgets/ai_coach_card.dart';
+import 'widgets/checkin_card.dart';
+import 'widgets/food_sections.dart';
+import 'widgets/home_calendar_section.dart';
+import 'widgets/home_header.dart';
+import 'widgets/metric_section.dart';
+import 'widgets/section_header.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

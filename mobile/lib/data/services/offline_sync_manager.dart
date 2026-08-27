@@ -37,7 +37,7 @@ class OfflineSyncManager {
       };
 
       await _box.add(item);
-      _logger.i('📦 [OfflineSyncManager] Action queued offline: $actionType -> $endpoint');
+      _logger.i('[OfflineSyncManager] Action queued offline: $actionType -> $endpoint');
     } catch (e) {
       _logger.e('Error queuing offline action: $e');
     }

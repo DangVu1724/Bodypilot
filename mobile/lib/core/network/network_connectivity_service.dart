@@ -38,7 +38,7 @@ class NetworkConnectivityService {
   Future<void> _checkInitialConnection() async {
     try {
       final results = await _connectivity.checkConnectivity();
-      final hasInterface = results.any((r) => r != ConnectivityResult.none);
+      final hasInterface = results.any((r) => r != ConnectivityResult.none); // check device có bật 4g 5g hay wifi k 
       if (!hasInterface) {
         _updateStatus(false);
       } else {

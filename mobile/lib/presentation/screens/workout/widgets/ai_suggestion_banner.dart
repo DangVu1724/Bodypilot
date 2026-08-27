@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mobile/core/theme/app_theme.dart';
-import 'package:mobile/presentation/screens/workout/workout_preference_survey_screen.dart';
-import 'package:mobile/presentation/screens/workout/ai_workout_suggestion_screen.dart';
-import 'package:mobile/data/services/token_service.dart';
 import 'package:mobile/data/repositories/workout_diary_repository.dart';
+import 'package:mobile/data/services/token_service.dart';
+import 'package:mobile/presentation/screens/workout/ai_workout_suggestion_screen.dart';
+import 'package:mobile/presentation/screens/workout/workout_preference_survey_screen.dart';
 
 class AiSuggestionBanner extends StatelessWidget {
   const AiSuggestionBanner({super.key});
@@ -22,47 +22,79 @@ class AiSuggestionBanner extends StatelessWidget {
         final dateStr = "${DateFormat('dd/MM').format(startDate)} - ${DateFormat('dd/MM').format(endDate)}";
         final bool? shouldProceed = await showDialog<bool>(
           context: context,
-          builder: (dialogContext) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFFEF3C7),
-                    borderRadius: BorderRadius.circular(10),
+          builder: (dialogContext) => Dialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
+            backgroundColor: Colors.white,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 28),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Top Icon
+                  Container(
+                    width: 76,
+                    height: 76,
+                    decoration: const BoxDecoration(color: Color(0xFFFFF2EC), shape: BoxShape.circle),
+                    child: const Icon(Icons.edit_calendar_rounded, color: Color(0xFFFF6B2C), size: 38),
                   ),
-                  child: const Icon(Icons.warning_amber_rounded, color: Color(0xFFD97706), size: 24),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Text(
-                    'Phát hiện lịch tập sẵn',
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                  const SizedBox(height: 20),
+
+                  // Title
+                  const Text(
+                    'Đã phát hiện lịch tập sẵn',
+                    style: TextStyle(fontSize: 19, fontWeight: FontWeight.bold, color: Color(0xFF1E293B)),
+                    textAlign: TextAlign.center,
                   ),
-                ),
-              ],
-            ),
-            content: Text(
-              'Bạn đang có lịch tập sẵn trong ${daysWithWorkout.length} ngày (khoảng $dateStr).\n\nNếu tiếp tục, AI sẽ lên lịch tập gợi ý mới cho bạn xem trước. Lịch tập cũ sẽ bị thay thế khi bạn bấm Áp dụng.\n\nBạn có muốn tiếp tục nhờ AI tạo lịch tập không?',
-              style: const TextStyle(fontSize: 14, color: Color(0xFF475569), height: 1.4),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.of(dialogContext).pop(false),
-                child: const Text('Hủy', style: TextStyle(color: Color(0xFF64748B), fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 12),
+
+                  // Subtitle Content
+                  Column(
+                    children: [
+                      Text(
+                        'Bạn đang có lịch tập sẵn trong ${daysWithWorkout.length} ngày\n($dateStr).',
+                        style: const TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.45),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Tiếp tục, AI sẽ lên lịch tập gợi ý mới\ncho bạn xem trước.',
+                        style: TextStyle(fontSize: 14, color: Color(0xFF64748B), height: 1.45),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Action Buttons
+                  SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: () => Navigator.of(dialogContext).pop(true),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFFF6B2C),
+                        foregroundColor: Colors.white,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Tiếp tục tạo với AI',
+                        style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextButton(
+                    onPressed: () => Navigator.of(dialogContext).pop(false),
+                    child: const Text(
+                      'Hủy',
+                      style: TextStyle(fontSize: 15, color: Color(0xFF64748B), fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
               ),
-              ElevatedButton(
-                onPressed: () => Navigator.of(dialogContext).pop(true),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primary,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 0,
-                ),
-                child: const Text('Tiếp tục tạo với AI', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ],
+            ),
           ),
         );
 
@@ -90,9 +122,7 @@ class AiSuggestionBanner extends StatelessWidget {
     showModalBottomSheet(
       context: parentContext,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(28))),
       backgroundColor: Colors.white,
       builder: (BuildContext modalContext) {
         return StatefulBuilder(
@@ -108,10 +138,7 @@ class AiSuggestionBanner extends StatelessWidget {
                       child: Container(
                         width: 40,
                         height: 4,
-                        decoration: BoxDecoration(
-                          color: Colors.grey.shade300,
-                          borderRadius: BorderRadius.circular(2),
-                        ),
+                        decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -143,7 +170,10 @@ class AiSuggestionBanner extends StatelessWidget {
                                 children: [
                                   Text(
                                     'Khảo sát sở thích tập luyện',
-                                    style: AppTheme.semiboldStyle.copyWith(fontSize: 14, color: const Color(0xFF1E293B)),
+                                    style: AppTheme.semiboldStyle.copyWith(
+                                      fontSize: 14,
+                                      color: const Color(0xFF1E293B),
+                                    ),
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
@@ -156,9 +186,7 @@ class AiSuggestionBanner extends StatelessWidget {
                             TextButton(
                               onPressed: () async {
                                 final result = await Navigator.of(parentContext, rootNavigator: true).push<bool>(
-                                  MaterialPageRoute(
-                                    builder: (context) => const WorkoutPreferenceSurveyScreen(),
-                                  ),
+                                  MaterialPageRoute(builder: (context) => const WorkoutPreferenceSurveyScreen()),
                                 );
                                 if (result == true) {
                                   setModalState(() {
@@ -202,9 +230,7 @@ class AiSuggestionBanner extends StatelessWidget {
                                 decoration: BoxDecoration(
                                   color: isSelected ? AppTheme.primary : const Color(0xFFF8FAFC),
                                   borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: isSelected ? AppTheme.primary : const Color(0xFFE2E8F0),
-                                  ),
+                                  border: Border.all(color: isSelected ? AppTheme.primary : const Color(0xFFE2E8F0)),
                                 ),
                                 child: Text(
                                   '$days Ngày',
@@ -298,9 +324,7 @@ class AiSuggestionBanner extends StatelessWidget {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF1E293B),
                           foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(16),
-                          ),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                           elevation: 0,
                         ),
                         child: Text(
@@ -326,10 +350,7 @@ class AiSuggestionBanner extends StatelessWidget {
           onCompleted: () {
             Navigator.of(surveyContext).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => AiWorkoutSuggestionScreen(
-                  days: days,
-                  startTomorrow: startTomorrow,
-                ),
+                builder: (context) => AiWorkoutSuggestionScreen(days: days, startTomorrow: startTomorrow),
               ),
             );
           },
@@ -343,10 +364,7 @@ class AiSuggestionBanner extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Gợi Ý Từ AI',
-          style: AppTheme.semiboldStyle.copyWith(fontSize: 16, color: const Color(0xFF1E293B)),
-        ),
+        Text('Gợi Ý Từ AI', style: AppTheme.semiboldStyle.copyWith(fontSize: 16, color: const Color(0xFF1E293B))),
         const SizedBox(height: 12),
         Container(
           width: double.infinity,
@@ -354,29 +372,24 @@ class AiSuggestionBanner extends StatelessWidget {
           decoration: BoxDecoration(
             color: const Color(0xFF1E293B),
             borderRadius: BorderRadius.circular(24),
+            image: const DecorationImage(
+              image: AssetImage('assets/images/ai_workout.png'),
+              fit: BoxFit.cover,
+              opacity: 0.3,
+            ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text(
-                  'Smart Workout',
-                  style: AppTheme.semiboldStyle.copyWith(color: Colors.white, fontSize: 10),
-                ),
+                decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(8)),
+                child: Text('Smart Workout', style: AppTheme.semiboldStyle.copyWith(color: Colors.white, fontSize: 10)),
               ),
               const SizedBox(height: 16),
               Text(
                 'Tạo lịch tập luyện\ntrong tuần theo AI',
-                style: AppTheme.headlineStyle.copyWith(
-                  color: Colors.white,
-                  fontSize: 20,
-                  height: 1.3,
-                ),
+                style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 20, height: 1.3),
               ),
               const SizedBox(height: 20),
               ElevatedButton.icon(
@@ -389,9 +402,7 @@ class AiSuggestionBanner extends StatelessWidget {
                   backgroundColor: Colors.white,
                   foregroundColor: const Color(0xFF1E293B),
                   padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ],

@@ -6,46 +6,52 @@ import 'package:core_shared/models/food_model.dart';
 class FoodListCubit extends Cubit<FoodListState> {
   final FoodRepository _foodRepository;
 
-  // Cache to store loaded foods. Key format: "{type}_{categoryId}_{query}"
   static final Map<String, List<FoodModel>> _cache = {};
 
   FoodListCubit(this._foodRepository) : super(const FoodListState());
 
   void initializeWithCache({required List<FoodModel> initialFoods, required String type}) {
-    // Filter initial foods by type (including BOTH)
     final filtered = initialFoods.where((f) => f.type == type || f.type == 'BOTH').toList();
 
     if (filtered.isNotEmpty) {
-      emit(state.copyWithCategory(status: FoodListStatus.success, foods: filtered, selectedCategoryId: ''));
+      emit(state.copyWithCategory(
+        status: FoodListStatus.success,
+        foods: filtered,
+        selectedCategoryId: '',
+        page: 0,
+        hasReachedMax: false,
+      ));
 
-      // Update the "ALL" cache key
       final cacheKey = '${type}_ALL_';
       _cache[cacheKey] = filtered;
     }
   }
 
   Future<void> searchFoods({
-    required String type, // 'DISH' or 'INGREDIENT'
+    required String type,
     String query = '',
     String? categoryId,
   }) async {
-    // Generate cache key
     final cacheKey = '${type}_${categoryId ?? 'ALL'}_$query';
 
-    // Update state to loading and set new category id instantly for UI response
-    emit(state.copyWithCategory(status: FoodListStatus.loading, selectedCategoryId: categoryId));
+    emit(state.copyWithCategory(
+      status: FoodListStatus.loading,
+      selectedCategoryId: categoryId,
+      page: 0,
+      hasReachedMax: false,
+      isLoadingMore: false,
+    ));
 
-    // Check cache first
     if (_cache.containsKey(cacheKey)) {
       emit(
         state.copyWithCategory(
           status: FoodListStatus.success,
           foods: _cache[cacheKey]!,
           selectedCategoryId: categoryId,
+          page: 0,
+          hasReachedMax: true,
         ),
       );
-      // Optionally, we could still fetch in the background to update cache,
-      // but for instant feedback and avoiding unnecessary calls, we return here.
       return;
     }
 
@@ -53,18 +59,29 @@ class FoodListCubit extends Cubit<FoodListState> {
       final response = await _foodRepository.searchFoods(
         query,
         categoryId: categoryId,
+        type: type,
         page: 0,
-        size: 100, // Fetch a large chunk for the list to avoid immediate pagination logic for now
+        size: 30,
       );
 
-      // Filter by type on the client side since the API might not support it
-      final filteredFoods = response.content.where((f) => f.type == type || f.type == 'BOTH').toList();
-
-      // Save to cache
+      final filteredFoods = response.content.where((f) {
+        if (categoryId != null && categoryId.isNotEmpty) {
+          return true;
+        }
+        final matchType = f.type == type || f.type == 'BOTH';
+        final matchCategory = f.category == null || f.category!.appliesTo == type || f.category!.appliesTo == 'BOTH';
+        return matchType || matchCategory;
+      }).toList();
       _cache[cacheKey] = filteredFoods;
 
       emit(
-        state.copyWithCategory(status: FoodListStatus.success, foods: filteredFoods, selectedCategoryId: categoryId),
+        state.copyWithCategory(
+          status: FoodListStatus.success,
+          foods: filteredFoods,
+          selectedCategoryId: categoryId,
+          page: 0,
+          hasReachedMax: response.last,
+        ),
       );
     } catch (e) {
       emit(
@@ -74,6 +91,47 @@ class FoodListCubit extends Cubit<FoodListState> {
           errorMessage: e.toString(),
         ),
       );
+    }
+  }
+
+  /// Tải thêm trang tiếp theo khi cuộn xuống dưới cùng (Load More)
+  Future<void> loadMoreFoods({
+    required String type,
+    String query = '',
+  }) async {
+    if (state.hasReachedMax || state.isLoadingMore || state.status != FoodListStatus.success) return;
+
+    emit(state.copyWith(isLoadingMore: true));
+
+    final nextPage = state.page + 1;
+
+    try {
+      final response = await _foodRepository.searchFoods(
+        query,
+        categoryId: state.selectedCategoryId,
+        type: type,
+        page: nextPage,
+        size: 30,
+      );
+
+      final filteredFoods = response.content.where((f) {
+        if (state.selectedCategoryId != null && state.selectedCategoryId!.isNotEmpty) {
+          return true;
+        }
+        final matchType = f.type == type || f.type == 'BOTH';
+        final matchCategory = f.category == null || f.category!.appliesTo == type || f.category!.appliesTo == 'BOTH';
+        return matchType || matchCategory;
+      }).toList();
+
+      emit(state.copyWith(
+        status: FoodListStatus.success,
+        foods: [...state.foods, ...filteredFoods],
+        page: nextPage,
+        hasReachedMax: response.last || filteredFoods.isEmpty,
+        isLoadingMore: false,
+      ));
+    } catch (e) {
+      emit(state.copyWith(isLoadingMore: false));
     }
   }
 
