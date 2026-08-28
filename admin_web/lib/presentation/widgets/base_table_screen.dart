@@ -212,26 +212,33 @@ class BaseTableScreen extends StatelessWidget {
             ),
             child: isLoading
                 ? _buildTableSkeleton()
-                : SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: DataTable(
-                      headingRowHeight: 44,
-                      dataRowMaxHeight: 56,
-                      headingRowColor: WidgetStateProperty.all(const Color(0xFFFAFAFA)),
-                      columns: columns
-                          .map((c) => DataColumn(
-                                label: Text(
-                                  c,
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.w700,
-                                    fontSize: 12,
-                                    color: AppTheme.textPrimary,
-                                  ),
-                                ),
-                              ))
-                          .toList(),
-                      rows: rows,
-                    ),
+                : LayoutBuilder(
+                    builder: (context, constraints) {
+                      return SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(minWidth: constraints.maxWidth),
+                          child: DataTable(
+                            headingRowHeight: 50,
+                            dataRowMaxHeight: 64,
+                            headingRowColor: WidgetStateProperty.all(const Color(0xFFFAFAFA)),
+                            columns: columns
+                                .map((c) => DataColumn(
+                                      label: Text(
+                                        c,
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.w800,
+                                          fontSize: 14,
+                                          color: AppTheme.textPrimary,
+                                        ),
+                                      ),
+                                    ))
+                                .toList(),
+                            rows: rows,
+                          ),
+                        ),
+                      );
+                    },
                   ),
           ),
 

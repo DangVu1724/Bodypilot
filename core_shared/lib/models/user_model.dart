@@ -5,6 +5,7 @@ import 'goal_model.dart';
 class UserModel {
   final String id;
   final String email;
+  final String role;
   final UserProfileModel? profile;
   final UserMetricsModel? metrics;
   final GoalModel? goal;
@@ -12,6 +13,7 @@ class UserModel {
   UserModel({
     required this.id,
     required this.email,
+    this.role = 'CUSTOMER',
     this.profile,
     this.metrics,
     this.goal,
@@ -21,6 +23,7 @@ class UserModel {
     return UserModel(
       id: json['id'] as String,
       email: json['email'] as String,
+      role: json['role'] as String? ?? 'CUSTOMER',
       profile: json['profile'] != null
           ? UserProfileModel.fromJson(json['profile'] as Map<String, dynamic>)
           : null,
@@ -37,6 +40,7 @@ class UserModel {
     return {
       'id': id,
       'email': email,
+      'role': role,
       'profile': profile?.toJson(),
       'metrics': metrics?.toJson(),
       'goal': goal?.toJson(),

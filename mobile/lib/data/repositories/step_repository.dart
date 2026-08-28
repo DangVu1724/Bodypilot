@@ -50,9 +50,7 @@ class StepRepository {
       if (response.data['success'] == true && response.data['data'] != null) {
         return StepHistoryModel.fromJson(response.data['data']);
       }
-    } catch (e) {
-      print('🚨 [StepRepository.syncTodaySteps error]: $e');
-    }
+    } catch (_) {}
     return null;
   }
 
@@ -79,9 +77,7 @@ class StepRepository {
         final List<dynamic> list = response.data['data'];
         return list.map((e) => StepHistoryModel.fromJson(e as Map<String, dynamic>)).toList();
       }
-    } catch (e) {
-      print('🚨 [StepRepository.getStepHistory error]: $e');
-    }
+    } catch (_) {}
     return [];
   }
 }

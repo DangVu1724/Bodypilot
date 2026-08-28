@@ -11,6 +11,8 @@ class TokenService {
   static const String _isWorkoutSurveyCompletedKey = 'is_workout_survey_completed';
   static const String _lastActivityKey = 'last_activity_at';
   static const String _cachedUserKey = 'cached_user';
+  static const String _streakCountKey = 'streak_count';
+  static const String _lastStreakDateKey = 'last_streak_date';
   static SharedPreferences? _prefs;
 
   static Future<void> init() async {
@@ -183,5 +185,60 @@ class TokenService {
       } catch (_) {}
     }
     return null;
+  }
+
+  /// Cập nhật và lấy số ngày chuỗi đăng nhập (Streak) liên tiếp ngoại tuyến
+  static int updateAndGetStreak() {
+    if (_prefs == null) return 1;
+
+    final now = DateTime.now();
+    final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
+    final lastDateStr = _prefs?.getString(_lastStreakDateKey);
+    int currentStreak = _prefs?.getInt(_streakCountKey) ?? 0;
+
+    if (lastDateStr == null || lastDateStr.isEmpty) {
+      // Lần đầu vào ứng dụng -> Khởi tạo streak = 1
+      currentStreak = 1;
+      _prefs?.setString(_lastStreakDateKey, todayStr);
+      _prefs?.setInt(_streakCountKey, currentStreak);
+    } else if (lastDateStr == todayStr) {
+      // Trong cùng một ngày -> Giữ nguyên streak hiện tại
+      if (currentStreak < 1) {
+        currentStreak = 1;
+        _prefs?.setInt(_streakCountKey, currentStreak);
+      }
+    } else {
+      try {
+        final parts = lastDateStr.split('-').map(int.parse).toList();
+        final lastDate = DateTime(parts[0], parts[1], parts[2]);
+        final todayDate = DateTime(now.year, now.month, now.day);
+        final differenceInDays = todayDate.difference(lastDate).inDays;
+
+        if (differenceInDays == 1) {
+          // Ngày kế tiếp liên tục -> Cộng 1 ngày vào chuỗi (+1)
+          currentStreak += 1;
+        } else if (differenceInDays > 1) {
+          // Bỏ lỡ ít nhất 1 ngày -> Reset chuỗi về 1
+          currentStreak = 1;
+        } else {
+          // Trường hợp đổi múi giờ hoặc lùi ngày -> giữ nguyên
+          if (currentStreak < 1) currentStreak = 1;
+        }
+
+        _prefs?.setString(_lastStreakDateKey, todayStr);
+        _prefs?.setInt(_streakCountKey, currentStreak);
+      } catch (e) {
+        currentStreak = 1;
+        _prefs?.setString(_lastStreakDateKey, todayStr);
+        _prefs?.setInt(_streakCountKey, currentStreak);
+      }
+    }
+
+    return currentStreak;
+  }
+
+  /// Lấy số ngày streak hiện tại
+  static int getStreakCount() {
+    return updateAndGetStreak();
   }
 }

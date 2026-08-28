@@ -65,7 +65,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         String reply;
         try {
             if ("LANGCHAIN4J".equalsIgnoreCase(request.getSelectedModel())) {
-                log.info("🤖 [LANGCHAIN4J_HYBRID_RAG] Đang xử lý qua LangChain4j AiServices...");
+                log.info("Xử lý câu hỏi chatbot qua LangChain4j...");
                 reply = fitnessAiAssistant.chat(userContext, retrievedDbContext, request.getUserQuery());
             } else {
                 // 3. System Instruction với Guardrails + Hybrid RAG Context
@@ -74,20 +74,14 @@ public class ChatbotServiceImpl implements ChatbotService {
                 reply = llmRouterService.routeChatRequest(request.getSelectedModel(), formattedPrompt, systemInstruction, false);
             }
         } catch (Exception e) {
-            log.error("❌ Error generating Hybrid RAG chatbot response: ", e);
-            try {
-                String systemInstruction = buildSystemInstruction(userContext, retrievedDbContext);
-                String formattedPrompt = buildPromptWithHistory(request.getHistory(), request.getUserQuery());
-                reply = llmRouterService.routeChatRequest(request.getSelectedModel(), formattedPrompt, systemInstruction, false);
-            } catch (Exception ex) {
-                reply = "Xin lỗi bạn, tôi gặp sự cố nhỏ khi kết nối dữ liệu AI. Bạn có thể lặp lại câu hỏi được không?";
-            }
+            log.error("Lỗi khi tạo phản hồi chatbot RAG: {}", e.getMessage());
+            reply = "Xin lỗi bạn, tôi gặp sự cố nhỏ khi kết nối dữ liệu AI. Bạn có thể lặp lại câu hỏi được không?";
         }
 
         reply = cleanReplyText(reply);
 
         long elapsedTime = System.currentTimeMillis() - startTime;
-        log.info("✅ [AI_CHAT_END] Hoàn thành trả lời Hybrid RAG Chatbot trong {} ms", elapsedTime);
+        log.info("Hoàn thành trả lời chatbot trong {} ms", elapsedTime);
 
         return ChatResponse.builder()
                 .reply(reply)

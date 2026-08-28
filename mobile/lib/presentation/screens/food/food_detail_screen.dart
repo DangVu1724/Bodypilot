@@ -1,12 +1,11 @@
 import 'package:core_shared/core_shared.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/core/utils/category_image_helper.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_state.dart';
 import 'package:mobile/presentation/widgets/skeleton.dart';
-import 'package:mobile/core/utils/category_image_helper.dart';
 
 class FoodDetailScreen extends StatefulWidget {
   final String foodId;
@@ -144,9 +143,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(child: Text(food.name, style: AppTheme.headlineStyle.copyWith(fontSize: 24))),
-            ],
+            children: [Expanded(child: Text(food.name, style: AppTheme.headlineStyle.copyWith(fontSize: 24)))],
           ),
           const SizedBox(height: 12),
           if (food.description != null)
@@ -193,7 +190,10 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text('Serving Size', style: AppTheme.bodyStyle.copyWith(fontSize: 12, color: AppTheme.textSecondary)),
-                Text('${_selectedServing?.name ?? "100g"} (${_selectedServing?.grams ?? 100}g)', style: AppTheme.semiboldStyle),
+                Text(
+                  '${_selectedServing?.name ?? "100g"} (${_selectedServing?.grams ?? 100}g)',
+                  style: AppTheme.semiboldStyle,
+                ),
               ],
             ),
           ),
@@ -201,10 +201,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
             icon: const Icon(Icons.keyboard_arrow_down, color: AppTheme.textPrimary),
             onSelected: (serving) => setState(() => _selectedServing = serving),
             itemBuilder: (context) => food.servings
-                .map((s) => PopupMenuItem<FoodServingModel>(
-                      value: s,
-                      child: Text('${s.name} (${s.grams}g)'),
-                    ))
+                .map((s) => PopupMenuItem<FoodServingModel>(value: s, child: Text('${s.name} (${s.grams}g)')))
                 .toList(),
           ),
         ],
@@ -384,12 +381,19 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> with SingleTickerPr
   Widget _buildNutritionGrid(FoodModel food) {
     final factor = (_selectedServing?.grams ?? 100) / 100;
     final items = [
-      _NutrientItem('Calories', (food.caloriesPer100g * factor).toStringAsFixed(0), 'kcal', Icons.local_fire_department_outlined),
+      _NutrientItem(
+        'Calories',
+        (food.caloriesPer100g * factor).toStringAsFixed(0),
+        'kcal',
+        Icons.local_fire_department_outlined,
+      ),
       _NutrientItem('Protein', (food.proteinPer100g * factor).toStringAsFixed(1), 'g', Icons.egg_outlined),
       _NutrientItem('Carbs', (food.carbsPer100g * factor).toStringAsFixed(1), 'g', Icons.grain),
       _NutrientItem('Fats', (food.fatPer100g * factor).toStringAsFixed(1), 'g', Icons.pie_chart_outline),
-      if (food.fiberPer100g != null) _NutrientItem('Fiber', (food.fiberPer100g! * factor).toStringAsFixed(1), 'g', Icons.eco_outlined),
-      if (food.sugarPer100g != null) _NutrientItem('Sugar', (food.sugarPer100g! * factor).toStringAsFixed(1), 'g', Icons.opacity),
+      if (food.fiberPer100g != null)
+        _NutrientItem('Fiber', (food.fiberPer100g! * factor).toStringAsFixed(1), 'g', Icons.eco_outlined),
+      if (food.sugarPer100g != null)
+        _NutrientItem('Sugar', (food.sugarPer100g! * factor).toStringAsFixed(1), 'g', Icons.opacity),
       if (food.sodiumMgPer100g != null)
         _NutrientItem('Sodium', (food.sodiumMgPer100g! * factor).toStringAsFixed(0), 'mg', Icons.science_outlined),
     ];

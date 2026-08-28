@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.bodypilot.backend.exception.ResourceNotFoundException;
 import com.bodypilot.backend.model.dto.workout.ExerciseDTO;
 import com.bodypilot.backend.model.dto.workout.WorkoutPlanDTO;
 import com.bodypilot.backend.model.dto.workout.WorkoutSessionDTO;
@@ -20,11 +21,9 @@ import com.bodypilot.backend.repository.WorkoutPlanRepository;
 import com.bodypilot.backend.service.WorkoutPlanService;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class WorkoutPlanServiceImpl implements WorkoutPlanService {
 
     private final WorkoutPlanRepository workoutPlanRepository;
@@ -32,10 +31,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
     @Override
     @Transactional(readOnly = true)
     public List<WorkoutPlanDTO> getAllPlansFull() {
-        log.info("Fetching all workout plans with full details");
-        List<WorkoutPlan> plans = workoutPlanRepository.findAll();
-        log.info("Found {} plans in database", plans.size());
-        return plans.stream()
+        return workoutPlanRepository.findAll().stream()
                 .map(this::mapToDTOFull)
                 .collect(Collectors.toList());
     }
@@ -59,12 +55,8 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
     @Override
     @Transactional(readOnly = true)
     public WorkoutPlanDTO getPlanById(UUID id) {
-        log.info("Fetching workout plan details for ID: {}", id);
         WorkoutPlan plan = workoutPlanRepository.findById(id)
-                .orElseThrow(() -> {
-                    log.error("Workout Plan not found with ID: {}", id);
-                    return new RuntimeException("Workout Plan not found with ID: " + id);
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Workout Plan not found with id: " + id));
         return mapToDTOFull(plan);
     }
 
@@ -88,7 +80,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
     @Transactional
     public WorkoutPlanDTO updatePlan(UUID id, WorkoutPlanDTO planDTO) {
         WorkoutPlan plan = workoutPlanRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Workout Plan not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Workout Plan not found with id: " + id));
 
         plan.setTitle(planDTO.getTitle());
         plan.setGoal(planDTO.getGoal());
@@ -105,7 +97,7 @@ public class WorkoutPlanServiceImpl implements WorkoutPlanService {
     @Transactional
     public void deletePlan(UUID id) {
         if (!workoutPlanRepository.existsById(id)) {
-            throw new RuntimeException("Workout Plan not found with ID: " + id);
+            throw new ResourceNotFoundException("Workout Plan not found with id: " + id);
         }
         workoutPlanRepository.deleteById(id);
     }

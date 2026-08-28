@@ -7,12 +7,12 @@ import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
 import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
 import '../../bloc/workout/exercise_cubit.dart';
 import '../../bloc/workout/workout_category_cubit.dart';
-import 'widgets/category_chips.dart';
-import 'widgets/ai_suggestion_banner.dart';
-import 'widgets/workout_plans_section.dart';
-import 'widgets/strength_section.dart';
-import 'widgets/ai_suggestion_card.dart';
-import 'widgets/workout_plan_section.dart';
+import 'widgets/sections/category_chips.dart';
+import 'widgets/ai_suggestion/ai_suggestion_banner.dart';
+import 'widgets/sections/workout_plans_section.dart';
+import 'widgets/sections/strength_section.dart';
+import 'widgets/ai_suggestion/ai_suggestion_card.dart';
+import 'widgets/sections/workout_plan_section.dart';
 import 'package:mobile/data/repositories/exercise_repository.dart';
 
 

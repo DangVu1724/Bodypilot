@@ -1,8 +1,9 @@
+import 'package:core_shared/models/goal_model.dart';
+import 'package:core_shared/models/user_metrics_model.dart';
+import 'package:core_shared/models/user_model.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/data/repositories/user_repository.dart';
 import 'package:mobile/data/services/token_service.dart';
-import 'package:core_shared/models/user_model.dart';
-import 'package:core_shared/models/user_metrics_model.dart';
 import 'user_state.dart';
 
 class UserCubit extends Cubit<UserState> {
@@ -43,21 +44,36 @@ class UserCubit extends Cubit<UserState> {
   }
 
   Future<void> updateWeight(double newWeight) async {
+    await updateGoalAndWeight(newWeight: newWeight);
+  }
+
+  Future<void> updateGoalAndWeight({double? newWeight, double? newTargetWeight}) async {
     if (state is UserLoaded) {
       final currentUser = (state as UserLoaded).user;
-      
+      final currentMetrics = currentUser.metrics;
+      final currentWeightVal = newWeight ?? currentMetrics?.weight;
+      final height = currentMetrics?.heightCm;
+
       final updatedMetrics = UserMetricsModel(
-        weight: newWeight,
-        heightCm: currentUser.metrics?.heightCm,
-        age: currentUser.metrics?.age,
-        goal: currentUser.metrics?.goal,
-        activityLevel: currentUser.metrics?.activityLevel,
-        bmi: currentUser.metrics?.heightCm != null && currentUser.metrics!.heightCm! > 0
-            ? newWeight / ((currentUser.metrics!.heightCm! / 100) * (currentUser.metrics!.heightCm! / 100))
-            : currentUser.metrics?.bmi,
-        bmr: currentUser.metrics?.bmr,
-        tdee: currentUser.metrics?.tdee,
-        targetCalories: currentUser.metrics?.targetCalories,
+        weight: currentWeightVal,
+        heightCm: height,
+        age: currentMetrics?.age,
+        goal: currentMetrics?.goal,
+        activityLevel: currentMetrics?.activityLevel,
+        bmi: (height != null && height > 0 && currentWeightVal != null)
+            ? currentWeightVal / ((height / 100) * (height / 100))
+            : currentMetrics?.bmi,
+        bmr: currentMetrics?.bmr,
+        tdee: currentMetrics?.tdee,
+        targetCalories: currentMetrics?.targetCalories,
+      );
+
+      final currentGoal = currentUser.goal;
+      final updatedGoal = GoalModel(
+        type: currentGoal?.type,
+        targetWeight: newTargetWeight ?? currentGoal?.targetWeight,
+        deadline: currentGoal?.deadline,
+        status: currentGoal?.status,
       );
 
       final updatedUser = UserModel(
@@ -65,7 +81,7 @@ class UserCubit extends Cubit<UserState> {
         email: currentUser.email,
         profile: currentUser.profile,
         metrics: updatedMetrics,
-        goal: currentUser.goal,
+        goal: updatedGoal,
       );
 
       await TokenService.saveUserCache(updatedUser);

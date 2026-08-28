@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import '../../../../core/theme/app_theme.dart';
-import '../../../bloc/user/user_cubit.dart';
-import '../../../bloc/user/user_state.dart';
+import 'package:mobile/core/theme/app_theme.dart';
+import 'package:mobile/presentation/bloc/user/user_cubit.dart';
+import 'package:mobile/presentation/bloc/user/user_state.dart';
 
-class WorkoutHeader extends StatelessWidget {
-  const WorkoutHeader({super.key});
+class MealHeader extends StatelessWidget {
+  const MealHeader({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +31,7 @@ class WorkoutHeader extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Ready for training 🏋️',
+                      'Ready for eating 🍽️',
                       style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 13),
                     ),
                     Row(
@@ -46,7 +46,7 @@ class WorkoutHeader extends StatelessWidget {
               ],
             ),
             Container(
-              decoration: BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
+              decoration: BoxDecoration(color: Colors.grey.withOpacity(0.1), shape: BoxShape.circle),
               child: IconButton(
                 icon: const Icon(Icons.search, color: AppTheme.textPrimary),
                 onPressed: () {},

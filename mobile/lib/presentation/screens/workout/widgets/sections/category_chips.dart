@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:mobile/core/theme/app_theme.dart';
-import '../../../bloc/workout/workout_category_cubit.dart';
-import '../../../bloc/workout/workout_category_state.dart';
-import '../category_exercises_screen.dart';
+import 'package:mobile/presentation/bloc/workout/workout_category_cubit.dart';
+import 'package:mobile/presentation/bloc/workout/workout_category_state.dart';
+import '../../category_exercises_screen.dart';
 import 'workout_skeleton.dart';
 
 class CategoryChips extends StatelessWidget {

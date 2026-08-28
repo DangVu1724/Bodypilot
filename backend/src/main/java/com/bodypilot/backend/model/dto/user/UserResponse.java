@@ -10,6 +10,7 @@ import java.util.UUID;
 public class UserResponse {
     private UUID id;
     private String email;
+    private String role;
     private UserProfileResponse profile;
     private UserMetricsResponse metrics;
     private GoalResponse goal;

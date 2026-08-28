@@ -5,8 +5,8 @@ import 'package:mobile/presentation/screens/workout/workout_plan_detail_screen.d
 import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_plan_state.dart';
 import 'package:mobile/core/theme/app_theme.dart';
-import 'package:mobile/presentation/screens/workout/widgets/section_title.dart';
-import 'package:mobile/presentation/screens/workout/widgets/workout_skeleton.dart';
+import 'package:mobile/presentation/screens/workout/widgets/sections/section_title.dart';
+import 'package:mobile/presentation/screens/workout/widgets/sections/workout_skeleton.dart';
 
 class WorkoutPlansSection extends StatelessWidget {
   const WorkoutPlansSection({super.key});

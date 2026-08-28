@@ -27,9 +27,9 @@ public class AiSuggestionController {
         if (startDate == null) {
             startDate = LocalDate.now();
         }
-        log.info("AI diet suggestion request received: userId={}, startDate={}, days={}, userFeedback={}", userId, startDate, days, userFeedback);
+        log.info("Nhận yêu cầu gợi ý thực đơn AI: userId={}, startDate={}, days={}", userId, startDate, days);
         String suggestion = geminiService.generateMealSuggestion(userId, startDate, days, userFeedback);
-        return ApiResponse.ok("AI suggestion generated successfully", suggestion);
+        return ApiResponse.ok("Tạo gợi ý thực đơn thành công", suggestion);
     }
 
     @GetMapping("/{userId}/ai-workout-suggestion")
@@ -41,9 +41,9 @@ public class AiSuggestionController {
         if (startDate == null) {
             startDate = LocalDate.now();
         }
-        log.info("AI workout suggestion request received: userId={}, startDate={}, days={}, focusBodyPart={}", userId, startDate, days, focusBodyPart);
+        log.info("Nhận yêu cầu gợi ý lịch tập AI: userId={}, startDate={}, days={}", userId, startDate, days);
         String suggestion = geminiService.generateWorkoutSuggestion(userId, startDate, days, focusBodyPart);
-        return ApiResponse.ok("AI suggestion generated successfully", suggestion);
+        return ApiResponse.ok("Tạo gợi ý lịch tập thành công", suggestion);
     }
 }
 

@@ -7,8 +7,8 @@ import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_diary_state.dart';
 import 'package:core_shared/core_shared.dart';
 import 'exercise_timer_screen.dart';
-import 'widgets/add_exercise_bottom_sheet.dart';
-import 'widgets/calender_workout.dart';
+import 'widgets/sheets/add_exercise_bottom_sheet.dart';
+import 'widgets/sections/calender_workout.dart';
 
 class WorkoutDiaryScreen extends StatefulWidget {
   const WorkoutDiaryScreen({super.key, this.initialDate});

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:core_shared/core_shared.dart';
 import '../../core/theme.dart';
+import '../../data/models/page_response_model.dart';
 import '../../data/repositories/admin_repository.dart';
 
 class DishFormScreen extends StatefulWidget {
@@ -93,10 +94,11 @@ class _DishFormScreenState extends State<DishFormScreen> {
     try {
       final futures = await Future.wait([
         adminRepository.getAllFoodCategories(),
-        adminRepository.getAllIngredients(),
+        adminRepository.getAllIngredients(size: 500),
       ]);
       final allCategories = futures[0] as List<FoodCategoryModel>;
-      final ingredients = futures[1] as List<FoodModel>;
+      final ingredientsPage = futures[1] as PageResponseModel<FoodModel>;
+      final ingredients = ingredientsPage.content;
 
       if (!mounted) return;
       setState(() {

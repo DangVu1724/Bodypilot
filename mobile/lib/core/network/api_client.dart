@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
+import 'package:mobile/core/routes/app_pages.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/data/services/token_service.dart';
-import 'package:mobile/core/routes/app_pages.dart';
 
 class ApiClient {
   late final Dio dio;
@@ -48,27 +48,9 @@ class ApiClient {
           return handler.next(options);
         },
         onError: (DioException e, handler) {
-          print("🚨 [ApiClient Error] Request to ${e.requestOptions.uri} failed!");
-          print("   Method: ${e.requestOptions.method}");
-          print("   Type: ${e.type}");
-          print("   Message: ${e.message}");
-          if (e.response != null) {
-            print("   Status Code: ${e.response?.statusCode}");
-            print("   Response Data: ${e.response?.data}");
-          } else {
-            print("   No response received from server.");
-          }
           if (e.response?.statusCode == 401) {
-            print("🚨 [ApiClient] 401 Unauthorized received. Logging out...");
             TokenService.removeToken();
             AppPages.router.go(AppRoutes.welcome);
-          } else if (e.response?.statusCode == 502 ||
-              e.response?.statusCode == 503 ||
-              e.response?.statusCode == 504) {
-            print("🛠️ [ApiClient] Server maintenance / busy status (${e.response?.statusCode}). Switching to offline mode.");
-          } else if (e.type == DioExceptionType.connectionTimeout ||
-              e.type == DioExceptionType.connectionError) {
-            print("⚡ [ApiClient] Network connection timeout/error. Fallback to offline mode.");
           }
           return handler.next(e);
         },

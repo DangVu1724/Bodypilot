@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:core_shared/core_shared.dart';
-import '../../core/theme.dart';
+import 'package:flutter/material.dart';
 
+import '../../core/theme.dart';
 import '../../data/repositories/admin_repository.dart';
 
 class ExerciseFormDialog extends StatefulWidget {
@@ -109,23 +109,15 @@ class _ExerciseFormDialogState extends State<ExerciseFormDialog> {
             _selectedTargetMuscle = _muscles.firstWhere((m) => m.id == ex!.targetMuscle!.id);
           } catch (_) {}
         }
+
         if (ex?.secondaryMuscles != null) {
-          _selectedSecondaryMuscles = ex!.secondaryMuscles!.map((em) {
-            try {
-              return _muscles.firstWhere((m) => m.id == em.id);
-            } catch (_) {
-              return em;
-            }
-          }).toList();
+          _selectedSecondaryMuscles = _muscles.where((m) => ex!.secondaryMuscles!.any((sm) => sm.id == m.id)).toList();
         }
 
         _isLoading = false;
       });
-    } catch (e) {
-      if (mounted) {
-        setState(() => _isLoading = false);
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi tải dữ liệu: $e')));
-      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -144,9 +136,7 @@ class _ExerciseFormDialogState extends State<ExerciseFormDialog> {
   void _submit() {
     if (_formKey.currentState!.validate()) {
       final updatedExercise = ExerciseModel(
-        id:
-            widget.exercise?.id ??
-            '', // BE will generate if empty string is ignored, or we use a separate logic in AdminRepository
+        id: widget.exercise?.id ?? '',
         code: _codeController.text,
         name: _nameController.text,
         description: _descController.text,
@@ -186,177 +176,329 @@ class _ExerciseFormDialogState extends State<ExerciseFormDialog> {
     });
   }
 
+  InputDecoration _buildInputDecoration(String label) {
+    return InputDecoration(
+      labelText: label,
+      labelStyle: const TextStyle(color: AppTheme.textSecondary, fontSize: 13),
+      filled: true,
+      fillColor: const Color(0xFFF8FAFC),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: AppTheme.primaryColor, width: 1.5),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: Text(
-        widget.exercise == null ? 'Thêm Bài Tập' : 'Sửa Bài Tập',
-        style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-      ),
-      content: SizedBox(
-        width: 600,
+    final isEdit = widget.exercise != null;
+
+    return Dialog(
+      backgroundColor: Colors.white,
+      surfaceTintColor: Colors.white,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      child: Container(
+        width: 780,
+        constraints: const BoxConstraints(maxHeight: 850),
+        padding: const EdgeInsets.all(32),
         child: _isLoading
-            ? const SizedBox(height: 200, child: Center(child: CircularProgressIndicator()))
-            : SingleChildScrollView(
-                child: Form(
-                  key: _formKey,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
+            ? const SizedBox(
+                height: 250,
+                child: Center(child: CircularProgressIndicator(color: AppTheme.primaryColor)),
+              )
+            : Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      TextFormField(
-                        controller: _codeController,
-                        decoration: const InputDecoration(labelText: 'Mã bài tập (Code)'),
-                        validator: (v) => v!.isEmpty ? 'Vui lòng nhập mã' : null,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _nameController,
-                        decoration: const InputDecoration(labelText: 'Tên bài tập'),
-                        validator: (v) => v!.isEmpty ? 'Vui lòng nhập tên' : null,
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _descController,
-                        decoration: const InputDecoration(labelText: 'Mô tả'),
-                        maxLines: 3,
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<String>(
-                        initialValue: _difficulty,
-                        decoration: const InputDecoration(labelText: 'Độ khó'),
-                        items: [
-                          'BEGINNER',
-                          'INTERMEDIATE',
-                          'ADVANCED',
-                        ].map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
-                        onChanged: (v) => setState(() => _difficulty = v!),
-                      ),
-                      const SizedBox(height: 12),
                       Row(
                         children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller: _metController,
-                              decoration: const InputDecoration(labelText: 'MET Value'),
-                              keyboardType: TextInputType.number,
+                          Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryLight,
+                              borderRadius: BorderRadius.circular(12),
                             ),
+                            child: const Icon(Icons.fitness_center_rounded, color: AppTheme.primaryColor, size: 24),
                           ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: TextFormField(
-                              controller: _durationController,
-                              decoration: const InputDecoration(labelText: 'Thời gian mặc định'),
-                              keyboardType: TextInputType.number,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: DropdownButtonFormField<String>(
-                              initialValue: _durationUnit,
-                              decoration: const InputDecoration(labelText: 'Đơn vị'),
-                              items: [
-                                'SECONDS',
-                                'MINUTES',
-                                'REPS',
-                              ].map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
-                              onChanged: (v) => setState(() => _durationUnit = v!),
-                            ),
+                          const SizedBox(width: 14),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                isEdit ? 'Sửa Bài Tập' : 'Thêm Bài Tập Mới',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                isEdit
+                                    ? 'Cập nhật thông tin chi tiết bài tập'
+                                    : 'Điền đầy đủ thông tin để tạo bài tập mới',
+                                style: const TextStyle(fontSize: 12, color: AppTheme.textSecondary),
+                              ),
+                            ],
                           ),
                         ],
                       ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<WorkoutCategoryModel>(
-                        initialValue: _selectedCategory,
-                        decoration: const InputDecoration(labelText: 'Nhóm bài tập (Category)'),
-                        items: _categories.map((c) => DropdownMenuItem(value: c, child: Text(c.name))).toList(),
-                        onChanged: (v) => setState(() => _selectedCategory = v),
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<BodyPartModel>(
-                        initialValue: _selectedBodyPart,
-                        decoration: const InputDecoration(labelText: 'Bộ phận cơ thể (Body Part)'),
-                        items: _bodyParts.map((b) => DropdownMenuItem(value: b, child: Text(b.name))).toList(),
-                        onChanged: (v) => setState(() => _selectedBodyPart = v),
-                      ),
-                      const SizedBox(height: 12),
-                      DropdownButtonFormField<MuscleModel>(
-                        initialValue: _selectedTargetMuscle,
-                        decoration: const InputDecoration(labelText: 'Nhóm cơ chính (Target Muscle)'),
-                        items: _muscles.map((m) => DropdownMenuItem(value: m, child: Text(m.name))).toList(),
-                        onChanged: (v) => setState(() => _selectedTargetMuscle = v),
-                      ),
-                      const SizedBox(height: 12),
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Nhóm cơ phụ (Secondary Muscles)',
-                          style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _muscles.map((m) {
-                          final isSelected = _selectedSecondaryMuscles.any((sm) => sm.id == m.id);
-                          return FilterChip(
-                            label: Text(m.name),
-                            selected: isSelected,
-                            onSelected: (bool selected) => _toggleSecondaryMuscle(m),
-                            selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
-                            checkmarkColor: AppTheme.primaryColor,
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 12),
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Dụng cụ (Equipment)',
-                          style: TextStyle(color: AppTheme.textSecondary, fontSize: 12),
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: _commonEquipments.map((eq) {
-                          final isSelected = _selectedEquipment.contains(eq);
-                          return FilterChip(
-                            label: Text(eq),
-                            selected: isSelected,
-                            onSelected: (bool selected) => _toggleEquipment(eq),
-                            selectedColor: AppTheme.primaryColor.withValues(alpha: 0.2),
-                            checkmarkColor: AppTheme.primaryColor,
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _mediaController,
-                        decoration: const InputDecoration(labelText: 'Media URL (Video/GIF)'),
-                      ),
-                      const SizedBox(height: 12),
-                      TextFormField(
-                        controller: _thumbController,
-                        decoration: const InputDecoration(labelText: 'Thumbnail URL'),
+                      IconButton(
+                        icon: const Icon(Icons.close_rounded, color: AppTheme.textSecondary),
+                        onPressed: () => Navigator.of(context).pop(),
                       ),
                     ],
                   ),
-                ),
+                  const Divider(height: 32, color: Color(0xFFF1F5F9)),
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _codeController,
+                                    decoration: _buildInputDecoration('Mã bài tập (Code)'),
+                                    validator: (v) => v!.isEmpty ? 'Vui lòng nhập mã' : null,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _nameController,
+                                    decoration: _buildInputDecoration('Tên bài tập'),
+                                    validator: (v) => v!.isEmpty ? 'Vui lòng nhập tên' : null,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            TextFormField(
+                              controller: _descController,
+                              decoration: _buildInputDecoration('Mô tả hướng dẫn bài tập'),
+                              maxLines: 3,
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField<String>(
+                                    initialValue: _difficulty,
+                                    decoration: _buildInputDecoration('Độ khó'),
+                                    items: [
+                                      'BEGINNER',
+                                      'INTERMEDIATE',
+                                      'ADVANCED',
+                                    ].map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                                    onChanged: (v) => setState(() => _difficulty = v!),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _metController,
+                                    decoration: _buildInputDecoration('Chỉ số MET Value'),
+                                    keyboardType: TextInputType.number,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  flex: 2,
+                                  child: TextFormField(
+                                    controller: _durationController,
+                                    decoration: _buildInputDecoration('Thời gian mặc định'),
+                                    keyboardType: TextInputType.number,
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  flex: 1,
+                                  child: DropdownButtonFormField<String>(
+                                    initialValue: _durationUnit,
+                                    decoration: _buildInputDecoration('Đơn vị'),
+                                    items: [
+                                      'SECONDS',
+                                      'MINUTES',
+                                      'REPS',
+                                    ].map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
+                                    onChanged: (v) => setState(() => _durationUnit = v!),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: DropdownButtonFormField<WorkoutCategoryModel>(
+                                    initialValue: _selectedCategory,
+                                    decoration: _buildInputDecoration('Danh mục bài tập'),
+                                    items: _categories
+                                        .map((c) => DropdownMenuItem(value: c, child: Text(c.name)))
+                                        .toList(),
+                                    onChanged: (v) => setState(() => _selectedCategory = v),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: DropdownButtonFormField<BodyPartModel>(
+                                    initialValue: _selectedBodyPart,
+                                    decoration: _buildInputDecoration('Bộ phận cơ thể'),
+                                    items: _bodyParts
+                                        .map((b) => DropdownMenuItem(value: b, child: Text(b.name)))
+                                        .toList(),
+                                    onChanged: (v) => setState(() => _selectedBodyPart = v),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 16),
+                            DropdownButtonFormField<MuscleModel>(
+                              initialValue: _selectedTargetMuscle,
+                              decoration: _buildInputDecoration('Nhóm cơ tác động chính (Target Muscle)'),
+                              items: _muscles.map((m) => DropdownMenuItem(value: m, child: Text(m.name))).toList(),
+                              onChanged: (v) => setState(() => _selectedTargetMuscle = v),
+                            ),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Nhóm cơ phụ tác động (Secondary Muscles)',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary),
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: _muscles.map((m) {
+                                final isSelected = _selectedSecondaryMuscles.any((sm) => sm.id == m.id);
+                                return FilterChip(
+                                  label: Text(m.name),
+                                  selected: isSelected,
+                                  onSelected: (_) => _toggleSecondaryMuscle(m),
+                                  backgroundColor: const Color(0xFFF1F5F9),
+                                  selectedColor: AppTheme.primaryLight,
+                                  checkmarkColor: AppTheme.primaryColor,
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? AppTheme.primaryColor : AppTheme.textPrimary,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    side: BorderSide(
+                                      color: isSelected ? AppTheme.primaryColor : const Color(0xFFE2E8F0),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Dụng cụ tập luyện (Equipment)',
+                              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary),
+                            ),
+                            const SizedBox(height: 10),
+                            Wrap(
+                              spacing: 8,
+                              runSpacing: 8,
+                              children: _commonEquipments.map((eq) {
+                                final isSelected = _selectedEquipment.contains(eq);
+                                return FilterChip(
+                                  label: Text(eq),
+                                  selected: isSelected,
+                                  onSelected: (_) => _toggleEquipment(eq),
+                                  backgroundColor: const Color(0xFFF1F5F9),
+                                  selectedColor: AppTheme.primaryLight,
+                                  checkmarkColor: AppTheme.primaryColor,
+                                  labelStyle: TextStyle(
+                                    color: isSelected ? AppTheme.primaryColor : AppTheme.textPrimary,
+                                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                                    fontSize: 12,
+                                  ),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10),
+                                    side: BorderSide(
+                                      color: isSelected ? AppTheme.primaryColor : const Color(0xFFE2E8F0),
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                            const SizedBox(height: 20),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _mediaController,
+                                    decoration: _buildInputDecoration('Đường dẫn Video / GIF bài tập'),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: TextFormField(
+                                    controller: _thumbController,
+                                    decoration: _buildInputDecoration('Đường dẫn Hình ảnh Thumbnail'),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: OutlinedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          side: const BorderSide(color: Color(0xFFCBD5E1)),
+                        ),
+                        child: const Text(
+                          'Hủy bỏ',
+                          style: TextStyle(color: AppTheme.textSecondary, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      ElevatedButton(
+                        onPressed: _submit,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: AppTheme.primaryColor,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          elevation: 0,
+                        ),
+                        child: const Text('Lưu bài tập', style: TextStyle(fontWeight: FontWeight.bold)),
+                      ),
+                    ],
+                  ),
+                ],
               ),
       ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.of(context).pop(),
-          child: const Text('Hủy', style: TextStyle(color: Colors.grey)),
-        ),
-        ElevatedButton(
-          onPressed: _submit,
-          style: ElevatedButton.styleFrom(backgroundColor: AppTheme.primaryColor),
-          child: const Text('Lưu'),
-        ),
-      ],
     );
   }
 }

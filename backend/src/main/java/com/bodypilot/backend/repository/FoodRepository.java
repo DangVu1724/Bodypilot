@@ -29,10 +29,20 @@ public interface FoodRepository extends JpaRepository<Food, UUID> {
     java.util.List<Food> findAllWithRelations();
 
     @EntityGraph(attributePaths = {"category"})
+    @Query("SELECT f FROM Food f")
+    java.util.List<Food> findAllWithCategory();
+
+    @EntityGraph(attributePaths = {"category"})
     java.util.List<Food> findByCategoryIdAndIsRecommendedTrue(UUID categoryId);
 
     @EntityGraph(attributePaths = {"category"})
     java.util.List<Food> findByIsRecommendedTrue();
 
     long countByType(FoodType type);
+
+    @Query("SELECT new com.bodypilot.backend.model.dto.admin.AdminStatsDTO$CategoryStatItem(" +
+           "COALESCE(c.name, 'Khác'), COUNT(f), 0.0) " +
+           "FROM Food f LEFT JOIN f.category c " +
+           "GROUP BY COALESCE(c.name, 'Khác') ORDER BY COUNT(f) DESC")
+    java.util.List<com.bodypilot.backend.model.dto.admin.AdminStatsDTO.CategoryStatItem> findFoodCategoryCounts();
 }

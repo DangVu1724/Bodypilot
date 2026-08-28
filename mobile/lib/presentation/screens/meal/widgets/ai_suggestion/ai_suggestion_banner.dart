@@ -113,9 +113,7 @@ class AiSuggestionBanner extends StatelessWidget {
 
         if (shouldProceed != true) return;
       }
-    } catch (e) {
-      print("🚨 [AiSuggestionBanner] Error checking existing meals: $e");
-    }
+    } catch (_) {}
 
     if (context.mounted) {
       Navigator.of(context, rootNavigator: true).push(

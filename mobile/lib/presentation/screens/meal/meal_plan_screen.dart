@@ -7,10 +7,10 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/core/utils/category_image_helper.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/presentation/bloc/meal/meal_state.dart';
-import 'package:mobile/presentation/screens/meal/widgets/calender_meal.dart';
+import 'package:mobile/presentation/screens/meal/widgets/sections/calender_meal.dart';
 
-import 'widgets/add_meal_bottom_sheet.dart';
-import 'widgets/smart_swap_bottom_sheet.dart';
+import 'widgets/sheets/add_meal_bottom_sheet.dart';
+import 'widgets/sheets/smart_swap_bottom_sheet.dart';
 
 class MealPlanScreen extends StatefulWidget {
   const MealPlanScreen({super.key, this.initialDate});

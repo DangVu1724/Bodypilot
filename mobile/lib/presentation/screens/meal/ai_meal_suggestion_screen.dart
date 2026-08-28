@@ -9,12 +9,11 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/nutrition_diary_repository.dart';
 import 'package:mobile/presentation/bloc/meal/ai_meal_cubit.dart';
 import 'package:mobile/presentation/bloc/meal/ai_meal_state.dart';
-
-import 'widgets/ai_meal_suggestion/ai_meal_bottom_bar.dart';
-import 'widgets/ai_meal_suggestion/ai_meal_error_view.dart';
-import 'widgets/ai_meal_suggestion/ai_meal_header.dart';
-import 'widgets/ai_meal_suggestion/ai_meal_loading_view.dart';
-import 'widgets/ai_meal_suggestion/ai_meal_slot_card.dart';
+import 'package:mobile/presentation/screens/meal/widgets/ai_suggestion/ai_meal_suggestion/ai_meal_bottom_bar.dart';
+import 'package:mobile/presentation/screens/meal/widgets/ai_suggestion/ai_meal_suggestion/ai_meal_error_view.dart';
+import 'package:mobile/presentation/screens/meal/widgets/ai_suggestion/ai_meal_suggestion/ai_meal_header.dart';
+import 'package:mobile/presentation/screens/meal/widgets/ai_suggestion/ai_meal_suggestion/ai_meal_loading_view.dart';
+import 'package:mobile/presentation/screens/meal/widgets/ai_suggestion/ai_meal_suggestion/ai_meal_slot_card.dart';
 
 class AiMealSuggestionScreen extends StatefulWidget {
   final int days;
@@ -240,9 +239,7 @@ class _AiMealSuggestionScreenState extends State<AiMealSuggestionScreen> {
 
         if (confirmed != true) return;
       }
-    } catch (e) {
-      print("🚨 [AiMealSuggestionScreen] Error checking existing meals before apply: $e");
-    }
+    } catch (_) {}
 
     setState(() {
       _isSaving = true;

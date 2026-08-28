@@ -94,6 +94,7 @@ public class UserServiceImpl implements UserService {
         return UserResponse.builder()
                 .id(user.getId())
                 .email(user.getEmail())
+                .role(user.getRole() != null ? user.getRole().name() : "CUSTOMER")
                 .profile(UserProfileResponse.builder()
                         .fullName(profile != null ? profile.getFullName() : null)
                         .avatarUrl(profile != null ? profile.getAvatarUrl() : null)

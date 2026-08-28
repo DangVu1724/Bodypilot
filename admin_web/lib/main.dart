@@ -73,6 +73,7 @@ class _MainLayoutState extends State<MainLayout> {
                 _loadedIndices.add(index); // Nạp dữ liệu màn hình khi người dùng bấm vào tab
               });
             },
+            onLogout: widget.onLogout,
           ),
           const VerticalDivider(width: 1, thickness: 1, color: Color(0xFFE2E8F0)),
           Expanded(
@@ -134,93 +135,17 @@ class _MainLayoutState extends State<MainLayout> {
           ),
           const Spacer(),
 
-          // Search Box (Reztro Style)
+          // Clean Admin User Profile Badge
           Container(
-            width: 320,
-            height: 42,
-            padding: const EdgeInsets.symmetric(horizontal: 14),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: const Color(0xFFEBECEF)),
-            ),
-            child: const Row(
-              children: [
-                Icon(Icons.search_rounded, color: AppTheme.textSecondary, size: 18),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Tìm kiếm dữ liệu...',
-                    style: TextStyle(color: AppTheme.textSecondary, fontSize: 13),
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 20),
-
-          // Notification Bell Button
-          Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8F9FA),
-                  shape: BoxShape.circle,
-                  border: Border.all(color: const Color(0xFFEBECEF)),
-                ),
-                child: IconButton(
-                  icon: const Icon(Icons.notifications_none_rounded, color: AppTheme.textPrimary, size: 20),
-                  onPressed: () {},
-                  padding: const EdgeInsets.all(8),
-                  constraints: const BoxConstraints(),
-                ),
-              ),
-              Positioned(
-                right: 4,
-                top: 4,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration: const BoxDecoration(
-                    color: AppTheme.primaryColor,
-                    shape: BoxShape.circle,
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(width: 12),
-
-          // Settings Button
-          Container(
-            decoration: BoxDecoration(
-              color: const Color(0xFFF8F9FA),
-              shape: BoxShape.circle,
-              border: Border.all(color: const Color(0xFFEBECEF)),
-            ),
-            child: IconButton(
-              icon: const Icon(Icons.settings_outlined, color: AppTheme.textPrimary, size: 20),
-              onPressed: () {},
-              padding: const EdgeInsets.all(8),
-              constraints: const BoxConstraints(),
-            ),
-          ),
-          const SizedBox(width: 16),
-          const SizedBox(height: 24, child: VerticalDivider(width: 1, color: AppTheme.borderColor)),
-          const SizedBox(width: 16),
-
-          // Admin User Profile Badge
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
               color: const Color(0xFFF8F9FA),
               borderRadius: BorderRadius.circular(30),
               border: Border.all(color: const Color(0xFFEBECEF)),
             ),
-            child: Row(
+            child: const Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 16,
                   backgroundColor: AppTheme.primaryColor,
                   child: Text(
@@ -228,8 +153,8 @@ class _MainLayoutState extends State<MainLayout> {
                     style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
                   ),
                 ),
-                const SizedBox(width: 10),
-                const Column(
+                SizedBox(width: 10),
+                Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -242,38 +167,6 @@ class _MainLayoutState extends State<MainLayout> {
                       style: TextStyle(color: AppTheme.textSecondary, fontSize: 10),
                     ),
                   ],
-                ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.logout_rounded, color: Colors.redAccent, size: 18),
-                  onPressed: () {
-                    showDialog(
-                      context: context,
-                      builder: (ctx) => AlertDialog(
-                        title: const Text('Xác nhận đăng xuất'),
-                        content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi hệ thống admin?'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(ctx),
-                            child: const Text('Hủy'),
-                          ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent,
-                              foregroundColor: Colors.white,
-                            ),
-                            onPressed: () {
-                              Navigator.pop(ctx);
-                              widget.onLogout();
-                            },
-                            child: const Text('Đăng xuất'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  padding: EdgeInsets.zero,
-                  constraints: const BoxConstraints(),
                 ),
               ],
             ),

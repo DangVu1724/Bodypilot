@@ -1,8 +1,9 @@
 import 'dart:convert';
-import 'package:sqflite/sqflite.dart';
-import 'package:path/path.dart';
-import 'package:core_shared/models/food_model.dart';
+
 import 'package:core_shared/models/food_category_model.dart';
+import 'package:core_shared/models/food_model.dart';
+import 'package:path/path.dart';
+import 'package:sqflite/sqflite.dart';
 
 /// Quản lý cơ sở dữ liệu SQLite cục bộ cho món ăn
 class FoodDatabaseHelper {
@@ -62,17 +63,13 @@ class FoodDatabaseHelper {
       final batch = db.batch();
 
       for (final food in chunk) {
-        batch.insert(
-          'foods',
-          {
-            'id': food.id,
-            'name': food.name,
-            'type': food.type,
-            'categoryId': food.category?.id ?? '',
-            'rawJson': jsonEncode(food.toJson()),
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        batch.insert('foods', {
+          'id': food.id,
+          'name': food.name,
+          'type': food.type,
+          'categoryId': food.category?.id ?? '',
+          'rawJson': jsonEncode(food.toJson()),
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
       }
 
       await batch.commit(noResult: true);
@@ -83,19 +80,15 @@ class FoodDatabaseHelper {
   Future<void> insertCategories(List<FoodCategoryModel> categoriesList) async {
     final db = await database;
     final batch = db.batch();
-    
+
     for (final cat in categoriesList) {
-      batch.insert(
-        'food_categories',
-        {
-          'id': cat.id,
-          'name': cat.name,
-          'rawJson': jsonEncode(cat.toJson()),
-        },
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      batch.insert('food_categories', {
+        'id': cat.id,
+        'name': cat.name,
+        'rawJson': jsonEncode(cat.toJson()),
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     }
-    
+
     await batch.commit(noResult: true);
   }
 
@@ -108,25 +101,27 @@ class FoodDatabaseHelper {
     int offset = 0,
   }) async {
     final db = await database;
-    
+
     String whereClause = '';
     final List<dynamic> whereArgs = [];
-    
+
     if (query.isNotEmpty) {
       whereClause += 'name LIKE ?';
       whereArgs.add('%$query%');
     }
-    
+
     if (categoryId != null && categoryId.isNotEmpty) {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
       whereClause += 'categoryId = ?';
       whereArgs.add(categoryId);
-    } else if (type != null && type.isNotEmpty) {
+    }
+
+    if (type != null && type.isNotEmpty) {
       if (whereClause.isNotEmpty) whereClause += ' AND ';
       whereClause += '(type = ? OR type = "BOTH")';
       whereArgs.add(type);
     }
-    
+
     final List<Map<String, dynamic>> maps = await db.query(
       'foods',
       where: whereClause.isNotEmpty ? whereClause : null,
@@ -135,7 +130,7 @@ class FoodDatabaseHelper {
       offset: offset,
       orderBy: 'name ASC',
     );
-    
+
     return maps.map((map) {
       final jsonStr = map['rawJson'] as String;
       return FoodModel.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>);
@@ -145,11 +140,8 @@ class FoodDatabaseHelper {
   /// Lấy danh mục món ăn ngoại tuyến
   Future<List<FoodCategoryModel>> getCategoriesOffline() async {
     final db = await database;
-    final List<Map<String, dynamic>> maps = await db.query(
-      'food_categories',
-      orderBy: 'name ASC',
-    );
-    
+    final List<Map<String, dynamic>> maps = await db.query('food_categories', orderBy: 'name ASC');
+
     return maps.map((map) {
       final jsonStr = map['rawJson'] as String;
       return FoodCategoryModel.fromJson(jsonDecode(jsonStr) as Map<String, dynamic>);

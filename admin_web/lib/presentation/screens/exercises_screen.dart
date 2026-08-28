@@ -1,31 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:core_shared/core_shared.dart';
 import '../../core/theme.dart';
 import '../../data/repositories/admin_repository.dart';
+import '../../logic/cubits/exercises/exercises_cubit.dart';
+import '../../logic/cubits/exercises/exercises_state.dart';
 import '../widgets/base_table_screen.dart';
-import '../../data/models/page_response_model.dart';
 import '../widgets/exercise_form_dialog.dart';
 import 'exercise_detail_screen.dart';
 
-class ExercisesScreen extends StatefulWidget {
+class ExercisesScreen extends StatelessWidget {
   const ExercisesScreen({super.key});
 
   @override
-  State<ExercisesScreen> createState() => _ExercisesScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => ExercisesCubit(adminRepository: adminRepository)..fetchExercises(),
+      child: const _ExercisesScreenContent(),
+    );
+  }
 }
 
-class _ExercisesScreenState extends State<ExercisesScreen> {
-  late Future<PageResponseModel<ExerciseModel>> _exercisesFuture;
+class _ExercisesScreenContent extends StatefulWidget {
+  const _ExercisesScreenContent();
+
+  @override
+  State<_ExercisesScreenContent> createState() => _ExercisesScreenContentState();
+}
+
+class _ExercisesScreenContentState extends State<_ExercisesScreenContent> {
   List<CategoryFilterItem> _categoryFilterItems = [const CategoryFilterItem(id: null, label: 'Tất cả')];
-  String _searchQuery = '';
   String? _selectedCategoryId;
-  int _currentPage = 0;
+  String _searchQuery = '';
 
   @override
   void initState() {
     super.initState();
     _loadCategories();
-    _loadExercises(page: 0);
   }
 
   Future<void> _loadCategories() async {
@@ -42,162 +53,181 @@ class _ExercisesScreenState extends State<ExercisesScreen> {
     } catch (_) {}
   }
 
-  void _loadExercises({int page = 0}) {
-    setState(() {
-      _currentPage = page;
-      _exercisesFuture = adminRepository.getAllExercises(
-        page: page,
-        size: 20,
-        search: _searchQuery,
-        categoryId: _selectedCategoryId,
-      );
-    });
-  }
-
-  void _refreshExercises() {
-    _loadExercises(page: _currentPage);
-  }
-
-  void _onSearchChanged(String query) {
-    _searchQuery = query;
-    _loadExercises(page: 0);
-  }
-
-  Future<void> _showAddEditDialog([ExerciseModel? exercise]) async {
-    final result = await showDialog<ExerciseModel>(
+  void _showAddExerciseDialog(BuildContext context) async {
+    final result = await showDialog<bool>(
       context: context,
-      builder: (context) => ExerciseFormDialog(exercise: exercise),
+      builder: (context) => const ExerciseFormDialog(),
     );
-
-    if (result != null) {
-      try {
-        if (exercise == null) {
-          await adminRepository.createExercise(result);
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Thêm thành công')));
-        } else {
-          await adminRepository.updateExercise(exercise.id, result);
-          if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Sửa thành công')));
-        }
-        _refreshExercises();
-      } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi: $e')));
-      }
+    if (result == true && mounted) {
+      context.read<ExercisesCubit>().fetchExercises(search: _searchQuery, categoryId: _selectedCategoryId);
     }
   }
 
-  Future<void> _deleteExercise(String id) async {
-    final confirm = await showDialog<bool>(
+  void _showEditExerciseDialog(BuildContext context, ExerciseModel exercise) async {
+    final result = await showDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (context) => ExerciseFormDialog(exercise: exercise),
+    );
+    if (result == true && mounted) {
+      context.read<ExercisesCubit>().fetchExercises(search: _searchQuery, categoryId: _selectedCategoryId);
+    }
+  }
+
+  void _confirmDeleteExercise(BuildContext context, ExerciseModel exercise) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
         title: const Text('Xác nhận xóa'),
-        content: const Text('Bạn có chắc chắn muốn xóa bài tập này không?'),
+        content: Text('Bạn có chắc chắn muốn xóa bài tập "${exercise.name}" không?'),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Hủy')),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Hủy'),
+          ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () async {
+              Navigator.pop(ctx);
+              final success = await context.read<ExercisesCubit>().deleteExercise(exercise.id);
+              if (success && context.mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Xóa bài tập thành công!')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red, foregroundColor: Colors.white),
             child: const Text('Xóa'),
           ),
         ],
       ),
     );
-
-    if (confirm == true) {
-      try {
-        await adminRepository.deleteExercise(id);
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Xóa thành công')));
-        _refreshExercises();
-      } catch (e) {
-        if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Lỗi xóa: $e')));
-      }
-    }
   }
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<PageResponseModel<ExerciseModel>>(
-      future: _exercisesFuture,
-      builder: (context, snapshot) {
-        final isLoading = snapshot.connectionState == ConnectionState.waiting;
-        final pageData = snapshot.data ?? PageResponseModel<ExerciseModel>.empty();
-        final exercises = pageData.content;
+    return BlocBuilder<ExercisesCubit, ExercisesState>(
+      builder: (context, state) {
+        final isLoading = state is ExercisesLoading;
+        final pageData = state is ExercisesSuccess ? state.pageData : null;
+        final items = pageData?.content ?? [];
 
         return BaseTableScreen(
-          title: 'Bài tập',
-          subtitle: 'Quản lý kho bài tập (Exercises) trong hệ thống',
-          onRefresh: _refreshExercises,
-          onAddPressed: () => _showAddEditDialog(),
-          onSearchChanged: _onSearchChanged,
-          searchHint: 'Tìm theo tên bài tập...',
+          title: 'Quản lý Bài tập',
+          subtitle: 'Danh sách bài tập và phân loại nhóm cơ',
+          searchHint: 'Tìm kiếm tên bài tập...',
           categoryFilters: _categoryFilterItems,
           selectedCategoryId: _selectedCategoryId,
           onCategorySelected: (catId) {
-            _selectedCategoryId = catId;
-            _loadExercises(page: 0);
+            setState(() {
+              _selectedCategoryId = catId;
+            });
+            context.read<ExercisesCubit>().fetchExercises(search: _searchQuery, categoryId: catId);
+          },
+          onSearchChanged: (query) {
+            _searchQuery = query;
+            context.read<ExercisesCubit>().fetchExercises(search: query, categoryId: _selectedCategoryId);
+          },
+          onRefresh: () => context.read<ExercisesCubit>().fetchExercises(search: _searchQuery, categoryId: _selectedCategoryId),
+          onAddPressed: () => _showAddExerciseDialog(context),
+          currentPage: pageData?.pageNumber ?? 0,
+          totalPages: pageData?.totalPages ?? 1,
+          totalElements: pageData?.totalElements ?? 0,
+          pageSize: pageData?.pageSize ?? 20,
+          onPageChanged: (newPage) {
+            context.read<ExercisesCubit>().fetchExercises(
+                  page: newPage,
+                  search: _searchQuery,
+                  categoryId: _selectedCategoryId,
+                );
           },
           isLoading: isLoading,
-          currentPage: pageData.pageNumber,
-          totalPages: pageData.totalPages,
-          totalElements: pageData.totalElements,
-          pageSize: pageData.pageSize,
-          onPageChanged: (newPage) => _loadExercises(page: newPage),
-          columns: const ['ID', 'Tên bài tập', 'Danh mục', 'Cơ chính', 'Độ khó', 'MET', 'Thao tác'],
-          rows: exercises
-              .map(
-                (ex) => DataRow(
-                  cells: [
-                    DataCell(Text(ex.id.length >= 8 ? ex.id.substring(0, 8) : ex.id)),
-                    DataCell(Text(ex.name)),
-                    DataCell(Text(ex.category?.name ?? 'Chưa phân loại')),
-                    DataCell(Text(ex.targetMuscle?.name ?? 'Chưa rõ')),
-                    DataCell(
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: ex.difficulty == 'BEGINNER'
-                              ? Colors.green.shade50
-                              : ex.difficulty == 'INTERMEDIATE'
-                                  ? Colors.orange.shade50
-                                  : Colors.red.shade50,
-                          borderRadius: BorderRadius.circular(6),
+          columns: const [
+            'Tên Bài tập',
+            'Loại',
+            'Nhóm cơ',
+            'Độ khó',
+            'Chỉ số MET',
+            'Hành động',
+          ],
+          rows: items.map((exercise) {
+            return DataRow(
+              cells: [
+                DataCell(
+                  Row(
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(8),
+                        child: Image.network(
+                          exercise.displayImageUrl,
+                          width: 44,
+                          height: 44,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => Container(
+                            width: 44,
+                            height: 44,
+                            color: const Color(0xFFF1F5F9),
+                            child: const Icon(Icons.fitness_center, size: 22, color: AppTheme.textSecondary),
+                          ),
                         ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
                         child: Text(
-                          ex.difficulty ?? 'N/A',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            color: ex.difficulty == 'BEGINNER'
-                                ? Colors.green.shade700
-                                : ex.difficulty == 'INTERMEDIATE'
-                                    ? Colors.orange.shade700
-                                    : Colors.red.shade700,
-                          ),
+                          exercise.name,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 15),
                         ),
                       ),
-                    ),
-                    DataCell(Text('${ex.metValue ?? 0}')),
-                    DataCell(
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.visibility_outlined, size: 18, color: AppTheme.primaryColor),
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (context) => ExerciseDetailScreen(exerciseId: ex.id)),
-                            ),
-                          ),
-                          IconButton(icon: const Icon(Icons.edit, size: 18), onPressed: () => _showAddEditDialog(ex)),
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline, size: 18, color: Colors.red),
-                            onPressed: () => _deleteExercise(ex.id),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              )
-              .toList(),
+                DataCell(Text(exercise.category?.name ?? '---', style: const TextStyle(fontSize: 14))),
+                DataCell(Text(exercise.bodyPart?.name ?? '---', style: const TextStyle(fontSize: 14))),
+                DataCell(
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF1F5F9),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      exercise.difficulty ?? '---',
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppTheme.textSecondary),
+                    ),
+                  ),
+                ),
+                DataCell(Text('${exercise.metValue ?? 0} MET', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600))),
+                DataCell(
+                  Row(
+                    children: [
+                      IconButton(
+                        icon: const Icon(Icons.visibility_outlined, size: 20, color: AppTheme.textSecondary),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ExerciseDetailScreen(exerciseId: exercise.id),
+                            ),
+                          );
+                        },
+                        tooltip: 'Xem chi tiết',
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.edit_outlined, size: 20, color: AppTheme.textSecondary),
+                        onPressed: () => _showEditExerciseDialog(context, exercise),
+                        tooltip: 'Chỉnh sửa',
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.delete_outline, size: 20, color: Colors.red),
+                        onPressed: () => _confirmDeleteExercise(context, exercise),
+                        tooltip: 'Xóa',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
         );
       },
     );

@@ -3,9 +3,12 @@ import 'package:core_shared/models/user_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
+import 'package:mobile/data/services/token_service.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
@@ -56,104 +59,105 @@ class ProfileScreen extends StatelessWidget {
     final metrics = user.metrics;
     final goal = user.goal;
 
-    return CustomScrollView(
-      physics: const BouncingScrollPhysics(),
-      slivers: [
-        SliverAppBar(
-          expandedHeight: 100,
-          floating: false,
-          pinned: true,
-          stretch: true,
-          elevation: 0,
-          backgroundColor: Colors.transparent,
-          flexibleSpace: FlexibleSpaceBar(
-            titlePadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-            title: Text('Hồ Sơ Cá Nhân', style: AppTheme.headlineStyle.copyWith(fontSize: 24, letterSpacing: -0.5)),
+    return SafeArea(
+      bottom: false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Tiêu đề cố định ở đỉnh màn hình
+          Padding(
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 12),
+            child: Text('Hồ Sơ Cá Nhân', style: AppTheme.headlineStyle.copyWith(fontSize: 24, letterSpacing: -0.5)),
           ),
-          automaticallyImplyLeading: false,
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _buildHeader(profile?.fullName ?? 'Người dùng', user.email, profile?.avatarUrl),
-                const SizedBox(height: 32),
 
-                _buildHighlightMetricsCard(metrics),
-                const SizedBox(height: 32),
+          // Nội dung cuộn bên dưới
+          Expanded(
+            child: SingleChildScrollView(
+              physics: const BouncingScrollPhysics(),
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  _buildHeader(profile?.fullName ?? 'Người dùng', user.email, profile?.avatarUrl),
+                  const SizedBox(height: 32),
 
-                _buildSectionTitle('Mục Tiêu Hiện Tại'),
-                const SizedBox(height: 16),
-                _buildGoalCard(context, goal, metrics?.weight),
-                const SizedBox(height: 32),
+                  _buildHighlightMetricsCard(metrics),
+                  const SizedBox(height: 32),
 
-                _buildSectionTitle('Chỉ Số Sức Khỏe'),
-                const SizedBox(height: 16),
-                _buildAdvancedMetricsGrid(metrics),
-                const SizedBox(height: 32),
+                  _buildSectionTitle('Mục Tiêu Hiện Tại'),
+                  const SizedBox(height: 16),
+                  _buildGoalCard(context, goal, metrics?.weight),
+                  const SizedBox(height: 32),
 
-                _buildSettingsGroup('TÀI KHOẢN', [
-                  _buildSettingsTile(Icons.person_outline, 'Chỉnh Sửa Hồ Sơ', () {
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).push(MaterialPageRoute(builder: (context) => EditProfileScreen(user: user)));
-                  }),
-                  _buildSettingsTile(Icons.assignment_outlined, 'Làm Lại Khảo Sát Thể Trạng', () {
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).push(MaterialPageRoute(builder: (context) => const AssessmentScreen()));
-                  }),
-                  _buildSettingsTile(
-                    Icons.notifications_none,
-                    'Thông Báo',
-                    () => context.push(AppRoutes.notifications),
-                  ),
-                  _buildSettingsTile(Icons.security, 'Quyền Riêng Tư & Bảo Mật', () {
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).push(MaterialPageRoute(builder: (context) => const PrivacyScreen()));
-                  }),
-                ]),
-                const SizedBox(height: 24),
-                _buildSettingsGroup('HỖ TRỢ', [
-                  _buildSettingsTile(Icons.science_outlined, 'Cơ Sở Khoa Học & Dữ Liệu', () {
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).push(MaterialPageRoute(builder: (context) => const ScientificBasisScreen()));
-                  }),
-                  _buildSettingsTile(Icons.help_outline, 'Trung Tâm Trợ Giúp', () {
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).push(MaterialPageRoute(builder: (context) => const HelpCenterScreen()));
-                  }),
-                  _buildSettingsTile(Icons.info_outline, 'Về BodyPilot', () {
-                    Navigator.of(
-                      context,
-                      rootNavigator: true,
-                    ).push(MaterialPageRoute(builder: (context) => const AboutScreen()));
-                  }),
-                ]),
-                const SizedBox(height: 24),
-                _buildSettingsGroup('ĐĂNG XUẤT', [
-                  _buildSettingsTile(Icons.logout, 'Đăng Xuất', () => _showLogoutDialog(context), isDanger: true),
-                ], showDivider: false),
-                const SizedBox(height: 60),
-              ],
+                  _buildSectionTitle('Chỉ Số Sức Khỏe'),
+                  const SizedBox(height: 16),
+                  _buildAdvancedMetricsGrid(metrics),
+                  const SizedBox(height: 32),
+
+                  _buildSettingsGroup('TÀI KHOẢN', [
+                    _buildSettingsTile(Icons.person_outline, 'Chỉnh Sửa Hồ Sơ', () {
+                      Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).push(MaterialPageRoute(builder: (context) => EditProfileScreen(user: user)));
+                    }),
+                    _buildSettingsTile(Icons.assignment_outlined, 'Làm Lại Khảo Sát Thể Trạng', () {
+                      Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).push(MaterialPageRoute(builder: (context) => const AssessmentScreen()));
+                    }),
+                    _buildSettingsTile(
+                      Icons.notifications_none,
+                      'Thông Báo',
+                      () => context.push(AppRoutes.notifications),
+                    ),
+                    _buildSettingsTile(Icons.security, 'Quyền Riêng Tư & Bảo Mật', () {
+                      Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).push(MaterialPageRoute(builder: (context) => const PrivacyScreen()));
+                    }),
+                  ]),
+                  const SizedBox(height: 24),
+                  _buildSettingsGroup('HỖ TRỢ', [
+                    _buildSettingsTile(Icons.science_outlined, 'Cơ Sở Khoa Học & Dữ Liệu', () {
+                      Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).push(MaterialPageRoute(builder: (context) => const ScientificBasisScreen()));
+                    }),
+                    _buildSettingsTile(Icons.help_outline, 'Trung Tâm Trợ Giúp', () {
+                      Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).push(MaterialPageRoute(builder: (context) => const HelpCenterScreen()));
+                    }),
+                    _buildSettingsTile(Icons.info_outline, 'Về BodyPilot', () {
+                      Navigator.of(
+                        context,
+                        rootNavigator: true,
+                      ).push(MaterialPageRoute(builder: (context) => const AboutScreen()));
+                    }),
+                  ]),
+                  const SizedBox(height: 24),
+                  _buildSettingsGroup('ĐĂNG XUẤT', [
+                    _buildSettingsTile(Icons.logout, 'Đăng Xuất', () => _showLogoutDialog(context), isDanger: true),
+                  ], showDivider: false),
+                  const SizedBox(height: 80),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   Widget _buildHeader(String name, String email, String? avatarUrl) {
+    final streakDays = TokenService.getStreakCount();
+
     return Row(
       children: [
         HeroProfileAvatar(
@@ -184,7 +188,7 @@ class ProfileScreen extends StatelessWidget {
                     const Text('🔥', style: TextStyle(fontSize: 14)),
                     const SizedBox(width: 6),
                     Text(
-                      'Chuỗi 15 Ngày',
+                      'Chuỗi $streakDays Ngày',
                       style: AppTheme.semiboldStyle.copyWith(fontSize: 12, color: const Color(0xFFB45309)),
                     ),
                   ],
@@ -253,90 +257,206 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  String _formatGoalType(String? rawType) {
-    if (rawType == null || rawType.isEmpty) return 'Chưa thiết lập mục tiêu';
-    final g = rawType.toUpperCase();
-    if (g.contains('LOSE') || g.contains('CUT') || g.contains('GIAM') || g.contains('WEIGHT_LOSS')) {
-      return 'Giảm cân';
-    } else if (g.contains('GAIN') || g.contains('BUILD') || g.contains('TANG') || g.contains('MUSCLE')) {
-      return 'Tăng cơ / Tăng cân';
-    } else if (g.contains('MAINTAIN') || g.contains('DUY_TRI')) {
-      return 'Duy trì vóc dáng';
-    }
-    return rawType;
-  }
-
   Widget _buildGoalCard(BuildContext context, dynamic goal, double? currentWeight) {
-    final type = _formatGoalType(goal?.type);
-    final targetWeight = goal?.targetWeight;
-    double progress = 0.65; // Mock progress
+    final rawType = (goal?.type ?? '').toString().toUpperCase();
+    final isMaintain = rawType.contains('MAINTAIN') || rawType.contains('DUY_TRI');
+
+    final displayType = (goal?.type != null && goal.type.toString().isNotEmpty) ? goal.type.toString() : 'GAIN_MUSCLE';
+    final targetWeight = (goal?.targetWeight as num?)?.toDouble() ?? 65.0;
+
+    // Calculate Estimated Completion Date based on 0.5 kg / week
+    String? estimatedCompletionDateStr;
+    if (!isMaintain && currentWeight != null && (currentWeight - targetWeight).abs() > 0.1) {
+      final weightDiff = (targetWeight - currentWeight).abs();
+      final weeksNeeded = weightDiff / 0.5;
+      final daysNeeded = (weeksNeeded * 7).ceil();
+      final estimatedDate = DateTime.now().add(Duration(days: daysNeeded));
+      estimatedCompletionDateStr = DateFormat('dd/MM/yyyy').format(estimatedDate);
+    }
+
+    // Calculate dynamic progress towards target weight
+    double progress = 1.0;
+    if (isMaintain) {
+      progress = 1.0;
+    } else if (currentWeight != null && currentWeight > 0 && targetWeight > 0) {
+      if (rawType.contains('LOSE') || rawType.contains('CUT') || rawType.contains('GIAM')) {
+        if (currentWeight <= targetWeight) {
+          progress = 1.0;
+        } else {
+          progress = (targetWeight / currentWeight).clamp(0.0, 1.0);
+        }
+      } else {
+        if (currentWeight >= targetWeight) {
+          progress = 1.0;
+        } else {
+          progress = (currentWeight / targetWeight).clamp(0.0, 1.0);
+        }
+      }
+    }
 
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppTheme.primary.withOpacity(0.08), Colors.white],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: AppTheme.primary.withOpacity(0.12)),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Header: Icon + Title & Target + Percentage
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: AppTheme.primary.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(16),
+                width: 48,
+                height: 48,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF0F172A),
+                  shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.bolt_rounded, color: AppTheme.primary, size: 28),
+                child: const Icon(
+                  Icons.fitness_center_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
-              const SizedBox(width: 16),
+              const SizedBox(width: 14),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(type, style: AppTheme.semiboldStyle.copyWith(fontSize: 18)),
+                    Text(
+                      displayType,
+                      style: GoogleFonts.workSans(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF0F172A),
+                        letterSpacing: -0.2,
+                      ),
+                    ),
                     const SizedBox(height: 2),
                     Text(
-                      targetWeight != null ? 'Mục tiêu: $targetWeight kg' : 'Nhấn để đặt mục tiêu',
-                      style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 14),
+                      'Target: ${targetWeight.toStringAsFixed(1)} kg',
+                      style: GoogleFonts.workSans(
+                        fontSize: 13,
+                        color: const Color(0xFF64748B),
+                      ),
                     ),
                   ],
                 ),
               ),
               Text(
                 '${(progress * 100).toInt()}%',
-                style: AppTheme.semiboldStyle.copyWith(color: AppTheme.primary, fontSize: 18),
+                style: GoogleFonts.workSans(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: const Color(0xFFFF6B2C),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 18),
+
+          // Progress Bar
           ClipRRect(
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(10),
             child: LinearProgressIndicator(
               value: progress,
-              minHeight: 10,
-              backgroundColor: AppTheme.primary.withOpacity(0.1),
-              valueColor: const AlwaysStoppedAnimation<Color>(AppTheme.primary),
+              minHeight: 8,
+              backgroundColor: const Color(0xFFF1F5F9),
+              valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF6B2C)),
             ),
           ),
           const SizedBox(height: 20),
+
+          // Info Rows: Target & Estimated Completion Date
+          Column(
+            children: [
+              // Row 1: Target
+              Row(
+                children: [
+                  const Icon(Icons.track_changes_rounded, color: Color(0xFF0F172A), size: 22),
+                  const SizedBox(width: 12),
+                  Text(
+                    'Mục tiêu',
+                    style: GoogleFonts.workSans(
+                      fontSize: 14,
+                      color: const Color(0xFF0F172A),
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  Text(
+                    '${targetWeight.toStringAsFixed(1)} kg',
+                    style: GoogleFonts.workSans(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: const Color(0xFF0F172A),
+                    ),
+                  ),
+                ],
+              ),
+
+              // Row 2: Estimated Completion Date
+              if (!isMaintain && estimatedCompletionDateStr != null) ...[
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(height: 1, color: Color(0xFFF1F5F9)),
+                ),
+                Row(
+                  children: [
+                    const Icon(Icons.calendar_month_rounded, color: Color(0xFF0F172A), size: 22),
+                    const SizedBox(width: 12),
+                    Text(
+                      'Dự kiến hoàn thành',
+                      style: GoogleFonts.workSans(
+                        fontSize: 14,
+                        color: const Color(0xFF0F172A),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(
+                      estimatedCompletionDateStr,
+                      style: GoogleFonts.workSans(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF0F172A),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 20),
+
+          // Action Button
           SizedBox(
             width: double.infinity,
+            height: 48,
             child: ElevatedButton(
               onPressed: () => _showUpdateGoalBottomSheet(context, goal, currentWeight),
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppTheme.primary,
+                backgroundColor: const Color(0xFF0F172A),
                 foregroundColor: Colors.white,
                 elevation: 0,
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                padding: const EdgeInsets.symmetric(vertical: 14),
               ),
-              child: const Text('Cập Nhật Tiến Độ'),
+              child: Text(
+                'Cập nhật tiến độ',
+                style: GoogleFonts.workSans(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
             ),
           ),
         ],
@@ -356,12 +476,7 @@ class ProfileScreen extends StatelessWidget {
         _buildMetricCard('BMI', metrics?.bmi?.toStringAsFixed(1) ?? '--', 'Chỉ số', Icons.speed),
         _buildMetricCard('BMR', metrics?.bmr?.toInt().toString() ?? '--', 'kcal/ngày', Icons.local_fire_department),
         _buildMetricCard('TDEE', metrics?.tdee?.toInt().toString() ?? '--', 'kcal/ngày', Icons.flash_on),
-        _buildMetricCard(
-          'Calo Hàng Ngày',
-          metrics?.targetCalories?.toInt().toString() ?? '--',
-          'kcal',
-          Icons.restaurant,
-        ),
+        _buildMetricCard('Calo/Ngày', metrics?.targetCalories?.toInt().toString() ?? '--', 'kcal', Icons.restaurant),
       ],
     );
   }
@@ -507,8 +622,17 @@ class ProfileScreen extends StatelessWidget {
                 height: 48,
                 child: ElevatedButton(
                   onPressed: () {
+                    final newWeight = double.tryParse(weightController.text.trim());
+                    final newTargetWeight = double.tryParse(targetWeightController.text.trim());
+
+                    if (newWeight != null || newTargetWeight != null) {
+                      context.read<UserCubit>().updateGoalAndWeight(
+                        newWeight: newWeight,
+                        newTargetWeight: newTargetWeight,
+                      );
+                    }
+
                     Navigator.pop(context);
-                    context.read<UserCubit>().fetchUserProfile();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Đã cập nhật tiến độ mục tiêu thành công!'),

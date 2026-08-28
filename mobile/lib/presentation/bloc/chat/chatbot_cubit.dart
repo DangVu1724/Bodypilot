@@ -107,7 +107,6 @@ class ChatbotCubit extends Cubit<ChatbotState> {
       emit(ChatbotUpdated(messages: finalMessages, isThinking: false, selectedModel: state.selectedModel));
       await _saveCurrentHistory(finalMessages);
     } catch (e) {
-      print("🚨 [ChatbotCubit Error]: $e");
       final errorAiMsg = ChatMessage(
         id: (DateTime.now().millisecondsSinceEpoch + 1).toString(),
         role: 'model',

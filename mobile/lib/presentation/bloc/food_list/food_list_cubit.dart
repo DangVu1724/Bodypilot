@@ -10,8 +10,19 @@ class FoodListCubit extends Cubit<FoodListState> {
 
   FoodListCubit(this._foodRepository) : super(const FoodListState());
 
+  bool _isFoodMatchingType(FoodModel f, String type) {
+    final targetType = type.toUpperCase();
+    final fType = f.type.toUpperCase();
+    final catAppliesTo = f.category?.appliesTo.toUpperCase();
+
+    final bool matchType = (fType == targetType || fType == 'BOTH');
+    final bool matchCategory = (catAppliesTo == null || catAppliesTo == targetType || catAppliesTo == 'BOTH');
+
+    return matchType && matchCategory;
+  }
+
   void initializeWithCache({required List<FoodModel> initialFoods, required String type}) {
-    final filtered = initialFoods.where((f) => f.type == type || f.type == 'BOTH').toList();
+    final filtered = initialFoods.where((f) => _isFoodMatchingType(f, type)).toList();
 
     if (filtered.isNotEmpty) {
       emit(state.copyWithCategory(
@@ -64,14 +75,7 @@ class FoodListCubit extends Cubit<FoodListState> {
         size: 30,
       );
 
-      final filteredFoods = response.content.where((f) {
-        if (categoryId != null && categoryId.isNotEmpty) {
-          return true;
-        }
-        final matchType = f.type == type || f.type == 'BOTH';
-        final matchCategory = f.category == null || f.category!.appliesTo == type || f.category!.appliesTo == 'BOTH';
-        return matchType || matchCategory;
-      }).toList();
+      final filteredFoods = response.content.where((f) => _isFoodMatchingType(f, type)).toList();
       _cache[cacheKey] = filteredFoods;
 
       emit(
@@ -114,14 +118,7 @@ class FoodListCubit extends Cubit<FoodListState> {
         size: 30,
       );
 
-      final filteredFoods = response.content.where((f) {
-        if (state.selectedCategoryId != null && state.selectedCategoryId!.isNotEmpty) {
-          return true;
-        }
-        final matchType = f.type == type || f.type == 'BOTH';
-        final matchCategory = f.category == null || f.category!.appliesTo == type || f.category!.appliesTo == 'BOTH';
-        return matchType || matchCategory;
-      }).toList();
+      final filteredFoods = response.content.where((f) => _isFoodMatchingType(f, type)).toList();
 
       emit(state.copyWith(
         status: FoodListStatus.success,

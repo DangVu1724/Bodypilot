@@ -7,7 +7,7 @@ import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
-import 'package:mobile/presentation/screens/workout/widgets/workout_plans_section.dart';
+import 'package:mobile/presentation/screens/workout/widgets/sections/workout_plans_section.dart';
 
 import 'widgets/ai_coach_card.dart';
 import 'widgets/checkin_card.dart';

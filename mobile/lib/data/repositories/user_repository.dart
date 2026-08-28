@@ -94,7 +94,12 @@ class UserRepository {
     }
   }
 
-  Future<List<DailyEatingModel>> getAiDietSuggestion(String userId, {int? days, String? userFeedback, String? startDate}) async {
+  Future<List<DailyEatingModel>> getAiDietSuggestion(
+    String userId, {
+    int? days,
+    String? userFeedback,
+    String? startDate,
+  }) async {
     try {
       final Map<String, dynamic> queryParams = {};
       if (days != null) queryParams['days'] = days;
@@ -114,21 +119,17 @@ class UserRepository {
         throw Exception(response.data['message'] ?? 'Failed to load AI suggestion');
       }
     } on DioException catch (e) {
-      String errMsg = 'Network error';
+      String errMsg = 'Lỗi kết nối mạng';
       if (e.response?.data != null) {
         if (e.response!.data is Map) {
-          errMsg = e.response!.data['message'] ?? e.response!.data['error'] ?? 'Server error';
+          errMsg = e.response!.data['message'] ?? e.response!.data['error'] ?? 'Lỗi máy chủ';
         } else {
           errMsg = e.response!.data.toString();
         }
       } else if (e.message != null) {
         errMsg = e.message!;
       }
-      print("🚨 [UserRepository.getAiDietSuggestion Error]: $errMsg");
       throw Exception(errMsg);
-    } catch (e) {
-      print("🚨 [UserRepository.getAiDietSuggestion Generic Error]: $e");
-      rethrow;
     }
   }
 
@@ -146,24 +147,20 @@ class UserRepository {
       if (response.data['success'] == true) {
         return response.data['data'] as String;
       } else {
-        throw Exception(response.data['message'] ?? 'Failed to load AI suggestion');
+        throw Exception(response.data['message'] ?? 'Lỗi không thể tải gợi ý AI');
       }
     } on DioException catch (e) {
-      String errMsg = 'Network error';
+      String errMsg = 'Lỗi kết nối mạng';
       if (e.response?.data != null) {
         if (e.response!.data is Map) {
-          errMsg = e.response!.data['message'] ?? e.response!.data['error'] ?? 'Server error';
+          errMsg = e.response!.data['message'] ?? e.response!.data['error'] ?? 'Lỗi máy chủ';
         } else {
           errMsg = e.response!.data.toString();
         }
       } else if (e.message != null) {
         errMsg = e.message!;
       }
-      print("🚨 [UserRepository.getAiWorkoutSuggestion Error]: $errMsg");
       throw Exception(errMsg);
-    } catch (e) {
-      print("🚨 [UserRepository.getAiWorkoutSuggestion Generic Error]: $e");
-      rethrow;
     }
   }
 

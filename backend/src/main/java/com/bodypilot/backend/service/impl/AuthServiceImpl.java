@@ -11,6 +11,8 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
+import com.bodypilot.backend.model.enums.UserRole;
+
 import com.bodypilot.backend.model.dto.auth.AuthResponse;
 import com.bodypilot.backend.model.dto.auth.GoogleLoginRequest;
 import com.bodypilot.backend.model.dto.auth.LoginRequest;
@@ -53,6 +55,7 @@ public class AuthServiceImpl implements AuthService {
         User user = User.builder()
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
+                .role(UserRole.CUSTOMER)
                 .build();
 
         User savedUser = userRepository.save(user);

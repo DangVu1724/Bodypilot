@@ -754,8 +754,8 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
           ),
           const SizedBox(height: 24),
 
-          // Portion size configuration
-          Text('Portion Size (g)', style: AppTheme.semiboldStyle.copyWith(fontSize: 16)),
+          // Cấu hình khối lượng khẩu phần
+          Text('Khẩu phần ăn (g)', style: AppTheme.semiboldStyle.copyWith(fontSize: 16)),
           const SizedBox(height: 12),
           Row(
             children: [
@@ -800,7 +800,7 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
           ),
           const SizedBox(height: 16),
 
-          // Portions Quick Presets
+          // Khẩu phần nhanh
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             physics: const BouncingScrollPhysics(),
@@ -838,21 +838,21 @@ class _AddMealBottomSheetState extends State<AddMealBottomSheet> {
           ),
           const SizedBox(height: 32),
 
-          // Dynamic Nutrition Info based on current quantity
-          Text('Nutrients for this portion', style: AppTheme.semiboldStyle.copyWith(fontSize: 16)),
+          // Giá trị dinh dưỡng theo khẩu phần
+          Text('Giá trị dinh dưỡng trong khẩu phần', style: AppTheme.semiboldStyle.copyWith(fontSize: 16)),
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(color: Colors.grey[50], borderRadius: BorderRadius.circular(16)),
             child: Column(
               children: [
-                _buildNutritionRow('Calories', '${calories.toStringAsFixed(0)} kcal', Colors.orange),
+                _buildNutritionRow('Năng lượng (Calo)', '${calories.toStringAsFixed(0)} kcal', Colors.orange),
                 const Divider(),
-                _buildNutritionRow('Protein', '${protein.toStringAsFixed(1)} g', Colors.blue),
+                _buildNutritionRow('Chất đạm (Protein)', '${protein.toStringAsFixed(1)} g', Colors.blue),
                 const Divider(),
-                _buildNutritionRow('Carbs', '${carbs.toStringAsFixed(1)} g', Colors.amber),
+                _buildNutritionRow('Tinh bột (Carbs)', '${carbs.toStringAsFixed(1)} g', Colors.amber),
                 const Divider(),
-                _buildNutritionRow('Fats', '${fat.toStringAsFixed(1)} g', Colors.red),
+                _buildNutritionRow('Chất béo (Fat)', '${fat.toStringAsFixed(1)} g', Colors.red),
               ],
             ),
           ),

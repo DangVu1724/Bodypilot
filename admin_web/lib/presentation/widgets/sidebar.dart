@@ -4,11 +4,13 @@ import '../../core/theme.dart';
 class AdminSidebar extends StatelessWidget {
   final int selectedIndex;
   final Function(int) onItemSelected;
+  final VoidCallback onLogout;
 
   const AdminSidebar({
     super.key,
     required this.selectedIndex,
     required this.onItemSelected,
+    required this.onLogout,
   });
 
   @override
@@ -60,7 +62,7 @@ class AdminSidebar extends StatelessWidget {
               ],
             ),
           ),
-          _buildPromoCard(),
+          _buildLogoutCard(context),
           const SizedBox(height: 20),
         ],
       ),
@@ -120,71 +122,89 @@ class AdminSidebar extends StatelessWidget {
     );
   }
 
-  Widget _buildPromoCard() {
+  Widget _buildLogoutCard(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16.0),
       child: Container(
-        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: const Color(0xFFFFF5F2),
+          color: const Color(0xFFFEF2F2),
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFFFE5DD)),
+          border: Border.all(color: const Color(0xFFFECACA)),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(
-                Icons.analytics_rounded,
-                color: AppTheme.primaryColor,
-                size: 24,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'BodyPilot Insights',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 13,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Tối ưu hóa quản lý dinh dưỡng & tập luyện với dữ liệu thời gian thực.',
-              style: TextStyle(
-                fontSize: 11,
-                color: AppTheme.textSecondary,
-                height: 1.4,
-              ),
-            ),
-            const SizedBox(height: 12),
-            SizedBox(
-              width: double.infinity,
-              height: 36,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppTheme.primaryColor,
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  padding: EdgeInsets.zero,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: () {
+              showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  title: const Text('Xác nhận đăng xuất'),
+                  content: const Text('Bạn có chắc chắn muốn đăng xuất khỏi hệ thống admin?'),
+                  actions: [
+                    TextButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      child: const Text('Hủy'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        onLogout();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.redAccent,
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Đăng xuất'),
+                    ),
+                  ],
+                ),
+              );
+            },
+            borderRadius: BorderRadius.circular(16),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.logout_rounded,
+                      color: Colors.redAccent,
+                      size: 20,
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Báo cáo chi tiết',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Đăng xuất',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Color(0xFF991B1B),
+                          ),
+                        ),
+                        Text(
+                          'Thoát phiên làm việc',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Color(0xFFDC2626),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ),
-          ],
+          ),
         ),
       ),
     );

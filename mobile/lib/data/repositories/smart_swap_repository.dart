@@ -21,9 +21,7 @@ class SmartSwapRepository {
         final List<dynamic> list = response.data['data'];
         return list.map((e) => FoodSmartSwapCandidateModel.fromJson(e as Map<String, dynamic>)).toList();
       }
-    } catch (e) {
-      print('🚨 [SmartSwapRepository.getFoodSwapCandidates error]: $e');
-    }
+    } catch (_) {}
     return [];
   }
 
@@ -42,9 +40,7 @@ class SmartSwapRepository {
         final List<dynamic> list = response.data['data'];
         return list.map((e) => ExerciseSmartSwapCandidateModel.fromJson(e as Map<String, dynamic>)).toList();
       }
-    } catch (e) {
-      print('🚨 [SmartSwapRepository.getExerciseSwapCandidates error]: $e');
-    }
+    } catch (_) {}
     return [];
   }
 }

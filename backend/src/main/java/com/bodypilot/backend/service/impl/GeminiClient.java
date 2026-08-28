@@ -1,17 +1,28 @@
 package com.bodypilot.backend.service.impl;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import com.bodypilot.backend.model.entity.ai.AiUsageLog;
+import com.bodypilot.backend.repository.AiUsageLogRepository;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import lombok.extern.slf4j.Slf4j;
-import okhttp3.*;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.TimeUnit;
+import lombok.extern.slf4j.Slf4j;
+import okhttp3.MediaType;
+import okhttp3.OkHttpClient;
+import okhttp3.Request;
+import okhttp3.RequestBody;
+import okhttp3.Response;
 
 @Component
 @Slf4j
@@ -24,7 +35,9 @@ public class GeminiClient {
     private String apiUrl;
 
     @Value("${gemini.model:gemini-2.5-flash}")
-    private String model;
+    private String primaryModel;
+
+    private final AiUsageLogRepository aiUsageLogRepository;
 
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -36,6 +49,10 @@ public class GeminiClient {
             .writeTimeout(60, TimeUnit.SECONDS)
             .build();
 
+    GeminiClient(AiUsageLogRepository aiUsageLogRepository) {
+        this.aiUsageLogRepository = aiUsageLogRepository;
+    }
+
     public boolean isApiKeyConfigured() {
         return apiKey != null && !apiKey.trim().isEmpty();
     }
@@ -45,78 +62,71 @@ public class GeminiClient {
     }
 
     public String callGemini(String prompt, String systemInstructionText, boolean forceJson) throws IOException {
-        String targetModel = (this.model != null && !this.model.trim().isEmpty()) ? this.model.trim() : "gemini-2.5-flash";
-        try {
-            return executeGeminiCall(targetModel, prompt, systemInstructionText, forceJson);
-        } catch (IOException e) {
-            if (e.getMessage() != null && (e.getMessage().contains("429") || e.getMessage().contains("RESOURCE_EXHAUSTED"))) {
-                throw new IOException("Gemini API Rate Limit / Quota Exceeded (429). Vui lòng thử lại sau ít phút hoặc đổi API Key Gemini mới.", e);
-            }
-            log.warn("⚠️ [GeminiClient] Primary model '{}' failed ({}). Retrying with 'gemini-2.0-flash-lite'...", targetModel, e.getMessage());
+        String mainModel = (primaryModel != null && !primaryModel.trim().isEmpty()) ? primaryModel.trim()
+                : "gemini-2.5-flash";
+        List<String> modelsToTry = List.of(mainModel, "gemini-2.0-flash-lite");
+
+        IOException lastException = null;
+        for (String modelName : modelsToTry) {
             try {
-                return executeGeminiCall("gemini-2.0-flash-lite", prompt, systemInstructionText, forceJson);
-            } catch (IOException ex) {
-                if (ex.getMessage() != null && (ex.getMessage().contains("429") || ex.getMessage().contains("RESOURCE_EXHAUSTED"))) {
-                    throw new IOException("Gemini API Rate Limit / Quota Exceeded (429). Vui lòng thử lại sau ít phút hoặc đổi API Key Gemini mới.", ex);
+                return executeGeminiCall(modelName, prompt, systemInstructionText, forceJson);
+            } catch (IOException e) {
+                lastException = e;
+                if (isRateLimitError(e)) {
+                    throw new IOException(
+                            "Gemini API Rate Limit / Quota Exceeded (429). Vui lòng thử lại sau ít phút hoặc đổi API Key Gemini mới.",
+                            e);
                 }
-                log.warn("⚠️ [GeminiClient] Fallback model failed: {}", ex.getMessage());
-                throw e; // Throw original primary error to avoid masking
+                log.warn("Gọi model {} thất bại: {}. Đang thử lại với model dự phòng...", modelName, e.getMessage());
             }
         }
+        throw lastException;
     }
 
-    private String executeGeminiCall(String targetModel, String prompt, String systemInstructionText, boolean forceJson) throws IOException {
-        log.info("Preparing Gemini request: model={}, apiUrl={}, forceJson={}", targetModel, apiUrl, forceJson);
+    private boolean isRateLimitError(IOException e) {
+        String msg = e.getMessage();
+        return msg != null && (msg.contains("429") || msg.contains("RESOURCE_EXHAUSTED"));
+    }
 
-        // Build Gemini Request Body
-        Map<String, Object> requestBodyMap = new HashMap<>();
+    private String executeGeminiCall(String targetModel, String prompt, String systemInstructionText, boolean forceJson)
+            throws IOException {
+        Map<String, Object> requestMap = new LinkedHashMap<>();
 
-        // contents
-        List<Map<String, Object>> contents = new ArrayList<>();
-        Map<String, Object> contentMap = new HashMap<>();
-        List<Map<String, String>> parts = new ArrayList<>();
-        parts.add(Map.of("text", prompt));
-        contentMap.put("parts", parts);
-        contents.add(contentMap);
-        requestBodyMap.put("contents", contents);
-
-        // systemInstruction
-        Map<String, Object> systemInstruction = new HashMap<>();
-        List<Map<String, String>> sysParts = new ArrayList<>();
-        sysParts.add(Map.of("text", systemInstructionText));
-        systemInstruction.put("parts", sysParts);
-        requestBodyMap.put("systemInstruction", systemInstruction);
-
-        // generationConfig
-        Map<String, Object> genConfig = new HashMap<>();
-        genConfig.put("temperature", 0.7);
-        genConfig.put("maxOutputTokens", 8192);
-        if (forceJson) {
-            genConfig.put("responseMimeType", "application/json");
+        if (systemInstructionText != null && !systemInstructionText.trim().isEmpty()) {
+            Map<String, Object> systemInstruction = new LinkedHashMap<>();
+            systemInstruction.put("parts", List.of(Map.of("text", systemInstructionText)));
+            requestMap.put("systemInstruction", systemInstruction);
         }
-        requestBodyMap.put("generationConfig", genConfig);
 
-        String jsonBody = objectMapper.writeValueAsString(requestBodyMap);
+        List<Map<String, Object>> contents = new ArrayList<>();
+        Map<String, Object> contentMap = new LinkedHashMap<>();
+        contentMap.put("role", "user");
+        contentMap.put("parts", List.of(Map.of("text", prompt)));
+        contents.add(contentMap);
+        requestMap.put("contents", contents);
 
-        RequestBody body = RequestBody.create(jsonBody, MediaType.get("application/json; charset=utf-8"));
+        Map<String, Object> generationConfig = new LinkedHashMap<>();
+        if (forceJson) {
+            generationConfig.put("responseMimeType", "application/json");
+        }
+        generationConfig.put("temperature", 0.7);
+        requestMap.put("generationConfig", generationConfig);
 
+        String jsonBody = objectMapper.writeValueAsString(requestMap);
+        RequestBody body = RequestBody.create(jsonBody, MediaType.parse("application/json; charset=utf-8"));
         String requestUrl = apiUrl + targetModel + ":generateContent?key=" + apiKey;
-        log.info("Gemini request URL prepared for model {}", targetModel);
 
         Request request = new Request.Builder()
                 .url(requestUrl)
                 .post(body)
                 .build();
 
-        long start = System.currentTimeMillis();
-        log.info("Calling Gemini API...");
         try (Response response = httpClient.newCall(request).execute()) {
-            log.info("Gemini responded in {} ms", System.currentTimeMillis() - start);
-
             String responseBody = response.body() != null ? response.body().string() : "";
 
             if (!response.isSuccessful()) {
-                throw new IOException("Gemini API call failed with code " + response.code() + ". Details: " + responseBody);
+                throw new IOException(
+                        "Gemini API call failed with code " + response.code() + ". Details: " + responseBody);
             }
 
             JsonNode rootNode = objectMapper.readTree(responseBody);
@@ -127,19 +137,45 @@ public class GeminiClient {
             JsonNode candidates = rootNode.path("candidates");
             if (!candidates.isArray() || candidates.isEmpty()) {
                 if (rootNode.has("promptFeedback")) {
-                    throw new IOException("Gemini blocked prompt. Feedback: " + rootNode.path("promptFeedback").toString());
+                    throw new IOException("Gemini blocked prompt. Feedback: " + rootNode.path("promptFeedback"));
                 }
                 throw new IOException("Gemini response has no candidates. Full response: " + responseBody);
             }
 
+            recordUsage(rootNode, targetModel, prompt.length());
+
             JsonNode candidate = candidates.get(0);
-            String finishReason = candidate.path("finishReason").asText();
-            if (!"STOP".equals(finishReason)) {
-                log.warn("Gemini generation finished with reason: {}", finishReason);
+            return candidate.path("content").path("parts").get(0).path("text").asText();
+        }
+    }
+
+    private void recordUsage(JsonNode rootNode, String targetModel, int promptCharLength) {
+        if (aiUsageLogRepository == null)
+            return;
+        try {
+            JsonNode usageNode = rootNode.path("usageMetadata");
+            int promptTokens = usageNode.path("promptTokenCount").asInt(0);
+            int completionTokens = usageNode.path("candidatesTokenCount").asInt(0);
+            int totalTokens = usageNode.path("totalTokenCount").asInt(0);
+
+            if (totalTokens == 0) {
+                promptTokens = promptCharLength / 4;
+                completionTokens = 150;
+                totalTokens = promptTokens + completionTokens;
             }
 
-            return candidate.path("content").path("parts").get(0)
-                    .path("text").asText();
+            double estimatedCost = (promptTokens * 0.075 / 1000000.0) + (completionTokens * 0.300 / 1000000.0);
+
+            aiUsageLogRepository.save(AiUsageLog.builder()
+                    .featureName("GEMINI_AI")
+                    .modelName(targetModel)
+                    .promptTokens(promptTokens)
+                    .completionTokens(completionTokens)
+                    .totalTokens(totalTokens)
+                    .estimatedCostUsd(estimatedCost)
+                    .build());
+        } catch (Exception ignored) {
+            // Suppress non-critical logging exception
         }
     }
 }

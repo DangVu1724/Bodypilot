@@ -8,8 +8,7 @@ import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
 import 'package:mobile/presentation/bloc/workout/exercise_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/exercise_state.dart';
-
-import 'section_title.dart';
+import 'package:mobile/presentation/screens/workout/widgets/sections/section_title.dart';
 
 class AiSuggestionCard extends StatefulWidget {
   const AiSuggestionCard({super.key});

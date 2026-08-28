@@ -2,7 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/theme/app_theme.dart';
-import 'package:mobile/presentation/screens/workout/widgets/workout_skeleton.dart';
+import 'package:mobile/presentation/screens/workout/widgets/sections/workout_skeleton.dart';
 
 class SmoothLoadingOverlay extends StatefulWidget {
   final String title;

@@ -1,5 +1,6 @@
 package com.bodypilot.backend.service.impl;
 
+import com.bodypilot.backend.exception.ResourceNotFoundException;
 import com.bodypilot.backend.model.dto.workout.ExerciseDTO;
 import com.bodypilot.backend.model.dto.workout.WorkoutSessionDTO;
 import com.bodypilot.backend.model.dto.workout.WorkoutSessionExerciseDTO;
@@ -13,7 +14,6 @@ import com.bodypilot.backend.repository.WorkoutSessionExerciseRepository;
 import com.bodypilot.backend.repository.WorkoutSessionRepository;
 import com.bodypilot.backend.service.WorkoutSessionService;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +24,6 @@ import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class WorkoutSessionServiceImpl implements WorkoutSessionService {
 
     private final WorkoutSessionRepository workoutSessionRepository;
@@ -35,15 +34,10 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     @Override
     @Transactional(readOnly = true)
     public List<WorkoutSessionDTO> getSessionsByPlanId(UUID planId) {
-        log.info("Fetching sessions for plan ID: {}", planId);
         WorkoutPlan plan = workoutPlanRepository.findById(planId)
-                .orElseThrow(() -> {
-                    log.error("Workout Plan not found with ID: {}", planId);
-                    return new RuntimeException("Workout Plan not found with ID: " + planId);
-                });
+                .orElseThrow(() -> new ResourceNotFoundException("Workout Plan not found with id: " + planId));
         
         List<WorkoutSession> sessions = workoutSessionRepository.findByPlanOrderByDayNumberAsc(plan);
-        log.info("Found {} sessions for plan: {}", sessions.size(), plan.getTitle());
         return sessions.stream()
                 .map(session -> mapToDTO(session, planId))
                 .collect(Collectors.toList());
@@ -53,7 +47,7 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     @Transactional(readOnly = true)
     public WorkoutSessionDTO getSessionById(UUID id) {
         WorkoutSession session = workoutSessionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Workout Session not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Workout Session not found with id: " + id));
         return mapToDTO(session);
     }
 
@@ -61,7 +55,7 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     @Transactional
     public WorkoutSessionDTO createSession(WorkoutSessionDTO sessionDTO) {
         WorkoutPlan plan = workoutPlanRepository.findById(sessionDTO.getPlanId())
-                .orElseThrow(() -> new RuntimeException("Workout Plan not found with ID: " + sessionDTO.getPlanId()));
+                .orElseThrow(() -> new ResourceNotFoundException("Workout Plan not found with id: " + sessionDTO.getPlanId()));
 
         WorkoutSession session = WorkoutSession.builder()
                 .plan(plan)
@@ -73,21 +67,7 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
 
         if (sessionDTO.getExercises() != null && !sessionDTO.getExercises().isEmpty()) {
             List<WorkoutSessionExercise> exercises = sessionDTO.getExercises().stream()
-                    .map(eDto -> {
-                        Exercise exercise = exerciseRepository.findById(eDto.getExercise().getId())
-                                .orElseThrow(() -> new RuntimeException("Exercise not found with ID: " + eDto.getExercise().getId()));
-                        return WorkoutSessionExercise.builder()
-                                .session(savedSession)
-                                .exercise(exercise)
-                                .order(eDto.getOrder())
-                                .sets(eDto.getSets())
-                                .reps(eDto.getReps())
-                                .weightKg(eDto.getWeightKg())
-                                .restSeconds(eDto.getRestSeconds())
-                                .durationMinutes(eDto.getDurationMinutes())
-                                .distanceKm(eDto.getDistanceKm())
-                                .build();
-                    })
+                    .map(eDto -> buildSessionExercise(savedSession, eDto))
                     .collect(Collectors.toList());
             workoutSessionExerciseRepository.saveAll(exercises);
             savedSession.setSessionExercises(exercises);
@@ -100,33 +80,17 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     @Transactional
     public WorkoutSessionDTO updateSession(UUID id, WorkoutSessionDTO sessionDTO) {
         WorkoutSession session = workoutSessionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Workout Session not found with ID: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Workout Session not found with id: " + id));
 
         session.setDayNumber(sessionDTO.getDayNumber());
         session.setName(sessionDTO.getName());
 
-        // Simple approach: clear and re-add exercises
-        // In a real app, you might want to update existing ones to preserve IDs
         workoutSessionExerciseRepository.deleteAll(session.getSessionExercises());
         session.getSessionExercises().clear();
 
         if (sessionDTO.getExercises() != null && !sessionDTO.getExercises().isEmpty()) {
             List<WorkoutSessionExercise> exercises = sessionDTO.getExercises().stream()
-                    .map(eDto -> {
-                        Exercise exercise = exerciseRepository.findById(eDto.getExercise().getId())
-                                .orElseThrow(() -> new RuntimeException("Exercise not found with ID: " + eDto.getExercise().getId()));
-                        return WorkoutSessionExercise.builder()
-                                .session(session)
-                                .exercise(exercise)
-                                .order(eDto.getOrder())
-                                .sets(eDto.getSets())
-                                .reps(eDto.getReps())
-                                .weightKg(eDto.getWeightKg())
-                                .restSeconds(eDto.getRestSeconds())
-                                .durationMinutes(eDto.getDurationMinutes())
-                                .distanceKm(eDto.getDistanceKm())
-                                .build();
-                    })
+                    .map(eDto -> buildSessionExercise(session, eDto))
                     .collect(Collectors.toList());
             workoutSessionExerciseRepository.saveAll(exercises);
             session.setSessionExercises(exercises);
@@ -140,9 +104,25 @@ public class WorkoutSessionServiceImpl implements WorkoutSessionService {
     @Transactional
     public void deleteSession(UUID id) {
         if (!workoutSessionRepository.existsById(id)) {
-            throw new RuntimeException("Workout Session not found with ID: " + id);
+            throw new ResourceNotFoundException("Workout Session not found with id: " + id);
         }
         workoutSessionRepository.deleteById(id);
+    }
+
+    private WorkoutSessionExercise buildSessionExercise(WorkoutSession session, WorkoutSessionExerciseDTO eDto) {
+        Exercise exercise = exerciseRepository.findById(eDto.getExercise().getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Exercise not found with id: " + eDto.getExercise().getId()));
+        return WorkoutSessionExercise.builder()
+                .session(session)
+                .exercise(exercise)
+                .order(eDto.getOrder())
+                .sets(eDto.getSets())
+                .reps(eDto.getReps())
+                .weightKg(eDto.getWeightKg())
+                .restSeconds(eDto.getRestSeconds())
+                .durationMinutes(eDto.getDurationMinutes())
+                .distanceKm(eDto.getDistanceKm())
+                .build();
     }
 
     private WorkoutSessionDTO mapToDTO(WorkoutSession session) {
