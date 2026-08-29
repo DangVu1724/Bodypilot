@@ -9,6 +9,7 @@ import 'package:core_shared/core_shared.dart';
 import 'exercise_timer_screen.dart';
 import 'widgets/sheets/add_exercise_bottom_sheet.dart';
 import 'widgets/sections/calender_workout.dart';
+import 'package:mobile/presentation/widgets/error_fallback_card.dart';
 
 class WorkoutDiaryScreen extends StatefulWidget {
   const WorkoutDiaryScreen({super.key, this.initialDate});
@@ -360,11 +361,10 @@ class _WorkoutDiaryScreenState extends State<WorkoutDiaryScreen> {
     }
 
     if (state.status == WorkoutDiaryStatus.failure) {
-      return Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(
-          child: Text('Error: ${state.errorMessage}', style: const TextStyle(color: Colors.red)),
-        ),
+      return ErrorFallbackCard(
+        title: 'Không thể tải nhật ký tập luyện',
+        message: state.errorMessage ?? 'Đã có lỗi xảy ra khi kết nối máy chủ.',
+        onRetry: () => context.read<WorkoutDiaryCubit>().fetchDailyWorkout(selectedDate),
       );
     }
 
@@ -379,8 +379,9 @@ class _WorkoutDiaryScreenState extends State<WorkoutDiaryScreen> {
               Icon(Icons.fitness_center, size: 54, color: Colors.grey[300]),
               const SizedBox(height: 12),
               Text(
-                'No exercises scheduled for today.',
+                'Chưa có bài tập nào được lên lịch cho ngày hôm nay.',
                 style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary),
+                textAlign: TextAlign.center,
               ),
             ],
           ),

@@ -1,0 +1,12 @@
+# Ignore all large non-web directories for Vercel CLI
+.git
+.dart_tool
+backend
+mobile
+core_shared
+data
+docs
+admin_web/.dart_tool
+admin_web/build/app
+admin_web/build/ios
+admin_web/build/apk

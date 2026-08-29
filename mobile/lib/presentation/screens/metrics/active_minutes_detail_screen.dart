@@ -5,6 +5,7 @@ import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/workout_diary_repository.dart';
 
 import 'widgets/custom_metric_charts.dart';
+import 'package:mobile/presentation/widgets/error_fallback_card.dart';
 
 class ActiveMinutesDetailScreen extends StatefulWidget {
   const ActiveMinutesDetailScreen({super.key});
@@ -226,9 +227,11 @@ class _ActiveMinutesDetailScreenState extends State<ActiveMinutesDetailScreen> {
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
                     : _errorMessage != null
-                    ? Center(
-                        child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-                      )
+                        ? ErrorFallbackCard(
+                            title: 'Không thể tải thời gian vận động',
+                            message: _errorMessage!,
+                            onRetry: _fetchData,
+                          )
                     : RefreshIndicator(
                         onRefresh: _fetchData,
                         child: SingleChildScrollView(

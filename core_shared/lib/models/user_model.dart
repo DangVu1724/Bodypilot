@@ -9,6 +9,7 @@ class UserModel {
   final UserProfileModel? profile;
   final UserMetricsModel? metrics;
   final GoalModel? goal;
+  final DateTime? createdAt;
 
   UserModel({
     required this.id,
@@ -17,6 +18,7 @@ class UserModel {
     this.profile,
     this.metrics,
     this.goal,
+    this.createdAt,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,9 @@ class UserModel {
       goal: json['goal'] != null
           ? GoalModel.fromJson(json['goal'] as Map<String, dynamic>)
           : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'].toString())
+          : (json['created_at'] != null ? DateTime.tryParse(json['created_at'].toString()) : null),
     );
   }
 
@@ -44,6 +49,7 @@ class UserModel {
       'profile': profile?.toJson(),
       'metrics': metrics?.toJson(),
       'goal': goal?.toJson(),
+      'createdAt': createdAt?.toIso8601String(),
     };
   }
 }

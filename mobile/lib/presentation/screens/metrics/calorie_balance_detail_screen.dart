@@ -10,6 +10,7 @@ import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
 
 import 'widgets/custom_metric_charts.dart';
+import 'package:mobile/presentation/widgets/error_fallback_card.dart';
 
 class CalorieBalanceDetailScreen extends StatefulWidget {
   const CalorieBalanceDetailScreen({super.key});
@@ -226,9 +227,11 @@ class _CalorieBalanceDetailScreenState extends State<CalorieBalanceDetailScreen>
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
                     : _errorMessage != null
-                    ? Center(
-                        child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-                      )
+                        ? ErrorFallbackCard(
+                            title: 'Không thể tải cân bằng calo',
+                            message: _errorMessage!,
+                            onRetry: _fetchData,
+                          )
                     : RefreshIndicator(
                         onRefresh: _fetchData,
                         child: SingleChildScrollView(

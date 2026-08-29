@@ -359,51 +359,6 @@ class SignUpView extends StatelessWidget {
                               ),
                       ),
                     ),
-                    const SizedBox(height: 24),
-
-                    Row(
-                      children: [
-                        Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 16),
-                          child: Text(
-                            'Hoặc đăng ký bằng',
-                            style: GoogleFonts.plusJakartaSans(
-                              color: AppTheme.textSecondary,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ),
-                        Expanded(child: Divider(color: Colors.grey.shade200, thickness: 1)),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    SizedBox(
-                      width: double.infinity,
-                      child: OutlinedButton.icon(
-                        onPressed: () {},
-                        icon: Image.network(
-                          'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c1/Google_%22G%22_logo.svg/1200px-Google_%22G%22_logo.svg.png',
-                          height: 18,
-                          width: 18,
-                          errorBuilder: (context, error, stackTrace) => const Icon(Icons.g_mobiledata, color: Colors.red, size: 24),
-                        ),
-                        label: Text(
-                          'Đăng ký bằng Google',
-                          style: GoogleFonts.plusJakartaSans(
-                            color: AppTheme.textPrimary,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 14,
-                          ),
-                        ),
-                        style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 14),
-                          side: BorderSide(color: Colors.grey.shade200),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 32),
 
                     Row(

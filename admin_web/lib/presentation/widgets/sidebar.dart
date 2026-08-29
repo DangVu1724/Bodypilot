@@ -75,10 +75,10 @@ class AdminSidebar extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            padding: const EdgeInsets.all(10),
+            width: 44,
+            height: 44,
             decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
-              borderRadius: BorderRadius.circular(12),
+              shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
                   color: AppTheme.primaryColor.withValues(alpha: 0.25),
@@ -87,10 +87,20 @@ class AdminSidebar extends StatelessWidget {
                 ),
               ],
             ),
-            child: const Icon(
-              Icons.local_fire_department_rounded,
-              color: Colors.white,
-              size: 22,
+            child: ClipOval(
+              child: Image.asset(
+                'assets/images/logo.png',
+                width: 44,
+                height: 44,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) => Container(
+                  decoration: const BoxDecoration(
+                    color: AppTheme.primaryColor,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.local_fire_department_rounded, color: Colors.white, size: 22),
+                ),
+              ),
             ),
           ),
           const SizedBox(width: 14),

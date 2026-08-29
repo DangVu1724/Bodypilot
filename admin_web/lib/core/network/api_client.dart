@@ -3,12 +3,17 @@ import 'package:dio/dio.dart';
 class ApiClient {
   late final Dio dio;
 
+  static const String renderCloudUrl = 'https://bodypilot-to4y.onrender.com/';
+  static const String localUrl = 'http://localhost:8080/';
+
+  static String get baseUrl => renderCloudUrl;
+
   ApiClient() {
     dio = Dio(
       BaseOptions(
-        baseUrl: 'http://localhost:8080/',
+        baseUrl: baseUrl,
         connectTimeout: const Duration(seconds: 30),
-        receiveTimeout: const Duration(seconds: 30),
+        receiveTimeout: const Duration(seconds: 60),
         headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
       ),
     );

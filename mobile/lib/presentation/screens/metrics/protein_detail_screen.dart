@@ -8,6 +8,7 @@ import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
 
 import 'widgets/custom_metric_charts.dart';
+import 'package:mobile/presentation/widgets/error_fallback_card.dart';
 
 class ProteinDetailScreen extends StatefulWidget {
   const ProteinDetailScreen({super.key});
@@ -243,9 +244,11 @@ class _ProteinDetailScreenState extends State<ProteinDetailScreen> {
                 child: _isLoading
                     ? const Center(child: CircularProgressIndicator(color: AppTheme.primary))
                     : _errorMessage != null
-                    ? Center(
-                        child: Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
-                      )
+                        ? ErrorFallbackCard(
+                            title: 'Không thể tải dữ liệu protein',
+                            message: _errorMessage!,
+                            onRetry: _fetchData,
+                          )
                     : RefreshIndicator(
                         onRefresh: _fetchData,
                         child: SingleChildScrollView(

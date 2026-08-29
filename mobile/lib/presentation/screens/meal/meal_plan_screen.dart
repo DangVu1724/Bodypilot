@@ -11,6 +11,7 @@ import 'package:mobile/presentation/screens/meal/widgets/sections/calender_meal.
 
 import 'widgets/sheets/add_meal_bottom_sheet.dart';
 import 'widgets/sheets/smart_swap_bottom_sheet.dart';
+import 'package:mobile/presentation/widgets/error_fallback_card.dart';
 
 class MealPlanScreen extends StatefulWidget {
   const MealPlanScreen({super.key, this.initialDate});
@@ -354,11 +355,10 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
 
     // Bị lỗi khi tải
     if (state.status == MealStatus.failure) {
-      return Padding(
-        padding: const EdgeInsets.all(24.0),
-        child: Center(
-          child: Text('Có lỗi xảy ra: ${state.errorMessage}', style: const TextStyle(color: Colors.red)),
-        ),
+      return ErrorFallbackCard(
+        title: 'Không thể tải nhật ký thực đơn',
+        message: state.errorMessage ?? 'Đã xảy ra lỗi khi kết nối máy chủ.',
+        onRetry: () => context.read<MealCubit>().fetchDailyEating(state.selectedDate!),
       );
     }
 

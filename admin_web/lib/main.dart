@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
+
 import 'core/theme.dart';
-import 'presentation/widgets/sidebar.dart';
-import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/dashboard_screen.dart';
-import 'presentation/screens/users_screen.dart';
-import 'presentation/screens/exercises_screen.dart';
 import 'presentation/screens/dishes_screen.dart';
+import 'presentation/screens/exercises_screen.dart';
 import 'presentation/screens/ingredients_screen.dart';
+import 'presentation/screens/login_screen.dart';
+import 'presentation/screens/users_screen.dart';
+import 'presentation/widgets/sidebar.dart';
 
 void main() {
   runApp(const AdminApp());
@@ -126,10 +127,7 @@ class _MainLayoutState extends State<MainLayout> {
               ),
               Text(
                 'Xin chào Admin, chúc bạn một ngày làm việc hiệu quả!',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: AppTheme.textSecondary,
-                ),
+                style: TextStyle(fontSize: 12, color: AppTheme.textSecondary),
               ),
             ],
           ),
@@ -148,10 +146,7 @@ class _MainLayoutState extends State<MainLayout> {
                 CircleAvatar(
                   radius: 16,
                   backgroundColor: AppTheme.primaryColor,
-                  child: Text(
-                    'A',
-                    style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 14),
-                  ),
+                  backgroundImage: AssetImage('assets/images/logo.png'),
                 ),
                 SizedBox(width: 10),
                 Column(
@@ -162,10 +157,7 @@ class _MainLayoutState extends State<MainLayout> {
                       'Admin BodyPilot',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary),
                     ),
-                    Text(
-                      'System Admin',
-                      style: TextStyle(color: AppTheme.textSecondary, fontSize: 10),
-                    ),
+                    Text('System Admin', style: TextStyle(color: AppTheme.textSecondary, fontSize: 10)),
                   ],
                 ),
               ],

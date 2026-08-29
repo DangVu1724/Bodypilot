@@ -150,7 +150,7 @@ class _UsersScreenContentState extends State<_UsersScreenContent> {
                                     children: [
                                       const Text('Vai trò hệ thống', style: TextStyle(fontSize: 11, color: AppTheme.textSecondary)),
                                       Text(
-                                        user.role ?? 'CUSTOMER',
+                                        user.role,
                                         style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: AppTheme.textPrimary),
                                       ),
                                     ],
@@ -261,15 +261,18 @@ class _UsersScreenContentState extends State<_UsersScreenContent> {
           columns: const [
             'Tài khoản / Email',
             'Họ & Tên',
-            'Giới tính',
+            'Ngày tạo',
             'Vai trò',
             'Hành động',
           ],
           isLoading: isLoading,
           totalElements: users.length,
               rows: users.map((user) {
-                final roleStr = user.role ?? 'CUSTOMER';
+                final roleStr = user.role;
                 final isAdmin = roleStr == 'ADMIN';
+                final dateStr = user.createdAt != null
+                    ? '${user.createdAt!.day.toString().padLeft(2, '0')}/${user.createdAt!.month.toString().padLeft(2, '0')}/${user.createdAt!.year}'
+                    : '---';
                 return DataRow(
                   cells: [
                     DataCell(
@@ -289,7 +292,7 @@ class _UsersScreenContentState extends State<_UsersScreenContent> {
                       ),
                     ),
                     DataCell(Text(user.profile?.fullName ?? '---', style: const TextStyle(fontSize: 14))),
-                    DataCell(Text(user.profile?.gender ?? '---', style: const TextStyle(fontSize: 14))),
+                    DataCell(Text(dateStr, style: const TextStyle(fontSize: 14, color: AppTheme.textSecondary))),
                     DataCell(
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),

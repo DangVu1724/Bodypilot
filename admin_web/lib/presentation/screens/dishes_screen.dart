@@ -133,7 +133,7 @@ class _DishesScreenContentState extends State<_DishesScreenContent> {
             'Tên Món ăn',
             'Danh mục',
             'Calo (trên 100g)',
-            'Macros (P/C/F)',
+            'Loại (Type)',
             'Hành động',
           ],
           rows: items.map((dish) {
@@ -149,7 +149,7 @@ class _DishesScreenContentState extends State<_DishesScreenContent> {
                           width: 44,
                           height: 44,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => Container(
+                          errorBuilder: (context, error, stackTrace) => Container(
                             width: 44,
                             height: 44,
                             color: const Color(0xFFF1F5F9),
@@ -172,9 +172,21 @@ class _DishesScreenContentState extends State<_DishesScreenContent> {
                 DataCell(Text(dish.category?.name ?? '---', style: const TextStyle(fontSize: 14))),
                 DataCell(Text('${dish.caloriesPer100g.toStringAsFixed(0)} kcal', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15))),
                 DataCell(
-                  Text(
-                    '${dish.proteinPer100g.toStringAsFixed(1)}g / ${dish.carbsPer100g.toStringAsFixed(1)}g / ${dish.fatPer100g.toStringAsFixed(1)}g',
-                    style: const TextStyle(fontSize: 13.5, color: AppTheme.textSecondary, fontWeight: FontWeight.w500),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEFF6FF),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: const Color(0xFFBFDBFE)),
+                    ),
+                    child: Text(
+                      dish.type.isNotEmpty ? dish.type : 'DISH',
+                      style: const TextStyle(
+                        color: Color(0xFF1D4ED8),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 12,
+                      ),
+                    ),
                   ),
                 ),
                 DataCell(

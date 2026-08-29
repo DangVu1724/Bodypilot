@@ -5,6 +5,7 @@ import 'package:mobile/core/utils/category_image_helper.dart';
 import 'package:mobile/data/models/food_smart_swap_model.dart';
 import 'package:mobile/presentation/bloc/smart_swap/smart_swap_cubit.dart';
 import 'package:mobile/presentation/bloc/smart_swap/smart_swap_state.dart';
+import 'package:mobile/presentation/widgets/error_fallback_card.dart';
 
 class SmartSwapBottomSheet extends StatefulWidget {
   final String foodId;
@@ -32,7 +33,8 @@ class SmartSwapBottomSheet extends StatefulWidget {
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (modalContext) => BlocProvider(
-        create: (context) => SmartSwapCubit()..fetchFoodCandidates(foodId, currentServingQuantity: currentServingQuantity),
+        create: (context) =>
+            SmartSwapCubit()..fetchFoodCandidates(foodId, currentServingQuantity: currentServingQuantity),
         child: SmartSwapBottomSheet(
           foodId: foodId,
           currentFoodName: currentFoodName,
@@ -73,10 +75,7 @@ class _SmartSwapBottomSheetState extends State<SmartSwapBottomSheet> {
           Container(
             width: 40,
             height: 4,
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
+            decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 16),
 
@@ -143,8 +142,13 @@ class _SmartSwapBottomSheetState extends State<SmartSwapBottomSheet> {
                 }
 
                 if (state is SmartSwapError) {
-                  return Center(
-                    child: Text('Lỗi: ${state.message}', style: const TextStyle(color: Colors.red)),
+                  return ErrorFallbackCard(
+                    title: 'Không tìm thấy món ăn thay thế',
+                    message: state.message.isNotEmpty ? state.message : 'Không thể kết nối máy chủ.',
+                    onRetry: () => context.read<SmartSwapCubit>().fetchFoodCandidates(
+                      widget.foodId,
+                      currentServingQuantity: widget.currentServingQuantity,
+                    ),
                   );
                 }
 
@@ -158,9 +162,7 @@ class _SmartSwapBottomSheetState extends State<SmartSwapBottomSheet> {
                       const Divider(height: 20),
                       Expanded(
                         child: filtered.isEmpty
-                            ? const Center(
-                                child: Text('Không tìm thấy món ăn phù hợp với tiêu chí lọc.'),
-                              )
+                            ? const Center(child: Text('Không tìm thấy món ăn phù hợp với tiêu chí lọc.'))
                             : ListView.separated(
                                 padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
                                 physics: const BouncingScrollPhysics(),
@@ -349,17 +351,10 @@ class _SmartSwapBottomSheetState extends State<SmartSwapBottomSheet> {
 
                             return Container(
                               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: bgColor,
-                                borderRadius: BorderRadius.circular(6),
-                              ),
+                              decoration: BoxDecoration(color: bgColor, borderRadius: BorderRadius.circular(6)),
                               child: Text(
                                 text,
-                                style: GoogleFonts.inter(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600,
-                                  color: textColor,
-                                ),
+                                style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w600, color: textColor),
                               ),
                             );
                           },

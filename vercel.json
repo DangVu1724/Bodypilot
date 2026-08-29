@@ -1,0 +1,13 @@
+{
+  "version": 2,
+  "routes": [
+    {
+      "src": "/(assets/.*|canvaskit/.*|icons/.*|.*\\.js|.*\\.json|.*\\.png|.*\\.css|.*\\.html)",
+      "dest": "/admin_web/build/web/$1"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/admin_web/build/web/index.html"
+    }
+  ]
+}
