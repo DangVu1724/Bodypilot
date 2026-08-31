@@ -56,12 +56,49 @@ public class CalorieCalculatorService {
         double targetCaloriesRaw = calculateTargetCalories(tdee, goal);
         double targetCalories = Math.round(targetCaloriesRaw);
 
+        // 5. Calculate Target Macros based on Goal (Matching Mobile FE formulas)
+        MacroRatio macros = getMacroRatio(goal);
+        double targetProtein = Math.round((targetCalories * macros.proteinRatio) / 4.0);
+        double targetFat = Math.round((targetCalories * macros.fatRatio) / 9.0);
+        double targetCarbs = Math.round((targetCalories * macros.carbsRatio) / 4.0);
+
         return CalorieCalculationResult.builder()
                 .bmi(bmi)
                 .bmr(bmr)
                 .tdee(tdee)
                 .targetCalories(targetCalories)
+                .targetProtein(targetProtein)
+                .targetFat(targetFat)
+                .targetCarbs(targetCarbs)
                 .build();
+    }
+
+    public record MacroRatio(double proteinRatio, double fatRatio, double carbsRatio) {}
+
+    /**
+     * Gets the macro distribution ratio based on user fitness goal.
+     * Matches the mobile frontend _goalMacros definitions:
+     * - MAINTAIN: 25% Protein, 25% Fat, 50% Carbs
+     * - LOSE_0_5KG: 35% Protein, 25% Fat, 40% Carbs
+     * - LOSE_1KG: 40% Protein, 20% Fat, 40% Carbs
+     * - GAIN_0_5KG: 25% Protein, 20% Fat, 55% Carbs
+     * - GAIN_1KG: 20% Protein, 25% Fat, 55% Carbs
+     * - GAIN_MUSCLE: 40% Protein, 20% Fat, 40% Carbs
+     * - HEALTHY_LIFESTYLE: 25% Protein, 30% Fat, 45% Carbs
+     */
+    public MacroRatio getMacroRatio(Goal goal) {
+        if (goal == null) {
+            return new MacroRatio(0.25, 0.25, 0.50);
+        }
+        return switch (goal) {
+            case MAINTAIN -> new MacroRatio(0.25, 0.25, 0.50);
+            case LOSE_0_5KG -> new MacroRatio(0.35, 0.25, 0.40);
+            case LOSE_1KG -> new MacroRatio(0.40, 0.20, 0.40);
+            case GAIN_0_5KG -> new MacroRatio(0.25, 0.20, 0.55);
+            case GAIN_1KG -> new MacroRatio(0.20, 0.25, 0.55);
+            case GAIN_MUSCLE -> new MacroRatio(0.40, 0.20, 0.40);
+            case HEALTHY_LIFESTYLE, ENDURANCE -> new MacroRatio(0.25, 0.30, 0.45);
+        };
     }
 
     /**
@@ -69,7 +106,7 @@ public class CalorieCalculatorService {
      */
     private double calculateTargetCalories(double tdee, Goal goal) {
         return switch (goal) {
-            case MAINTAIN, HEALTHY_LIFESTYLE -> tdee;
+            case MAINTAIN, HEALTHY_LIFESTYLE, ENDURANCE -> tdee;
             case LOSE_0_5KG -> tdee - 500;
             case LOSE_1KG -> tdee - 1000;
             case GAIN_0_5KG -> tdee + 500;

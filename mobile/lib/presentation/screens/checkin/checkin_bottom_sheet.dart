@@ -31,7 +31,11 @@ class _CheckInBottomSheetState extends State<CheckInBottomSheet> {
   @override
   Widget build(BuildContext context) {
     final prevWeight = widget.status.currentWeight;
+    final minAllowedWeight = (prevWeight - 10.0).clamp(30.0, 250.0);
+    final maxAllowedWeight = (prevWeight + 10.0).clamp(30.0, 250.0);
     final diff = _weight - prevWeight;
+    final canDecrease = _weight > minAllowedWeight;
+    final canIncrease = _weight < maxAllowedWeight;
 
     return BlocListener<CheckInCubit, CheckInState>(
       listener: (context, state) {
@@ -100,9 +104,18 @@ class _CheckInBottomSheetState extends State<CheckInBottomSheet> {
               const SizedBox(height: 24),
 
               // 1. Weight adjustment
-              const Text(
-                '1. Cân nặng hiện tại của bạn (kg)',
-                style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 14),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const Text(
+                    '1. Cân nặng hiện tại của bạn (kg)',
+                    style: TextStyle(color: Color(0xFF38BDF8), fontWeight: FontWeight.bold, fontSize: 14),
+                  ),
+                  Text(
+                    'Giới hạn: ±10kg',
+                    style: TextStyle(color: Colors.white.withOpacity(0.4), fontSize: 12),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               Container(
@@ -115,12 +128,19 @@ class _CheckInBottomSheetState extends State<CheckInBottomSheet> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _weight = double.parse((_weight - 0.5).toStringAsFixed(1));
-                        });
-                      },
-                      icon: const Icon(Icons.remove_circle_outline, color: Colors.white, size: 32),
+                      onPressed: canDecrease
+                          ? () {
+                              setState(() {
+                                final next = (_weight - 0.5).clamp(minAllowedWeight, maxAllowedWeight);
+                                _weight = double.parse(next.toStringAsFixed(1));
+                              });
+                            }
+                          : null,
+                      icon: Icon(
+                        Icons.remove_circle_outline,
+                        color: canDecrease ? Colors.white : Colors.white24,
+                        size: 32,
+                      ),
                     ),
                     const SizedBox(width: 20),
                     Column(
@@ -154,12 +174,19 @@ class _CheckInBottomSheetState extends State<CheckInBottomSheet> {
                     ),
                     const SizedBox(width: 20),
                     IconButton(
-                      onPressed: () {
-                        setState(() {
-                          _weight = double.parse((_weight + 0.5).toStringAsFixed(1));
-                        });
-                      },
-                      icon: const Icon(Icons.add_circle_outline, color: Colors.white, size: 32),
+                      onPressed: canIncrease
+                          ? () {
+                              setState(() {
+                                final next = (_weight + 0.5).clamp(minAllowedWeight, maxAllowedWeight);
+                                _weight = double.parse(next.toStringAsFixed(1));
+                              });
+                            }
+                          : null,
+                      icon: Icon(
+                        Icons.add_circle_outline,
+                        color: canIncrease ? Colors.white : Colors.white24,
+                        size: 32,
+                      ),
                     ),
                   ],
                 ),

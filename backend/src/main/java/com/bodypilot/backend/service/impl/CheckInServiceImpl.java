@@ -119,6 +119,12 @@ public class CheckInServiceImpl implements CheckInService {
         Double heightCm = request.getNewHeightCm() != null ? request.getNewHeightCm()
                 : (profile.getHeightCm() != null ? profile.getHeightCm() : 170.0);
 
+        if (newWeight != null && previousWeight != null && Math.abs(newWeight - previousWeight) > 10.0) {
+            throw new IllegalArgumentException(String.format(
+                    "Cân nặng thay đổi quá lớn (%.1f kg so với %.1f kg trước đó). Giới hạn tối đa là ±10kg.",
+                    newWeight, previousWeight));
+        }
+
         profile.setWeight(newWeight);
         if (request.getNewHeightCm() != null) {
             profile.setHeightCm(request.getNewHeightCm());

@@ -17,6 +17,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 
+import com.bodypilot.backend.model.enums.Goal;
+import com.bodypilot.backend.service.CalorieCalculatorService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -29,6 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class DietPromptBuilder {
 
+        private final CalorieCalculatorService calorieCalculatorService;
         private final ObjectMapper objectMapper = new ObjectMapper()
                         .registerModule(new JavaTimeModule())
                         .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
@@ -79,6 +83,27 @@ public class DietPromptBuilder {
                                         .append(goal.getTargetWeight() != null ? goal.getTargetWeight() + " kg"
                                                         : "Chưa cập nhật")
                                         .append("\n");
+                }
+
+                if (metric != null && metric.getTargetCalories() != null && metric.getTargetCalories() > 0) {
+                        double targetCal = metric.getTargetCalories();
+                        Goal goalEnum = null;
+                        if (goal != null && goal.getType() != null) {
+                                try {
+                                        goalEnum = Goal.valueOf(goal.getType().toUpperCase());
+                                } catch (Exception ignored) {
+                                }
+                        }
+                        CalorieCalculatorService.MacroRatio macros = calorieCalculatorService.getMacroRatio(goalEnum);
+                        double targetP = Math.round((targetCal * macros.proteinRatio()) / 4.0);
+                        double targetF = Math.round((targetCal * macros.fatRatio()) / 9.0);
+                        double targetC = Math.round((targetCal * macros.carbsRatio()) / 4.0);
+
+                        sb.append("- Nhu cầu năng lượng mục tiêu hàng ngày (BẮT BUỘC ĐẠT ĐƯỢC TRONG 3 BỮA):\n");
+                        sb.append(String.format("  + Tổng Calo mục tiêu: %.0f kcal/ngày\n", targetCal));
+                        sb.append(String.format("  + Đạm (Protein) mục tiêu: ~%.0f g/ngày (%.0f%% calo)\n", targetP, macros.proteinRatio() * 100));
+                        sb.append(String.format("  + Tinh bột (Carbs) mục tiêu: ~%.0f g/ngày (%.0f%% calo)\n", targetC, macros.carbsRatio() * 100));
+                        sb.append(String.format("  + Chất béo (Fat) mục tiêu: ~%.0f g/ngày (%.0f%% calo)\n", targetF, macros.fatRatio() * 100));
                 }
 
                 if (allergies != null && !allergies.isEmpty()) {

@@ -190,6 +190,16 @@ public class PresetMealFallbackBuilder {
             return;
 
         BigDecimal ratio = targetCalories.divide(currentTotal, 4, RoundingMode.HALF_UP);
+        BigDecimal calDiff = targetCalories.subtract(currentTotal).abs();
+
+        // Nếu đã xấp xỉ mục tiêu (lệch trong ±7% và lệch dưới 100 kcal) thì giữ nguyên khẩu phần gốc
+        boolean isAligned = ratio.compareTo(new BigDecimal("0.93")) >= 0
+                && ratio.compareTo(new BigDecimal("1.07")) <= 0
+                && calDiff.compareTo(new BigDecimal("100")) <= 0;
+        if (isAligned) {
+            return;
+        }
+
         if (ratio.compareTo(new BigDecimal("0.5")) < 0)
             ratio = new BigDecimal("0.5");
         if (ratio.compareTo(new BigDecimal("2.0")) > 0)

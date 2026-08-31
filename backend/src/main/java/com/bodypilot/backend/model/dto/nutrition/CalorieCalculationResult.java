@@ -14,4 +14,7 @@ public class CalorieCalculationResult {
     private double bmr;
     private double tdee;
     private double targetCalories;
+    private double targetProtein;
+    private double targetFat;
+    private double targetCarbs;
 }

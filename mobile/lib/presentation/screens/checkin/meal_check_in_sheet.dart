@@ -132,105 +132,115 @@ class _MealCheckInSheetState extends State<MealCheckInSheet> {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE2E8F0), width: 1.5),
       ),
-      child: Row(
-        children: [
-          // Nút Giảm (-)
-          Material(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: () {
-                double current = double.tryParse(_weightController.text) ?? _selectedWeight;
-                if (current > 30.0) {
-                  current = (current - 0.5).clamp(30.0, 200.0);
-                  setState(() {
-                    _selectedWeight = current;
-                    _weightController.text = current.toStringAsFixed(1);
-                  });
-                }
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
+      child: Builder(
+        builder: (context) {
+          final baseWeight = widget.currentWeight > 0 ? widget.currentWeight : 65.0;
+          final minAllowed = (baseWeight - 10.0).clamp(30.0, 200.0);
+          final maxAllowed = (baseWeight + 10.0).clamp(30.0, 200.0);
+          final canDecrease = _selectedWeight > minAllowed;
+          final canIncrease = _selectedWeight < maxAllowed;
+
+          return Row(
+            children: [
+              // Nút Giảm (-)
+              Material(
+                color: canDecrease ? Colors.white : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: canDecrease
+                      ? () {
+                          double current = double.tryParse(_weightController.text) ?? _selectedWeight;
+                          current = (current - 0.5).clamp(minAllowed, maxAllowed);
+                          setState(() {
+                            _selectedWeight = current;
+                            _weightController.text = current.toStringAsFixed(1);
+                          });
+                        }
+                      : null,
                   borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                ),
-                child: const Icon(Icons.remove_rounded, color: Color(0xFF475569), size: 22),
-              ),
-            ),
-          ),
-          // Ô hiển thị / Nhập cân nặng ở giữa
-          Expanded(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                IntrinsicWidth(
-                  child: TextField(
-                    controller: _weightController,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    textAlign: TextAlign.center,
-                    style: GoogleFonts.beVietnamPro(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                      color: const Color(0xFFFF7A30),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: canDecrease ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0)),
                     ),
-                    decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      isDense: true,
-                      contentPadding: EdgeInsets.zero,
-                    ),
-                    onChanged: (val) {
-                      final d = double.tryParse(val);
-                      if (d != null) {
-                        _selectedWeight = d;
-                      }
-                    },
+                    child: Icon(Icons.remove_rounded, color: canDecrease ? const Color(0xFF475569) : const Color(0xFF94A3B8), size: 22),
                   ),
                 ),
-                const SizedBox(width: 4),
-                Text(
-                  'kg',
-                  style: GoogleFonts.inter(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: const Color(0xFF64748B),
+              ),
+              // Ô hiển thị / Nhập cân nặng ở giữa
+              Expanded(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    IntrinsicWidth(
+                      child: TextField(
+                        controller: _weightController,
+                        keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                        textAlign: TextAlign.center,
+                        style: GoogleFonts.beVietnamPro(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFFFF7A30),
+                        ),
+                        decoration: const InputDecoration(
+                          border: InputBorder.none,
+                          isDense: true,
+                          contentPadding: EdgeInsets.zero,
+                        ),
+                        onChanged: (val) {
+                          final d = double.tryParse(val);
+                          if (d != null) {
+                            _selectedWeight = d.clamp(minAllowed, maxAllowed);
+                          }
+                        },
+                      ),
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'kg',
+                      style: GoogleFonts.inter(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: const Color(0xFF64748B),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Nút Tăng (+)
+              Material(
+                color: canIncrease ? Colors.white : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
+                child: InkWell(
+                  onTap: canIncrease
+                      ? () {
+                          double current = double.tryParse(_weightController.text) ?? _selectedWeight;
+                          current = (current + 0.5).clamp(minAllowed, maxAllowed);
+                          setState(() {
+                            _selectedWeight = current;
+                            _weightController.text = current.toStringAsFixed(1);
+                          });
+                        }
+                      : null,
+                  borderRadius: BorderRadius.circular(12),
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: canIncrease ? const Color(0xFFCBD5E1) : const Color(0xFFE2E8F0)),
+                    ),
+                    child: Icon(Icons.add_rounded, color: canIncrease ? const Color(0xFF475569) : const Color(0xFF94A3B8), size: 22),
                   ),
                 ),
-              ],
-            ),
-          ),
-          // Nút Tăng (+)
-          Material(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            child: InkWell(
-              onTap: () {
-                double current = double.tryParse(_weightController.text) ?? _selectedWeight;
-                if (current < 200.0) {
-                  current = (current + 0.5).clamp(30.0, 200.0);
-                  setState(() {
-                    _selectedWeight = current;
-                    _weightController.text = current.toStringAsFixed(1);
-                  });
-                }
-              },
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: const Color(0xFFCBD5E1)),
-                ),
-                child: const Icon(Icons.add_rounded, color: Color(0xFF475569), size: 22),
               ),
-            ),
-          ),
-        ],
+            ],
+          );
+        },
       ),
     );
   }

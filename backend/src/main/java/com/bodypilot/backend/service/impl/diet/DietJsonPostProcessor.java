@@ -149,50 +149,65 @@ public class DietJsonPostProcessor {
                         .map(item -> item.getCalories() != null ? item.getCalories() : BigDecimal.ZERO)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                // Cân chỉnh Calo chuẩn mục tiêu TDEE của User
+                // Cân chỉnh Calo chuẩn mục tiêu TDEE của User khi chênh lệch quá xa (> 7% hoặc > 120 kcal)
                 if (targetCalories != null && targetCalories.compareTo(BigDecimal.ZERO) > 0
                         && totalCal.compareTo(BigDecimal.ZERO) > 0) {
                     BigDecimal scaleFactor = targetCalories.divide(totalCal, 4, RoundingMode.HALF_UP);
-                    if (scaleFactor.compareTo(new BigDecimal("0.5")) < 0) {
-                        scaleFactor = new BigDecimal("0.5");
-                    } else if (scaleFactor.compareTo(new BigDecimal("2.0")) > 0) {
-                        scaleFactor = new BigDecimal("2.0");
-                    }
+                    BigDecimal calDifference = targetCalories.subtract(totalCal).abs();
+                    
+                    // Ngưỡng sai số cho phép: lệch trong khoảng 0.93 - 1.07 (±7%) hoặc lệch dưới 100 kcal thì giữ nguyên định lượng tự nhiên của AI
+                    boolean isWithinAcceptableRange = scaleFactor.compareTo(new BigDecimal("0.93")) >= 0
+                            && scaleFactor.compareTo(new BigDecimal("1.07")) <= 0
+                            && calDifference.compareTo(new BigDecimal("100")) <= 0;
 
-                    for (MealSlotDTO slot : mealSlots) {
-                        for (MealItemDTO item : slot.getItems()) {
-                            if (item.getFoodId() != null && foodMap.containsKey(item.getFoodId())) {
-                                Food food = foodMap.get(item.getFoodId());
-                                BigDecimal scaledQuantity = item.getServingQuantity().multiply(scaleFactor).setScale(1,
-                                        RoundingMode.HALF_UP);
-                                BigDecimal minQty = presetMealFallbackBuilder.getMinQuantityForCategory(food);
-                                BigDecimal maxQty = presetMealFallbackBuilder.getMaxQuantityForCategory(food);
-                                if (scaledQuantity.compareTo(minQty) < 0) {
-                                    scaledQuantity = minQty;
-                                } else if (scaledQuantity.compareTo(maxQty) > 0) {
-                                    scaledQuantity = maxQty;
+                    if (!isWithinAcceptableRange) {
+                        log.info("Calorie deviation detected (Total: {} kcal, Target: {} kcal, Ratio: {}). Scaling serving quantities...",
+                                totalCal, targetCalories, scaleFactor);
+
+                        if (scaleFactor.compareTo(new BigDecimal("0.5")) < 0) {
+                            scaleFactor = new BigDecimal("0.5");
+                        } else if (scaleFactor.compareTo(new BigDecimal("2.0")) > 0) {
+                            scaleFactor = new BigDecimal("2.0");
+                        }
+
+                        for (MealSlotDTO slot : mealSlots) {
+                            for (MealItemDTO item : slot.getItems()) {
+                                if (item.getFoodId() != null && foodMap.containsKey(item.getFoodId())) {
+                                    Food food = foodMap.get(item.getFoodId());
+                                    BigDecimal scaledQuantity = item.getServingQuantity().multiply(scaleFactor).setScale(1,
+                                            RoundingMode.HALF_UP);
+                                    BigDecimal minQty = presetMealFallbackBuilder.getMinQuantityForCategory(food);
+                                    BigDecimal maxQty = presetMealFallbackBuilder.getMaxQuantityForCategory(food);
+                                    if (scaledQuantity.compareTo(minQty) < 0) {
+                                        scaledQuantity = minQty;
+                                    } else if (scaledQuantity.compareTo(maxQty) > 0) {
+                                        scaledQuantity = maxQty;
+                                    }
+
+                                    BigDecimal factor = scaledQuantity.divide(new BigDecimal("100"), 4,
+                                            RoundingMode.HALF_UP);
+                                    item.setServingQuantity(scaledQuantity);
+                                    item.setCalories(
+                                            food.getCaloriesPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                                    item.setProtein(
+                                            food.getProteinPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                                    item.setFat(food.getFatPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                                    item.setCarbs(
+                                            food.getCarbsPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                                    item.setFiber(
+                                            food.getFiberPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
                                 }
-
-                                BigDecimal factor = scaledQuantity.divide(new BigDecimal("100"), 4,
-                                        RoundingMode.HALF_UP);
-                                item.setServingQuantity(scaledQuantity);
-                                item.setCalories(
-                                        food.getCaloriesPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
-                                item.setProtein(
-                                        food.getProteinPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
-                                item.setFat(food.getFatPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
-                                item.setCarbs(
-                                        food.getCarbsPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
-                                item.setFiber(
-                                        food.getFiberPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
                             }
                         }
-                    }
 
-                    totalCal = mealSlots.stream()
-                            .flatMap(slot -> slot.getItems().stream())
-                            .map(item -> item.getCalories() != null ? item.getCalories() : BigDecimal.ZERO)
-                            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                        totalCal = mealSlots.stream()
+                                .flatMap(slot -> slot.getItems().stream())
+                                .map(item -> item.getCalories() != null ? item.getCalories() : BigDecimal.ZERO)
+                                .reduce(BigDecimal.ZERO, BigDecimal::add);
+                    } else {
+                        log.info("Total calories ({} kcal) is well-aligned with target ({} kcal). Keeping AI suggested natural portions.",
+                                totalCal, targetCalories);
+                    }
                 }
 
                 list.add(DailyEatingDTO.builder()
