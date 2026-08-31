@@ -85,12 +85,13 @@ public class DietFoodFilterService {
                 dislikes != null ? dislikes.size() : 0);
 
         return foods.stream()
-                .filter(f -> (f.getId() != null && f.getId().equals(MANDATORY_RICE_ID)) || (
-                        Boolean.TRUE.equals(f.getIsRecommended())
-                        && (allergies == null || allergies.stream().noneMatch(allergy -> isAllergicFood(f, allergy)))
-                        && (diets == null || diets.stream().allMatch(diet -> isDietCompliant(f, diet)))
-                        && (dislikes == null || dislikes.stream().noneMatch(dislike -> isDislikedFood(f, dislike)))
-                ))
+                .filter(f -> (f.getId() != null && f.getId().equals(MANDATORY_RICE_ID))
+                        || (Boolean.TRUE.equals(f.getIsRecommended())
+                                && (allergies == null
+                                        || allergies.stream().noneMatch(allergy -> isAllergicFood(f, allergy)))
+                                && (diets == null || diets.stream().allMatch(diet -> isDietCompliant(f, diet)))
+                                && (dislikes == null
+                                        || dislikes.stream().noneMatch(dislike -> isDislikedFood(f, dislike)))))
                 .collect(Collectors.toList());
     }
 
@@ -200,7 +201,8 @@ public class DietFoodFilterService {
         List<Food> selected = new ArrayList<>();
         Set<UUID> selectedIds = new HashSet<>();
 
-        // Bắt buộc ưu tiên đưa món Cơm đã nấu (MANDATORY_RICE_ID) vào danh sách ứng viên gửi cho AI
+        // Bắt buộc ưu tiên đưa món Cơm đã nấu (MANDATORY_RICE_ID) vào danh sách ứng
+        // viên gửi cho AI
         foods.stream()
                 .filter(f -> f.getId() != null && f.getId().equals(MANDATORY_RICE_ID))
                 .findFirst()

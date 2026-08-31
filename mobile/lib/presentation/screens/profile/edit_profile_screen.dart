@@ -22,6 +22,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   String _selectedGender = 'MALE';
   String _selectedActivityLevel = 'MODERATE';
+  bool _hasExperience = false;
   bool _isSubmitting = false;
 
   final List<Map<String, String>> _genders = [
@@ -49,6 +50,21 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     _heightController = TextEditingController(text: metrics?.heightCm?.toInt().toString() ?? '');
     _ageController = TextEditingController(text: metrics?.age?.toString() ?? '');
 
+    if (profile?.gender != null && profile!.gender!.isNotEmpty) {
+      final gUpper = profile.gender!.toUpperCase();
+      if (gUpper == 'MALE' || gUpper == 'NAM') {
+        _selectedGender = 'MALE';
+      } else if (gUpper == 'FEMALE' || gUpper == 'NU' || gUpper == 'NỮ') {
+        _selectedGender = 'FEMALE';
+      } else {
+        _selectedGender = 'OTHER';
+      }
+    }
+
+    if (profile?.hasExperience != null) {
+      _hasExperience = profile!.hasExperience!;
+    }
+
     if (metrics?.activityLevel != null) {
       _selectedActivityLevel = metrics!.activityLevel!;
     }
@@ -75,14 +91,35 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     setState(() => _isSubmitting = true);
 
     try {
-      // Refresh user profile after mock update or backend update call
-      await Future.delayed(const Duration(milliseconds: 600));
+      final data = <String, dynamic>{
+        'fullName': name,
+        'gender': _selectedGender,
+        'hasExperience': _hasExperience,
+        'activityLevel': _selectedActivityLevel,
+      };
+
+      final weight = double.tryParse(_weightController.text.trim());
+      if (weight != null) data['weight'] = weight;
+
+      final height = double.tryParse(_heightController.text.trim());
+      if (height != null) data['heightCm'] = height;
+
+      final age = int.tryParse(_ageController.text.trim());
+      if (age != null) data['age'] = age;
+
+      final success = await context.read<UserCubit>().updateProfile(data);
+
       if (mounted) {
-        context.read<UserCubit>().fetchUserProfile();
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Cập nhật hồ sơ cá nhân thành công!'), backgroundColor: Colors.green),
-        );
-        Navigator.pop(context);
+        if (success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Cập nhật hồ sơ cá nhân thành công!'), backgroundColor: Colors.green),
+          );
+          Navigator.pop(context);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Không thể cập nhật hồ sơ. Vui lòng thử lại!'), backgroundColor: Colors.red),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
@@ -176,6 +213,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             ),
             const SizedBox(height: 16),
             _buildActivityLevelDropdown(),
+            const SizedBox(height: 24),
+
+            // Workout Experience Form
+            _buildSectionHeader('Kinh Nghiệm Tập Luyện'),
+            const SizedBox(height: 14),
+            _buildExperienceSelector(),
             const SizedBox(height: 36),
 
             // Submit Button
@@ -298,6 +341,118 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               onChanged: (val) {
                 if (val != null) setState(() => _selectedActivityLevel = val);
               },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildExperienceSelector() {
+    return Row(
+      children: [
+        // Beginner option
+        Expanded(
+          child: InkWell(
+            onTap: () => setState(() => _hasExperience = false),
+            borderRadius: BorderRadius.circular(14),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+              decoration: BoxDecoration(
+                color: !_hasExperience ? AppTheme.primary.withValues(alpha: 0.08) : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: !_hasExperience ? AppTheme.primary : const Color(0xFFE2E8F0),
+                  width: !_hasExperience ? 1.5 : 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: !_hasExperience ? AppTheme.primary : const Color(0xFFF1F5F9),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.spa_rounded,
+                      size: 20,
+                      color: !_hasExperience ? Colors.white : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Chưa từng tập',
+                    style: GoogleFonts.workSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: !_hasExperience ? AppTheme.primary : const Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Người mới bắt đầu',
+                    style: GoogleFonts.workSans(
+                      fontSize: 11,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        // Experienced option
+        Expanded(
+          child: InkWell(
+            onTap: () => setState(() => _hasExperience = true),
+            borderRadius: BorderRadius.circular(14),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+              decoration: BoxDecoration(
+                color: _hasExperience ? AppTheme.primary.withValues(alpha: 0.08) : Colors.white,
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(
+                  color: _hasExperience ? AppTheme.primary : const Color(0xFFE2E8F0),
+                  width: _hasExperience ? 1.5 : 1,
+                ),
+              ),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: _hasExperience ? AppTheme.primary : const Color(0xFFF1F5F9),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.fitness_center_rounded,
+                      size: 20,
+                      color: _hasExperience ? Colors.white : const Color(0xFF64748B),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Đã từng tập',
+                    style: GoogleFonts.workSans(
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: _hasExperience ? AppTheme.primary : const Color(0xFF1E293B),
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Đã có kinh nghiệm',
+                    style: GoogleFonts.workSans(
+                      fontSize: 11,
+                      color: const Color(0xFF94A3B8),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),

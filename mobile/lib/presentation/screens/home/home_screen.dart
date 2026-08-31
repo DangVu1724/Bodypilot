@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/presentation/bloc/checkin/checkin_cubit.dart';
+import 'package:mobile/presentation/bloc/checkin/checkin_state.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
@@ -17,8 +18,26 @@ import 'widgets/home_header.dart';
 import 'widgets/metric_section.dart';
 import 'widgets/section_header.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        final checkInCubit = context.read<CheckInCubit>();
+        if (checkInCubit.state is CheckInInitial || checkInCubit.lastStatus == null) {
+          checkInCubit.fetchCheckInStatus();
+        }
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +61,7 @@ class HomeScreen extends StatelessWidget {
             final sunday = monday.add(const Duration(days: 6));
             await Future.wait([
               context.read<UserCubit>().fetchUserProfile(),
-              context.read<CheckInCubit>().fetchCheckInStatus(),
+              context.read<CheckInCubit>().fetchCheckInStatus(force: true),
               context.read<WorkoutPlanCubit>().fetchPlansFull(forceRefresh: true),
               context.read<WorkoutDiaryCubit>().fetchWeeklyWorkouts(monday, sunday),
               context.read<MealCubit>().fetchWeeklyEating(monday, sunday),

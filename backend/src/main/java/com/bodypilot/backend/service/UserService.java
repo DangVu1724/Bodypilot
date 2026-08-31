@@ -18,4 +18,6 @@ public interface UserService {
     List<UserResponse> searchUsers(String query);
 
     boolean isProfileComplete(UUID userId);
+
+    UserResponse updateProfile(UUID userId, com.bodypilot.backend.model.dto.user.UpdateProfileRequest request);
 }

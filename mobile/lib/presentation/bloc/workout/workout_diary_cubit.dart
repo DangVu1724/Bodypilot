@@ -133,4 +133,9 @@ class WorkoutDiaryCubit extends Cubit<WorkoutDiaryState> {
       emit(state.copyWith(status: WorkoutDiaryStatus.failure, errorMessage: e.toString()));
     }
   }
+
+  void clear() {
+    _notifiedWorkoutDates.clear();
+    emit(const WorkoutDiaryState());
+  }
 }

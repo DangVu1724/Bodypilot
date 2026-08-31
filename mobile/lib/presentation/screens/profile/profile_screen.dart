@@ -9,9 +9,13 @@ import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/data/repositories/auth_repository.dart';
 import 'package:mobile/data/services/token_service.dart';
+import 'package:mobile/presentation/bloc/checkin/checkin_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
+import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
+import 'package:mobile/presentation/bloc/notification/notification_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_state.dart';
+import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
 import 'package:mobile/presentation/screens/assessment/assessment_screen.dart';
 import 'package:mobile/presentation/screens/profile/about_screen.dart';
 import 'package:mobile/presentation/screens/profile/edit_profile_screen.dart';
@@ -79,7 +83,7 @@ class ProfileScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 8),
-                  _buildHeader(profile?.fullName ?? 'Người dùng', user.email, profile?.avatarUrl),
+                  _buildHeader(profile?.fullName ?? 'Người dùng', user.email, profile?.avatarUrl, hasExperience: profile?.hasExperience),
                   const SizedBox(height: 32),
 
                   _buildHighlightMetricsCard(metrics),
@@ -155,8 +159,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(String name, String email, String? avatarUrl) {
+  Widget _buildHeader(String name, String email, String? avatarUrl, {bool? hasExperience}) {
     final streakDays = TokenService.getStreakCount();
+    final isExperienced = hasExperience == true;
 
     return Row(
       children: [
@@ -175,24 +180,56 @@ class ProfileScreen extends StatelessWidget {
               const SizedBox(height: 4),
               Text(email, style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary, fontSize: 14)),
               const SizedBox(height: 12),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFFEF3C7),
-                  borderRadius: BorderRadius.circular(100),
-                  border: Border.all(color: const Color(0xFFFCD34D).withOpacity(0.5)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text('🔥', style: TextStyle(fontSize: 14)),
-                    const SizedBox(width: 6),
-                    Text(
-                      'Chuỗi $streakDays Ngày',
-                      style: AppTheme.semiboldStyle.copyWith(fontSize: 12, color: const Color(0xFFB45309)),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFEF3C7),
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(color: const Color(0xFFFCD34D).withOpacity(0.5)),
                     ),
-                  ],
-                ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text('🔥', style: TextStyle(fontSize: 13)),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Chuỗi $streakDays Ngày',
+                          style: AppTheme.semiboldStyle.copyWith(fontSize: 12, color: const Color(0xFFB45309)),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: isExperienced ? const Color(0xFFEFF6FF) : const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(100),
+                      border: Border.all(
+                        color: isExperienced
+                            ? const Color(0xFF3B82F6).withOpacity(0.3)
+                            : const Color(0xFF22C55E).withOpacity(0.3),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(isExperienced ? '🏋️' : '🌱', style: const TextStyle(fontSize: 13)),
+                        const SizedBox(width: 4),
+                        Text(
+                          isExperienced ? 'Đã có kinh nghiệm' : 'Người mới bắt đầu',
+                          style: AppTheme.semiboldStyle.copyWith(
+                            fontSize: 12,
+                            color: isExperienced ? const Color(0xFF1D4ED8) : const Color(0xFF15803D),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -674,6 +711,10 @@ class ProfileScreen extends StatelessWidget {
               onPressed: () async {
                 context.read<UserCubit>().clear();
                 context.read<FoodCubit>().clear();
+                context.read<CheckInCubit>().reset();
+                context.read<MealCubit>().clear();
+                context.read<WorkoutDiaryCubit>().clear();
+                context.read<NotificationCubit>().clearAll();
 
                 await authRepository.logout();
                 if (context.mounted) {

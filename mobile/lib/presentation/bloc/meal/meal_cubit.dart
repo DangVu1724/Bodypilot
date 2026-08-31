@@ -134,4 +134,8 @@ class MealCubit extends Cubit<MealState> {
       emit(state.copyWith(status: MealStatus.failure, errorMessage: e.toString()));
     }
   }
+
+  void clear() {
+    emit(const MealState());
+  }
 }

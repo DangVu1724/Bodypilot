@@ -6,8 +6,13 @@ import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/core/theme/app_theme.dart';
 import 'package:mobile/presentation/bloc/auth/login_cubit.dart';
 import 'package:mobile/presentation/bloc/auth/login_state.dart';
+import 'package:mobile/presentation/bloc/checkin/checkin_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
+import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
+import 'package:mobile/presentation/bloc/notification/notification_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
+import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
+import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -27,7 +32,16 @@ class LoginView extends StatelessWidget {
       listener: (context, state) {
         if (state.status == LoginStatus.success) {
           context.read<UserCubit>().fetchUserProfile();
+          context.read<CheckInCubit>().fetchCheckInStatus(force: true);
           context.read<FoodCubit>().init();
+          context.read<WorkoutPlanCubit>().fetchPlansFull(forceRefresh: true);
+          context.read<NotificationCubit>().loadNotificationsForUser();
+
+          final now = DateTime.now();
+          final monday = now.subtract(Duration(days: now.weekday - 1));
+          final sunday = monday.add(const Duration(days: 6));
+          context.read<MealCubit>().fetchWeeklyEating(monday, sunday);
+          context.read<WorkoutDiaryCubit>().fetchWeeklyWorkouts(monday, sunday);
 
           if (state.isProfileComplete == true) {
             context.go(AppRoutes.home);

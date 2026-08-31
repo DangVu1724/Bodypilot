@@ -8,5 +8,7 @@ import lombok.Data;
 public class UserProfileResponse {
     private String fullName;
     private String avatarUrl;
+    private String gender;
+    private Boolean hasExperience;
     private boolean isAssessmentCompleted;
 }

@@ -35,8 +35,12 @@ public class WorkoutSuggestionHelper {
     private final WorkoutJsonPostProcessor jsonPostProcessor;
     private final PresetWorkoutFallbackBuilder presetFallbackBuilder;
 
+    public List<ExerciseCandidate> getBalancedExerciseCandidates(UUID userId, String goalType, String focusBodyPart, Boolean hasExperience) {
+        return exerciseFilterService.getBalancedExerciseCandidates(userId, goalType, focusBodyPart, hasExperience);
+    }
+
     public List<ExerciseCandidate> getBalancedExerciseCandidates(UUID userId, String goalType, String focusBodyPart) {
-        return exerciseFilterService.getBalancedExerciseCandidates(userId, goalType, focusBodyPart);
+        return exerciseFilterService.getBalancedExerciseCandidates(userId, goalType, focusBodyPart, null);
     }
 
     public List<ExerciseCandidate> getBalancedExerciseCandidates(UUID userId, String goalType) {

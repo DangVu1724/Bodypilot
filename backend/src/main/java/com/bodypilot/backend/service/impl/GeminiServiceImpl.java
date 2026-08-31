@@ -161,7 +161,8 @@ public class GeminiServiceImpl implements GeminiService {
             }
 
             List<UserInjury> injuries = userInjuryRepository.findAllByUserId(userId);
-            List<ExerciseCandidate> candidates = workoutSuggestionHelper.getBalancedExerciseCandidates(userId, goalType, focusBodyPart);
+            Boolean hasExperience = profile != null ? profile.getHasExperience() : null;
+            List<ExerciseCandidate> candidates = workoutSuggestionHelper.getBalancedExerciseCandidates(userId, goalType, focusBodyPart, hasExperience);
 
             String prompt = workoutSuggestionHelper.buildWorkoutPrompt(profile, activeGoal, latestMetric, injuries, candidates, startDate, days, focusBodyPart);
 

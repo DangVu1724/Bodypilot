@@ -29,7 +29,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Service dedicated to parsing and post-processing AI-generated Diet JSON responses
+ * Service dedicated to parsing and post-processing AI-generated Diet JSON
+ * responses
  * using strongly-typed fail-safe Raw DTOs.
  */
 @Component
@@ -88,7 +89,8 @@ public class DietJsonPostProcessor {
                             int itemOrder = 0;
                             for (RawMealItem rawItem : rawSlot.getItems()) {
                                 String foodIdStr = (rawItem.getFoodId() != null) ? rawItem.getFoodId().trim() : "";
-                                String foodNameStr = (rawItem.getFoodName() != null) ? rawItem.getFoodName().trim() : "";
+                                String foodNameStr = (rawItem.getFoodName() != null) ? rawItem.getFoodName().trim()
+                                        : "";
                                 BigDecimal servingQuantity = (rawItem.getServingQuantity() != null)
                                         ? rawItem.getServingQuantity()
                                         : new BigDecimal("100.0");
@@ -96,17 +98,24 @@ public class DietJsonPostProcessor {
                                 Food food = matchFoodInDatabase(foodIdStr, foodNameStr, foodMap, nameMap, allFoods);
 
                                 if (food != null) {
-                                    BigDecimal factor = servingQuantity.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
-                                    BigDecimal calories = food.getCaloriesPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP);
-                                    BigDecimal protein = food.getProteinPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP);
-                                    BigDecimal fat = food.getFatPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP);
-                                    BigDecimal carbs = food.getCarbsPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP);
-                                    BigDecimal fiber = food.getFiberPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP);
+                                    BigDecimal factor = servingQuantity.divide(new BigDecimal("100"), 4,
+                                            RoundingMode.HALF_UP);
+                                    BigDecimal calories = food.getCaloriesPer100g().multiply(factor).setScale(1,
+                                            RoundingMode.HALF_UP);
+                                    BigDecimal protein = food.getProteinPer100g().multiply(factor).setScale(1,
+                                            RoundingMode.HALF_UP);
+                                    BigDecimal fat = food.getFatPer100g().multiply(factor).setScale(1,
+                                            RoundingMode.HALF_UP);
+                                    BigDecimal carbs = food.getCarbsPer100g().multiply(factor).setScale(1,
+                                            RoundingMode.HALF_UP);
+                                    BigDecimal fiber = food.getFiberPer100g().multiply(factor).setScale(1,
+                                            RoundingMode.HALF_UP);
 
                                     items.add(MealItemDTO.builder()
                                             .foodId(food.getId())
                                             .servingQuantity(servingQuantity)
-                                            .orderIndex(rawItem.getOrderIndex() != null ? rawItem.getOrderIndex() : itemOrder++)
+                                            .orderIndex(rawItem.getOrderIndex() != null ? rawItem.getOrderIndex()
+                                                    : itemOrder++)
                                             .foodName(food.getName())
                                             .calories(calories)
                                             .protein(protein)
@@ -119,7 +128,8 @@ public class DietJsonPostProcessor {
                                             .isEaten(false)
                                             .build());
                                 } else {
-                                    log.warn("Suggested food ID [{}] / Name [{}] not found in database candidates.", foodIdStr, foodNameStr);
+                                    log.warn("Suggested food ID [{}] / Name [{}] not found in database candidates.",
+                                            foodIdStr, foodNameStr);
                                 }
                             }
                         }
@@ -153,7 +163,8 @@ public class DietJsonPostProcessor {
                         for (MealItemDTO item : slot.getItems()) {
                             if (item.getFoodId() != null && foodMap.containsKey(item.getFoodId())) {
                                 Food food = foodMap.get(item.getFoodId());
-                                BigDecimal scaledQuantity = item.getServingQuantity().multiply(scaleFactor).setScale(1, RoundingMode.HALF_UP);
+                                BigDecimal scaledQuantity = item.getServingQuantity().multiply(scaleFactor).setScale(1,
+                                        RoundingMode.HALF_UP);
                                 BigDecimal minQty = presetMealFallbackBuilder.getMinQuantityForCategory(food);
                                 BigDecimal maxQty = presetMealFallbackBuilder.getMaxQuantityForCategory(food);
                                 if (scaledQuantity.compareTo(minQty) < 0) {
@@ -162,13 +173,18 @@ public class DietJsonPostProcessor {
                                     scaledQuantity = maxQty;
                                 }
 
-                                BigDecimal factor = scaledQuantity.divide(new BigDecimal("100"), 4, RoundingMode.HALF_UP);
+                                BigDecimal factor = scaledQuantity.divide(new BigDecimal("100"), 4,
+                                        RoundingMode.HALF_UP);
                                 item.setServingQuantity(scaledQuantity);
-                                item.setCalories(food.getCaloriesPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
-                                item.setProtein(food.getProteinPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                                item.setCalories(
+                                        food.getCaloriesPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                                item.setProtein(
+                                        food.getProteinPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
                                 item.setFat(food.getFatPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
-                                item.setCarbs(food.getCarbsPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
-                                item.setFiber(food.getFiberPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                                item.setCarbs(
+                                        food.getCarbsPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
+                                item.setFiber(
+                                        food.getFiberPer100g().multiply(factor).setScale(1, RoundingMode.HALF_UP));
                             }
                         }
                     }
@@ -197,7 +213,8 @@ public class DietJsonPostProcessor {
     }
 
     private String cleanMarkdownJson(String rawJson) {
-        if (rawJson == null) return "[]";
+        if (rawJson == null)
+            return "[]";
         String cleaned = rawJson.trim();
         if (cleaned.startsWith("```json")) {
             cleaned = cleaned.substring(7);

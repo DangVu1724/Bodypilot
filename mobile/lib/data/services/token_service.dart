@@ -74,6 +74,19 @@ class TokenService {
   }
 
   static Future<void> removeToken() async {
+    final currentUserId = getUserId();
+    if (currentUserId != null && currentUserId.isNotEmpty) {
+      await _prefs?.remove('${_mealCheckInSummaryKey}_$currentUserId');
+      await _prefs?.remove('${_workoutCheckInSummaryKey}_$currentUserId');
+      await _prefs?.remove('${_isMealCheckInDoneKey}_$currentUserId');
+      await _prefs?.remove('${_isWorkoutCheckInDoneKey}_$currentUserId');
+      await _prefs?.remove('${_streakCountKey}_$currentUserId');
+      await _prefs?.remove('${_lastStreakDateKey}_$currentUserId');
+      await _prefs?.remove('focus_body_part_$currentUserId');
+      await _prefs?.remove('selected_chat_model_$currentUserId');
+      await _prefs?.remove('${_cachedUserKey}_$currentUserId');
+    }
+
     await _prefs?.remove(_tokenKey);
     await _prefs?.remove(_userIdKey);
     await _prefs?.remove(_isAssessmentCompletedKey);
@@ -81,6 +94,14 @@ class TokenService {
     await _prefs?.remove(_isWorkoutSurveyCompletedKey);
     await _prefs?.remove(_lastActivityKey);
     await _prefs?.remove(_cachedUserKey);
+    await _prefs?.remove(_mealCheckInSummaryKey);
+    await _prefs?.remove(_workoutCheckInSummaryKey);
+    await _prefs?.remove(_isMealCheckInDoneKey);
+    await _prefs?.remove(_isWorkoutCheckInDoneKey);
+    await _prefs?.remove(_streakCountKey);
+    await _prefs?.remove(_lastStreakDateKey);
+    await _prefs?.remove('focus_body_part');
+    await _prefs?.remove('selected_chat_model');
   }
 
   static bool hasToken() {
@@ -88,11 +109,15 @@ class TokenService {
   }
 
   static Future<void> saveUserCache(UserModel user) async {
-    await _prefs?.setString(_cachedUserKey, jsonEncode(user.toJson()));
+    final userJson = jsonEncode(user.toJson());
+    await _prefs?.setString(_cachedUserKey, userJson);
+    await _prefs?.setString('${_cachedUserKey}_${user.id}', userJson);
   }
 
-  static UserModel? getCachedUser() {
-    final jsonString = _prefs?.getString(_cachedUserKey);
+  static UserModel? getCachedUser([String? userId]) {
+    final uid = userId ?? getUserId();
+    final jsonString = (uid != null ? _prefs?.getString('${_cachedUserKey}_$uid') : null) ??
+        _prefs?.getString(_cachedUserKey);
     if (jsonString != null) {
       try {
         return UserModel.fromJson(jsonDecode(jsonString));
@@ -124,20 +149,33 @@ class TokenService {
     await _prefs?.remove('chat_history_$userId');
   }
 
-  static Future<void> saveSelectedModel(String model) async {
+  static Future<void> saveSelectedModel(String model, [String? userId]) async {
+    final uid = userId ?? getUserId();
+    if (uid != null) {
+      await _prefs?.setString('selected_chat_model_$uid', model);
+    }
     await _prefs?.setString('selected_chat_model', model);
   }
 
-  static String? getSelectedModel() {
-    return _prefs?.getString('selected_chat_model');
+  static String? getSelectedModel([String? userId]) {
+    final uid = userId ?? getUserId();
+    return (uid != null ? _prefs?.getString('selected_chat_model_$uid') : null) ??
+        _prefs?.getString('selected_chat_model');
   }
 
-  static Future<void> saveFocusBodyPart(String bodyPart) async {
+  static Future<void> saveFocusBodyPart(String bodyPart, [String? userId]) async {
+    final uid = userId ?? getUserId();
+    if (uid != null) {
+      await _prefs?.setString('focus_body_part_$uid', bodyPart);
+    }
     await _prefs?.setString('focus_body_part', bodyPart);
   }
 
-  static String getFocusBodyPart() {
-    return _prefs?.getString('focus_body_part') ?? 'NONE';
+  static String getFocusBodyPart([String? userId]) {
+    final uid = userId ?? getUserId();
+    return (uid != null ? _prefs?.getString('focus_body_part_$uid') : null) ??
+        _prefs?.getString('focus_body_part') ??
+        'NONE';
   }
 
   static const String _mealCheckInSummaryKey = 'meal_checkin_summary';
@@ -145,19 +183,30 @@ class TokenService {
   static const String _isMealCheckInDoneKey = 'is_meal_checkin_done';
   static const String _isWorkoutCheckInDoneKey = 'is_workout_checkin_done';
 
-  static bool isMealCheckInDone() {
-    return _prefs?.getBool(_isMealCheckInDoneKey) ?? false;
+  static bool isMealCheckInDone([String? userId]) {
+    final uid = userId ?? getUserId();
+    if (uid == null) return false;
+    return _prefs?.getBool('${_isMealCheckInDoneKey}_$uid') ?? false;
   }
 
-  static Future<void> setMealCheckInDone(bool isDone, {Map<String, dynamic>? summary}) async {
+  static Future<void> setMealCheckInDone(bool isDone, {Map<String, dynamic>? summary, String? userId}) async {
+    final uid = userId ?? getUserId();
+    if (uid != null) {
+      await _prefs?.setBool('${_isMealCheckInDoneKey}_$uid', isDone);
+      if (summary != null) {
+        await _prefs?.setString('${_mealCheckInSummaryKey}_$uid', jsonEncode(summary));
+      }
+    }
     await _prefs?.setBool(_isMealCheckInDoneKey, isDone);
     if (summary != null) {
       await _prefs?.setString(_mealCheckInSummaryKey, jsonEncode(summary));
     }
   }
 
-  static Map<String, dynamic>? getMealCheckInSummary() {
-    final raw = _prefs?.getString(_mealCheckInSummaryKey);
+  static Map<String, dynamic>? getMealCheckInSummary([String? userId]) {
+    final uid = userId ?? getUserId();
+    if (uid == null) return null;
+    final raw = _prefs?.getString('${_mealCheckInSummaryKey}_$uid') ?? _prefs?.getString(_mealCheckInSummaryKey);
     if (raw != null && raw.isNotEmpty) {
       try {
         return jsonDecode(raw) as Map<String, dynamic>;
@@ -166,19 +215,30 @@ class TokenService {
     return null;
   }
 
-  static bool isWorkoutCheckInDone() {
-    return _prefs?.getBool(_isWorkoutCheckInDoneKey) ?? false;
+  static bool isWorkoutCheckInDone([String? userId]) {
+    final uid = userId ?? getUserId();
+    if (uid == null) return false;
+    return _prefs?.getBool('${_isWorkoutCheckInDoneKey}_$uid') ?? false;
   }
 
-  static Future<void> setWorkoutCheckInDone(bool isDone, {Map<String, dynamic>? summary}) async {
+  static Future<void> setWorkoutCheckInDone(bool isDone, {Map<String, dynamic>? summary, String? userId}) async {
+    final uid = userId ?? getUserId();
+    if (uid != null) {
+      await _prefs?.setBool('${_isWorkoutCheckInDoneKey}_$uid', isDone);
+      if (summary != null) {
+        await _prefs?.setString('${_workoutCheckInSummaryKey}_$uid', jsonEncode(summary));
+      }
+    }
     await _prefs?.setBool(_isWorkoutCheckInDoneKey, isDone);
     if (summary != null) {
       await _prefs?.setString(_workoutCheckInSummaryKey, jsonEncode(summary));
     }
   }
 
-  static Map<String, dynamic>? getWorkoutCheckInSummary() {
-    final raw = _prefs?.getString(_workoutCheckInSummaryKey);
+  static Map<String, dynamic>? getWorkoutCheckInSummary([String? userId]) {
+    final uid = userId ?? getUserId();
+    if (uid == null) return null;
+    final raw = _prefs?.getString('${_workoutCheckInSummaryKey}_$uid') ?? _prefs?.getString(_workoutCheckInSummaryKey);
     if (raw != null && raw.isNotEmpty) {
       try {
         return jsonDecode(raw) as Map<String, dynamic>;
@@ -188,24 +248,28 @@ class TokenService {
   }
 
   /// Cập nhật và lấy số ngày chuỗi đăng nhập (Streak) liên tiếp ngoại tuyến
-  static int updateAndGetStreak() {
+  static int updateAndGetStreak([String? userId]) {
     if (_prefs == null) return 1;
+
+    final uid = userId ?? getUserId();
+    final streakKey = uid != null ? '${_streakCountKey}_$uid' : _streakCountKey;
+    final dateKey = uid != null ? '${_lastStreakDateKey}_$uid' : _lastStreakDateKey;
 
     final now = DateTime.now();
     final todayStr = "${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}";
-    final lastDateStr = _prefs?.getString(_lastStreakDateKey);
-    int currentStreak = _prefs?.getInt(_streakCountKey) ?? 0;
+    final lastDateStr = _prefs?.getString(dateKey);
+    int currentStreak = _prefs?.getInt(streakKey) ?? 0;
 
     if (lastDateStr == null || lastDateStr.isEmpty) {
       // Lần đầu vào ứng dụng -> Khởi tạo streak = 1
       currentStreak = 1;
-      _prefs?.setString(_lastStreakDateKey, todayStr);
-      _prefs?.setInt(_streakCountKey, currentStreak);
+      _prefs?.setString(dateKey, todayStr);
+      _prefs?.setInt(streakKey, currentStreak);
     } else if (lastDateStr == todayStr) {
       // Trong cùng một ngày -> Giữ nguyên streak hiện tại
       if (currentStreak < 1) {
         currentStreak = 1;
-        _prefs?.setInt(_streakCountKey, currentStreak);
+        _prefs?.setInt(streakKey, currentStreak);
       }
     } else {
       try {
@@ -225,12 +289,12 @@ class TokenService {
           if (currentStreak < 1) currentStreak = 1;
         }
 
-        _prefs?.setString(_lastStreakDateKey, todayStr);
-        _prefs?.setInt(_streakCountKey, currentStreak);
+        _prefs?.setString(dateKey, todayStr);
+        _prefs?.setInt(streakKey, currentStreak);
       } catch (e) {
         currentStreak = 1;
-        _prefs?.setString(_lastStreakDateKey, todayStr);
-        _prefs?.setInt(_streakCountKey, currentStreak);
+        _prefs?.setString(dateKey, todayStr);
+        _prefs?.setInt(streakKey, currentStreak);
       }
     }
 
@@ -238,7 +302,7 @@ class TokenService {
   }
 
   /// Lấy số ngày streak hiện tại
-  static int getStreakCount() {
-    return updateAndGetStreak();
+  static int getStreakCount([String? userId]) {
+    return updateAndGetStreak(userId);
   }
 }

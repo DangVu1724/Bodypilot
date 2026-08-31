@@ -15,6 +15,10 @@ import com.bodypilot.backend.service.UserService;
 
 import lombok.RequiredArgsConstructor;
 
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import com.bodypilot.backend.model.dto.user.UpdateProfileRequest;
+
 @RestController
 @RequestMapping("/api/v1/users")
 @RequiredArgsConstructor
@@ -30,5 +34,12 @@ public class UserController {
     @GetMapping("/{userId}")
     public ApiResponse<UserResponse> getUser(@PathVariable UUID userId) {
         return ApiResponse.ok("User retrieved successfully", userService.getUserDetails(userId));
+    }
+
+    @PutMapping("/{userId}/profile")
+    public ApiResponse<UserResponse> updateProfile(
+            @PathVariable UUID userId,
+            @RequestBody UpdateProfileRequest request) {
+        return ApiResponse.ok("User profile updated successfully", userService.updateProfile(userId, request));
     }
 }

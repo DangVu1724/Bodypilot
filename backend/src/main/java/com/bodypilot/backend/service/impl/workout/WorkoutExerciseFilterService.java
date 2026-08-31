@@ -31,10 +31,10 @@ public class WorkoutExerciseFilterService {
     private final ExerciseRepository exerciseRepository;
     private final UserInjuryRepository userInjuryRepository;
 
-    public List<ExerciseCandidate> getBalancedExerciseCandidates(UUID userId, String goalType, String focusBodyPart) {
+    public List<ExerciseCandidate> getBalancedExerciseCandidates(UUID userId, String goalType, String focusBodyPart, Boolean hasExperience) {
         List<UserInjury> injuries = (userId != null) ? userInjuryRepository.findAllByUserId(userId) : new ArrayList<>();
         List<Exercise> filteredExercises = getFilteredExercises(injuries);
-        List<Exercise> limitedExercises = selectBalancedExercises(filteredExercises, 100, goalType, focusBodyPart);
+        List<Exercise> limitedExercises = selectBalancedExercises(filteredExercises, 100, goalType, focusBodyPart, hasExperience);
 
         return limitedExercises.stream()
                 .map(e -> new ExerciseCandidate(
@@ -46,8 +46,12 @@ public class WorkoutExerciseFilterService {
                 .collect(Collectors.toList());
     }
 
+    public List<ExerciseCandidate> getBalancedExerciseCandidates(UUID userId, String goalType, String focusBodyPart) {
+        return getBalancedExerciseCandidates(userId, goalType, focusBodyPart, null);
+    }
+
     public List<ExerciseCandidate> getBalancedExerciseCandidates(UUID userId, String goalType) {
-        return getBalancedExerciseCandidates(userId, goalType, null);
+        return getBalancedExerciseCandidates(userId, goalType, null, null);
     }
 
     public List<Exercise> getFilteredExercises(List<UserInjury> injuries) {
@@ -72,7 +76,7 @@ public class WorkoutExerciseFilterService {
     }
 
     public List<Exercise> selectBalancedExercises(List<Exercise> exercises, int limit, String goalType,
-            String focusBodyPart) {
+            String focusBodyPart, Boolean hasExperience) {
         if (exercises.size() <= limit) {
             return exercises;
         }
@@ -80,7 +84,7 @@ public class WorkoutExerciseFilterService {
         Random random = new Random();
         Map<Exercise, Double> exerciseScores = new HashMap<>();
         for (Exercise ex : exercises) {
-            double score = calculateExerciseScore(ex, goalType, focusBodyPart) + (random.nextDouble() * 15.0);
+            double score = calculateExerciseScore(ex, goalType, focusBodyPart, hasExperience) + (random.nextDouble() * 15.0);
             exerciseScores.put(ex, score);
         }
 
@@ -174,7 +178,12 @@ public class WorkoutExerciseFilterService {
         return selected;
     }
 
-    private double calculateExerciseScore(Exercise ex, String goalType, String focusBodyPart) {
+    public List<Exercise> selectBalancedExercises(List<Exercise> exercises, int limit, String goalType,
+            String focusBodyPart) {
+        return selectBalancedExercises(exercises, limit, goalType, focusBodyPart, null);
+    }
+
+    private double calculateExerciseScore(Exercise ex, String goalType, String focusBodyPart, Boolean hasExperience) {
         double score = 50.0;
         if (ex == null)
             return score;
@@ -215,7 +224,31 @@ public class WorkoutExerciseFilterService {
             }
         }
 
+        // Adjust score based on user experience level
+        if (ex.getDifficulty() != null) {
+            boolean isExperienced = Boolean.TRUE.equals(hasExperience);
+            if (!isExperienced) {
+                // Beginner preference
+                switch (ex.getDifficulty()) {
+                    case BEGINNER -> score += 20.0;
+                    case INTERMEDIATE -> score += 5.0;
+                    case ADVANCED -> score -= 20.0;
+                }
+            } else {
+                // Experienced preference
+                switch (ex.getDifficulty()) {
+                    case BEGINNER -> score += 5.0;
+                    case INTERMEDIATE -> score += 20.0;
+                    case ADVANCED -> score += 15.0;
+                }
+            }
+        }
+
         return score;
+    }
+
+    private double calculateExerciseScore(Exercise ex, String goalType, String focusBodyPart) {
+        return calculateExerciseScore(ex, goalType, focusBodyPart, null);
     }
 
     private Map<String, Integer> getGoalCategoryQuotas(String goalType, int remainingSlots) {

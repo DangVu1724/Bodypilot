@@ -65,22 +65,30 @@ class AssessmentResultStep extends StatelessWidget {
 
     // 4. PAL (Physical Activity Level)
     double pal = 1.55;
+    String activityTitle;
     switch (activityCode.toUpperCase()) {
       case 'SEDENTARY':
         pal = 1.2;
+        activityTitle = 'Ít vận động (Ngồi nhiều)';
         break;
       case 'LIGHT':
         pal = 1.375;
+        activityTitle = 'Nhẹ nhàng (1 - 3 buổi/tuần)';
         break;
       case 'MODERATE':
         pal = 1.55;
+        activityTitle = 'Vừa phải (3 - 5 buổi/tuần)';
         break;
       case 'ACTIVE':
         pal = 1.725;
+        activityTitle = 'Nhiều (6 - 7 buổi/tuần)';
         break;
       case 'VERY_ACTIVE':
         pal = 1.9;
+        activityTitle = 'Rất nhiều (Cường độ cao)';
         break;
+      default:
+        activityTitle = 'Vừa phải (3 - 5 buổi/tuần)';
     }
 
     // 5. TDEE Calculation
@@ -151,25 +159,34 @@ class AssessmentResultStep extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              gradient: LinearGradient(
+              gradient: const LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [const Color(0xFF1E293B), const Color(0xFF0F172A)],
+                colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
               ),
               borderRadius: BorderRadius.circular(24),
-              boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.12), blurRadius: 16, offset: const Offset(0, 8))],
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.12),
+                  blurRadius: 16,
+                  offset: const Offset(0, 8),
+                ),
+              ],
             ),
             child: Column(
               children: [
                 Container(
                   padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.1), shape: BoxShape.circle),
-                  child: const Icon(Icons.auto_awesome, color: Color(0xFFF59E0B), size: 32),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.auto_awesome_rounded, color: Color(0xFFF59E0B), size: 30),
                 ),
                 const SizedBox(height: 12),
                 Text(
                   'Phân Tích Thể Trạng Hoàn Tất',
-                  style: GoogleFonts.beVietnamPro(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.white),
+                  style: GoogleFonts.beVietnamPro(fontSize: 19, fontWeight: FontWeight.bold, color: Colors.white),
                 ),
                 const SizedBox(height: 6),
                 Text(
@@ -184,32 +201,41 @@ class AssessmentResultStep extends StatelessWidget {
 
           // Evaluation Banner Card
           Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: bmiColor.withOpacity(0.08),
+              color: bmiColor.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: bmiColor.withOpacity(0.3), width: 1.5),
+              border: Border.all(color: bmiColor.withValues(alpha: 0.3), width: 1.5),
             ),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
                   padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(color: bmiColor.withOpacity(0.18), shape: BoxShape.circle),
-                  child: Icon(bmiIcon, color: bmiColor, size: 26),
+                  decoration: BoxDecoration(
+                    color: bmiColor.withValues(alpha: 0.18),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(bmiIcon, color: bmiColor, size: 24),
                 ),
-                const SizedBox(width: 14),
+                const SizedBox(width: 12),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
+                      Wrap(
+                        crossAxisAlignment: WrapCrossAlignment.center,
+                        spacing: 8,
+                        runSpacing: 4,
                         children: [
                           Text(
                             'Đánh giá BMI:',
-                            style: GoogleFonts.beVietnamPro(fontSize: 13, color: const Color(0xFF64748B)),
+                            style: GoogleFonts.beVietnamPro(
+                              fontSize: 13,
+                              color: const Color(0xFF64748B),
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
-                          const SizedBox(width: 6),
                           Container(
                             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
                             decoration: BoxDecoration(color: bmiColor, borderRadius: BorderRadius.circular(12)),
@@ -224,7 +250,7 @@ class AssessmentResultStep extends StatelessWidget {
                           ),
                         ],
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: 8),
                       Text(
                         bmiDescription,
                         style: GoogleFonts.beVietnamPro(
@@ -309,35 +335,53 @@ class AssessmentResultStep extends StatelessWidget {
               color: Colors.white,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(color: Colors.grey.shade200),
-              boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 10, offset: const Offset(0, 4))],
+              boxShadow: [
+                BoxShadow(color: Colors.grey.shade100, blurRadius: 10, offset: const Offset(0, 4)),
+              ],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.flag_rounded, color: AppTheme.primary, size: 20),
-                    const SizedBox(width: 8),
+                    Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: AppTheme.primary.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: const Icon(Icons.flag_rounded, color: AppTheme.primary, size: 18),
+                    ),
+                    const SizedBox(width: 10),
                     Text(
                       'Lộ Trình & Thể Trạng Đã Đăng Ký',
                       style: GoogleFonts.beVietnamPro(
-                        fontSize: 14,
+                        fontSize: 14.5,
                         fontWeight: FontWeight.bold,
                         color: const Color(0xFF1E293B),
                       ),
                     ),
                   ],
                 ),
-                const Divider(height: 20),
-                _buildInfoRow('Mục tiêu thể hình:', goalTitle),
-                const SizedBox(height: 8),
-                _buildInfoRow('Cân nặng hiện tại:', '${weight.toInt()} kg'),
-                const SizedBox(height: 8),
-                _buildInfoRow('Chiều cao / Độ tuổi:', '${height.toInt()} cm • $age tuổi (${isMale ? 'Nam' : 'Nữ'})'),
-                if (state.targetWeight != null) ...[
-                  const SizedBox(height: 8),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(height: 1),
+                ),
+                _buildInfoRow('Mục tiêu thể hình:', goalTitle, isHighlight: true),
+                const SizedBox(height: 10),
+                _buildInfoRow('Giới tính:', isMale ? 'Nam' : 'Nữ'),
+                const SizedBox(height: 10),
+                _buildInfoRow('Độ tuổi:', '$age tuổi'),
+                const SizedBox(height: 10),
+                _buildInfoRow('Chiều cao:', '${height.toInt()} cm'),
+                const SizedBox(height: 10),
+                _buildInfoRow('Cân nặng hiện tại:', '${weight.toStringAsFixed(1).replaceAll('.0', '')} kg'),
+                if (state.targetWeight > 0) ...[
+                  const SizedBox(height: 10),
                   _buildInfoRow('Cân nặng mục tiêu:', '${state.targetWeight} kg'),
                 ],
+                const SizedBox(height: 10),
+                _buildInfoRow('Mức độ vận động:', activityTitle),
               ],
             ),
           ),
@@ -370,12 +414,14 @@ class AssessmentResultStep extends StatelessWidget {
     required Color accentColor,
   }) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: Colors.grey.shade200),
-        boxShadow: [BoxShadow(color: Colors.grey.shade100, blurRadius: 8, offset: const Offset(0, 3))],
+        boxShadow: [
+          BoxShadow(color: Colors.grey.shade100, blurRadius: 8, offset: const Offset(0, 3)),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -397,58 +443,82 @@ class AssessmentResultStep extends StatelessWidget {
               ),
               const SizedBox(width: 4),
               Container(
-                padding: const EdgeInsets.all(6),
+                padding: const EdgeInsets.all(5),
                 decoration: BoxDecoration(
-                  color: accentColor.withOpacity(0.12),
-                  borderRadius: BorderRadius.circular(10),
+                  color: accentColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(8),
                 ),
-                child: Icon(icon, color: accentColor, size: 16),
+                child: Icon(icon, color: accentColor, size: 15),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.baseline,
-            textBaseline: TextBaseline.alphabetic,
-            children: [
-              Flexible(
-                child: Text(
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text(
                   value,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
                   style: GoogleFonts.beVietnamPro(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: const Color(0xFF0F172A),
                   ),
                 ),
-              ),
-              const SizedBox(width: 4),
-              Text(unit, style: GoogleFonts.beVietnamPro(fontSize: 10, color: const Color(0xFF94A3B8))),
-            ],
+                const SizedBox(width: 4),
+                Text(
+                  unit,
+                  style: GoogleFonts.beVietnamPro(fontSize: 10.5, color: const Color(0xFF94A3B8)),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 4),
           Text(
             subtitle,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.beVietnamPro(fontSize: 11, fontWeight: FontWeight.w500, color: accentColor),
+            style: GoogleFonts.beVietnamPro(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: accentColor,
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildInfoRow(String label, String value) {
+  Widget _buildInfoRow(String label, String value, {bool isHighlight = false}) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: GoogleFonts.beVietnamPro(fontSize: 13, color: const Color(0xFF64748B))),
         Text(
-          value,
-          style: GoogleFonts.beVietnamPro(fontSize: 13, fontWeight: FontWeight.bold, color: const Color(0xFF1E293B)),
+          label,
+          style: GoogleFonts.beVietnamPro(
+            fontSize: 13,
+            color: const Color(0xFF64748B),
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: GoogleFonts.beVietnamPro(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: isHighlight ? AppTheme.primary : const Color(0xFF1E293B),
+              height: 1.3,
+            ),
+          ),
         ),
       ],
     );
   }
 }
+

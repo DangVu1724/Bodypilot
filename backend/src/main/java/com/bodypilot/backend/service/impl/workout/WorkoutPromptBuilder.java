@@ -52,6 +52,10 @@ public class WorkoutPromptBuilder {
                     .append(profile.getActivityLevel() != null ? translateActivityLevel(profile.getActivityLevel())
                             : "Chưa cập nhật")
                     .append("\n");
+            boolean isExperienced = Boolean.TRUE.equals(profile.getHasExperience());
+            sb.append("- Kinh nghiệm tập luyện: ")
+                    .append(isExperienced ? "Đã có kinh nghiệm tập luyện" : "Người mới bắt đầu (Chưa từng tập)")
+                    .append("\n");
         }
 
         if (goal != null) {
@@ -87,6 +91,19 @@ public class WorkoutPromptBuilder {
         }
 
         sb.append("\nYêu cầu định dạng đầu ra:\n");
+        boolean isExperienced = profile != null && Boolean.TRUE.equals(profile.getHasExperience());
+        if (!isExperienced) {
+            sb.append("LƯU Ý QUAN TRỌNG VỀ ĐỘ KHÓ: Người dùng là NGƯỜI MỚI BẮT ĐẦU (Chưa từng tập).\n")
+              .append("- Ưu tiên bài tập cơ bản, máy tập cố định hoặc bodyweight dễ thực hiện.\n")
+              .append("- Số hiệp tập vừa phải (2 - 3 sets/bài), số lần lặp an toàn (10 - 15 reps), thời gian nghỉ đầy đủ (60 - 90 giây).\n")
+              .append("- Mức tạ ban đầu nhẹ nhàng hoặc vừa sức.\n")
+              .append("- Trong trường `notes`, hãy ghi chú ngắn gọn về kiểm soát nhịp thở, form chuẩn và an toàn khớp.\n\n");
+        } else {
+            sb.append("LƯU Ý QUAN TRỌNG VỀ ĐỘ KHÓ: Người dùng ĐÃ CÓ KINH NGHIỆM TẬP LUYỆN.\n")
+              .append("- Thiết kế chương trình có tính tăng tiến (Progressive Overload), kết hợp bài tập phức hợp (Compound) và cô lập (Isolation).\n")
+              .append("- Số hiệp 3 - 4 sets/bài, cường độ cao hơn, tối ưu áp lực kích thích phát triển cơ bắp/thể lực.\n\n");
+        }
+
         sb.append(
                 "Hãy tự thiết kế một lịch tập mới hoàn toàn sử dụng các bài tập trong danh sách ứng viên (CANDIDATES) ở trên để tạo lịch tập gợi ý trong ")
                 .append(days).append(" ngày liên tiếp bắt đầu từ ngày ").append(startDate).append(".\n");

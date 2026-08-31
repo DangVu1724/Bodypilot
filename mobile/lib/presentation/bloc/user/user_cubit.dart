@@ -89,6 +89,26 @@ class UserCubit extends Cubit<UserState> {
     }
   }
 
+  Future<bool> updateProfile(Map<String, dynamic> data) async {
+    final userId = TokenService.getUserId();
+    if (userId == null) {
+      emit(const UserError('User not logged in'));
+      return false;
+    }
+
+    try {
+      final updatedUser = await _userRepository.updateUserProfile(userId, data);
+      await TokenService.saveUserCache(updatedUser);
+      if (updatedUser.profile != null) {
+        await TokenService.setAssessmentCompleted(updatedUser.profile!.isAssessmentCompleted);
+      }
+      emit(UserLoaded(updatedUser));
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+
   void clear() {
     emit(UserInitial());
   }

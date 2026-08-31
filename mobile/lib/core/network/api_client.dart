@@ -3,6 +3,8 @@ import 'package:mobile/core/routes/app_pages.dart';
 import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/data/services/token_service.dart';
 
+import 'package:mobile/core/network/network_connectivity_service.dart';
+
 class ApiClient {
   late final Dio dio;
 
@@ -39,6 +41,17 @@ class ApiClient {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) {
+          // Chặn ngay lập tức các request khi thiết bị đang Offline để tránh spam và xung đột dữ liệu
+          if (!networkConnectivityService.isOnline) {
+            return handler.reject(
+              DioException(
+                requestOptions: options,
+                error: 'Không có kết nối mạng. Vui lòng kết nối Internet để thực hiện thao tác!',
+                type: DioExceptionType.connectionError,
+              ),
+            );
+          }
+
           final token = TokenService.getToken();
           if (token != null) {
             options.headers['Authorization'] = 'Bearer $token';

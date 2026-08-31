@@ -21,6 +21,15 @@ class UserRepository {
     }
   }
 
+  Future<UserModel> updateUserProfile(String userId, Map<String, dynamic> data) async {
+    try {
+      final response = await apiClient.put('/users/$userId/profile', data: data);
+      return UserModel.fromJson(response.data['data']);
+    } on DioException catch (e) {
+      throw Exception(e.response?.data['message'] ?? 'Network error');
+    }
+  }
+
   Future<List<HealthConditionModel>> getHealthConditions() async {
     try {
       final response = await apiClient.get('/health-conditions');

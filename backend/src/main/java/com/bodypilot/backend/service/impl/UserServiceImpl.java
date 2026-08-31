@@ -18,6 +18,13 @@ import java.util.List;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.bodypilot.backend.model.dto.nutrition.CalorieCalculationResult;
+import com.bodypilot.backend.model.dto.user.UpdateProfileRequest;
+import com.bodypilot.backend.model.enums.ActivityLevel;
+import com.bodypilot.backend.model.enums.Gender;
+import com.bodypilot.backend.service.CalorieCalculatorService;
+import org.springframework.transaction.annotation.Transactional;
+
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl implements UserService {
@@ -26,6 +33,7 @@ public class UserServiceImpl implements UserService {
     private final UserProfileRepository userProfileRepository;
     private final UserMetricHistoryRepository userMetricHistoryRepository;
     private final UserGoalRepository goalRepository;
+    private final CalorieCalculatorService calorieCalculatorService;
 
     @Override
     public User getById(UUID id) {
@@ -60,6 +68,93 @@ public class UserServiceImpl implements UserService {
         return userRepository.searchUsers(query).stream()
                 .map(this::mapToUserResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional
+    public UserResponse updateProfile(UUID userId, UpdateProfileRequest request) {
+        User user = getById(userId);
+        UserProfile profile = userProfileRepository.findByUserId(userId)
+                .orElse(UserProfile.builder().user(user).build());
+
+        if (request.getFullName() != null) {
+            profile.setFullName(request.getFullName().trim());
+        }
+        if (request.getGender() != null) {
+            profile.setGender(request.getGender());
+        }
+        if (request.getAge() != null) {
+            profile.setAge(request.getAge());
+        }
+        if (request.getHeightCm() != null) {
+            profile.setHeightCm(request.getHeightCm());
+        }
+        if (request.getWeight() != null) {
+            profile.setWeight(request.getWeight());
+        }
+        if (request.getActivityLevel() != null) {
+            profile.setActivityLevel(request.getActivityLevel());
+        }
+        if (request.getHasExperience() != null) {
+            profile.setHasExperience(request.getHasExperience());
+        }
+        if (request.getAvatarUrl() != null) {
+            profile.setAvatarUrl(request.getAvatarUrl());
+        }
+
+        userProfileRepository.save(profile);
+
+        // Recalculate metrics if physical metrics are present
+        if (profile.getWeight() != null && profile.getHeightCm() != null && profile.getAge() != null) {
+            UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
+                    .stream().findFirst().orElse(null);
+            String goalStr = activeGoal != null ? activeGoal.getType() : "MAINTAIN";
+
+            Gender enumGender = "Nam".equalsIgnoreCase(profile.getGender()) || "MALE".equalsIgnoreCase(profile.getGender())
+                    ? Gender.MALE
+                    : Gender.FEMALE;
+
+            ActivityLevel enumActivityLevel;
+            try {
+                enumActivityLevel = profile.getActivityLevel() != null
+                        ? ActivityLevel.valueOf(profile.getActivityLevel())
+                        : ActivityLevel.SEDENTARY;
+            } catch (Exception e) {
+                enumActivityLevel = ActivityLevel.SEDENTARY;
+            }
+
+            com.bodypilot.backend.model.enums.Goal enumGoal;
+            try {
+                enumGoal = com.bodypilot.backend.model.enums.Goal.valueOf(goalStr);
+            } catch (Exception e) {
+                enumGoal = com.bodypilot.backend.model.enums.Goal.MAINTAIN;
+            }
+
+            CalorieCalculationResult calculationResult = calorieCalculatorService.calculateMetrics(
+                    profile.getWeight(),
+                    profile.getHeightCm(),
+                    profile.getAge(),
+                    enumGender,
+                    enumActivityLevel,
+                    enumGoal);
+
+            UserMetricHistory newMetric = UserMetricHistory.builder()
+                    .user(user)
+                    .weight(profile.getWeight())
+                    .heightCm(profile.getHeightCm())
+                    .age(profile.getAge())
+                    .goal(goalStr)
+                    .activityLevel(profile.getActivityLevel())
+                    .bmi(calculationResult.getBmi())
+                    .bmr(calculationResult.getBmr())
+                    .tdee(calculationResult.getTdee())
+                    .targetCalories(calculationResult.getTargetCalories())
+                    .build();
+
+            userMetricHistoryRepository.save(newMetric);
+        }
+
+        return getUserDetails(userId);
     }
 
     private UserResponse mapToUserResponse(User user) {
@@ -98,6 +193,8 @@ public class UserServiceImpl implements UserService {
                 .profile(UserProfileResponse.builder()
                         .fullName(profile != null ? profile.getFullName() : null)
                         .avatarUrl(profile != null ? profile.getAvatarUrl() : null)
+                        .gender(profile != null ? profile.getGender() : null)
+                        .hasExperience(profile != null ? profile.getHasExperience() : null)
                         .isAssessmentCompleted(isProfileComplete(userId))
                         .build())
                 .metrics(metricsResponse)

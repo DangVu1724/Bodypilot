@@ -2,7 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mobile/core/network/network_connectivity_service.dart';
-import 'package:mobile/data/services/offline_sync_manager.dart';
 
 class OfflineBannerWidget extends StatefulWidget {
   final Widget child;
@@ -17,7 +16,6 @@ class _OfflineBannerWidgetState extends State<OfflineBannerWidget> {
   StreamSubscription<bool>? _sub;
   bool _isOnline = true;
   bool _showReconnectedBanner = false;
-  int _syncedCount = 0;
   Timer? _reconnectHideTimer;
 
   @override
@@ -25,25 +23,22 @@ class _OfflineBannerWidgetState extends State<OfflineBannerWidget> {
     super.initState();
     _isOnline = networkConnectivityService.isOnline;
 
-    _sub = networkConnectivityService.onConnectivityChanged.listen((isOnline) async {
+    _sub = networkConnectivityService.onConnectivityChanged.listen((isOnline) {
       if (!isOnline) {
         setState(() {
           _isOnline = false;
           _showReconnectedBanner = false;
         });
       } else {
-        // Reconnected to internet! Process offline queue
-        final synced = await OfflineSyncManager.processPendingQueue();
         if (mounted) {
           setState(() {
             _isOnline = true;
             _showReconnectedBanner = true;
-            _syncedCount = synced;
           });
         }
 
         _reconnectHideTimer?.cancel();
-        _reconnectHideTimer = Timer(const Duration(seconds: 4), () {
+        _reconnectHideTimer = Timer(const Duration(seconds: 3), () {
           if (mounted) {
             setState(() {
               _showReconnectedBanner = false;
@@ -102,9 +97,7 @@ class _OfflineBannerWidgetState extends State<OfflineBannerWidget> {
                   const Icon(Icons.check_circle_rounded, color: Colors.white, size: 16),
                   const SizedBox(width: 8),
                   Text(
-                    _syncedCount > 0
-                        ? 'Đã khôi phục kết nối. Đã đồng bộ $_syncedCount tác vụ thành công! 🟢'
-                        : 'Đã khôi phục kết nối Internet! 🟢',
+                    'Đã khôi phục kết nối Internet! 🟢',
                     style: GoogleFonts.plusJakartaSans(
                       color: Colors.white,
                       fontSize: 12,
