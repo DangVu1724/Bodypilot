@@ -45,14 +45,28 @@ public class StepServiceImpl implements StepService {
                 .orElseGet(() -> UserStepHistory.builder()
                         .user(user)
                         .date(syncDate)
+                        .stepCount(0)
+                        .caloriesBurned(0.0)
+                        .distanceKm(0.0)
                         .build());
 
-        entity.setStepCount(steps);
-        entity.setCaloriesBurned(calories);
-        entity.setDistanceKm(distance);
+        int currentSteps = entity.getStepCount() != null ? entity.getStepCount() : 0;
+        int effectiveSteps = Math.max(currentSteps, steps);
+
+        double effectiveCalories = (request.getCaloriesBurned() != null && request.getCaloriesBurned() > 0)
+                ? Math.max(entity.getCaloriesBurned() != null ? entity.getCaloriesBurned() : 0.0, request.getCaloriesBurned())
+                : effectiveSteps * 0.04;
+
+        double effectiveDistance = (request.getDistanceKm() != null && request.getDistanceKm() > 0)
+                ? Math.max(entity.getDistanceKm() != null ? entity.getDistanceKm() : 0.0, request.getDistanceKm())
+                : effectiveSteps * 0.00075;
+
+        entity.setStepCount(effectiveSteps);
+        entity.setCaloriesBurned(effectiveCalories);
+        entity.setDistanceKm(effectiveDistance);
 
         UserStepHistory saved = stepHistoryRepository.save(entity);
-        log.info("Synced {} steps for user {} on {}", steps, userId, syncDate);
+        log.info("Synced {} steps (effective: {}) for user {} on {}", steps, effectiveSteps, userId, syncDate);
 
         return mapToDTO(saved);
     }

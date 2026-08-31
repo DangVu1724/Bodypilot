@@ -67,12 +67,13 @@ class StepTrackerService {
 
     // Case 1: First time app initialization
     if (baseline < 0 || lastRaw < 0) {
-      baseline = rawHardwareSteps;
+      final int initialToday = (savedDate == todayStr && savedTodaySteps > 0) ? savedTodaySteps : 0;
+      baseline = (rawHardwareSteps >= initialToday) ? (rawHardwareSteps - initialToday) : rawHardwareSteps;
       await prefs.setString(_baselineDateKey, todayStr);
       await prefs.setInt(_baselineStepsKey, baseline);
       await prefs.setInt(_lastRawStepsKey, rawHardwareSteps);
-      await prefs.setInt(_todayStepsKey, 0);
-      return 0;
+      await prefs.setInt(_todayStepsKey, initialToday);
+      return initialToday;
     }
 
     // Case 2: Device reboot detected (raw hardware counter reset to smaller number)
@@ -102,6 +103,27 @@ class StepTrackerService {
     final int todaySteps = (rawHardwareSteps - baseline).clamp(0, 1000000);
     await prefs.setInt(_todayStepsKey, todaySteps);
     return todaySteps;
+  }
+
+  Future<void> restoreTodaySteps(int backendSteps) async {
+    if (backendSteps <= 0) return;
+    final prefs = await SharedPreferences.getInstance();
+    final String todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final String? savedDate = prefs.getString(_baselineDateKey);
+    final int currentSaved = (savedDate == todayStr) ? (prefs.getInt(_todayStepsKey) ?? 0) : 0;
+
+    if (currentSaved >= backendSteps) {
+      return;
+    }
+
+    final int lastRaw = prefs.getInt(_lastRawStepsKey) ?? -1;
+    await prefs.setString(_baselineDateKey, todayStr);
+    await prefs.setInt(_todayStepsKey, backendSteps);
+
+    if (lastRaw >= backendSteps) {
+      final int newBaseline = lastRaw - backendSteps;
+      await prefs.setInt(_baselineStepsKey, newBaseline);
+    }
   }
 
   Future<int> getSavedTodaySteps() async {

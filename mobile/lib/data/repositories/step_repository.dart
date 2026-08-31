@@ -54,6 +54,16 @@ class StepRepository {
     return null;
   }
 
+  Future<StepHistoryModel?> getTodaySteps(String userId) async {
+    try {
+      final response = await apiClient.get('/users/$userId/steps/today');
+      if (response.data['success'] == true && response.data['data'] != null) {
+        return StepHistoryModel.fromJson(response.data['data']);
+      }
+    } catch (_) {}
+    return null;
+  }
+
   Future<List<StepHistoryModel>> getStepHistory(
     String userId, {
     DateTime? startDate,

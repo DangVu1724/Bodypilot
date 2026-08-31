@@ -10,6 +10,7 @@ import 'package:mobile/presentation/bloc/checkin/checkin_cubit.dart';
 import 'package:mobile/presentation/bloc/food/food_cubit.dart';
 import 'package:mobile/presentation/bloc/meal/meal_cubit.dart';
 import 'package:mobile/presentation/bloc/notification/notification_cubit.dart';
+import 'package:mobile/presentation/bloc/step/step_cubit.dart';
 import 'package:mobile/presentation/bloc/user/user_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_diary_cubit.dart';
 import 'package:mobile/presentation/bloc/workout/workout_plan_cubit.dart';
@@ -36,6 +37,7 @@ class LoginView extends StatelessWidget {
           context.read<FoodCubit>().init();
           context.read<WorkoutPlanCubit>().fetchPlansFull(forceRefresh: true);
           context.read<NotificationCubit>().loadNotificationsForUser();
+          context.read<StepCubit>().init();
 
           final now = DateTime.now();
           final monday = now.subtract(Duration(days: now.weekday - 1));

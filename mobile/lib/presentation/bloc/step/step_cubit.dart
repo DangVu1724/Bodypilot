@@ -26,21 +26,34 @@ class StepCubit extends Cubit<StepState> with WidgetsBindingObserver {
     if (savedSteps > state.steps) {
       emit(state.copyWith(steps: savedSteps));
     }
-    syncTodayStepsToBackend(state.steps);
+    if (state.steps > 0) {
+      syncTodayStepsToBackend(state.steps);
+    }
     fetchStepHistory();
   }
 
   Future<void> init() async {
     final savedSteps = await _stepTrackerService.getSavedTodaySteps();
-    emit(state.copyWith(steps: savedSteps));
-    syncTodayStepsToBackend(savedSteps);
-    fetchStepHistory();
+    int currentSteps = savedSteps;
+    emit(state.copyWith(steps: currentSteps));
+
+    final userId = TokenService.getUserId();
+    if (userId != null && userId.isNotEmpty) {
+      // 1. Fetch today's steps already recorded on the server
+      final backendToday = await stepRepository.getTodaySteps(userId);
+      if (backendToday != null && backendToday.stepCount > currentSteps) {
+        currentSteps = backendToday.stepCount;
+        await _stepTrackerService.restoreTodaySteps(currentSteps);
+        emit(state.copyWith(steps: currentSteps));
+      }
+      fetchStepHistory();
+    }
 
     _stepTrackerService.initStepTracker(
       onStepCountUpdated: (todaySteps) {
         emit(state.copyWith(steps: todaySteps, isPermissionGranted: true));
         // Sync to backend if step count changed significantly (>= 50 steps) or first time
-        if (_lastSyncedSteps < 0 || (todaySteps - _lastSyncedSteps).abs() >= 50) {
+        if (todaySteps > 0 && (_lastSyncedSteps < 0 || (todaySteps - _lastSyncedSteps).abs() >= 50)) {
           syncTodayStepsToBackend(todaySteps);
         }
       },
@@ -57,6 +70,7 @@ class StepCubit extends Cubit<StepState> with WidgetsBindingObserver {
   }
 
   Future<void> syncTodayStepsToBackend(int steps) async {
+    if (steps <= 0) return;
     final userId = TokenService.getUserId();
     if (userId == null || userId.isEmpty) return;
 
