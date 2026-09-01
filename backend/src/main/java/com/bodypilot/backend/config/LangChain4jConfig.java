@@ -2,6 +2,9 @@ package com.bodypilot.backend.config;
 
 import java.time.Duration;
 
+import javax.sql.DataSource;
+
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -10,11 +13,13 @@ import com.bodypilot.backend.rag.FitnessAiAssistant;
 
 import dev.langchain4j.data.segment.TextSegment;
 import dev.langchain4j.model.chat.ChatLanguageModel;
+import dev.langchain4j.model.embedding.AllMiniLmL6V2QuantizedEmbeddingModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
-import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
+import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore;
 
 @Configuration
 public class LangChain4jConfig {
@@ -25,17 +30,18 @@ public class LangChain4jConfig {
     @Value("${gemini.model:gemini-1.5-flash}")
     private String geminiModel;
 
-    @Value("${gemini.embedding.model:gemini-embedding-2}")
-    private String geminiEmbeddingModel;
-
     @Value("${gemini.api.baseUrl:https://generativelanguage.googleapis.com/v1beta/openai/}")
     private String geminiBaseUrl;
 
+    /**
+     * Chat Model: Kết nối Google Gemini qua OpenAI-compatible REST Endpoint
+     */
     @Bean
     public ChatLanguageModel langChain4jChatModel() {
         String apiKey = (geminiApiKey != null && !geminiApiKey.trim().isEmpty()) ? geminiApiKey.trim() : "demo";
         String model = (geminiModel != null && !geminiModel.trim().isEmpty()) ? geminiModel.trim() : "gemini-1.5-flash";
-        String baseUrl = (geminiBaseUrl != null && !geminiBaseUrl.trim().isEmpty()) ? geminiBaseUrl.trim() : "https://generativelanguage.googleapis.com/v1beta/openai/";
+        String baseUrl = (geminiBaseUrl != null && !geminiBaseUrl.trim().isEmpty()) ? geminiBaseUrl.trim()
+                : "https://generativelanguage.googleapis.com/v1beta/openai/";
 
         return OpenAiChatModel.builder()
                 .baseUrl(baseUrl)
@@ -46,29 +52,37 @@ public class LangChain4jConfig {
                 .build();
     }
 
+    /**
+     * Embedding Model: Chạy Local trong JVM bằng mô hình Quantized INT8 siêu nhẹ (~23MB)
+     */
     @Bean
     public EmbeddingModel langChain4jEmbeddingModel() {
-        // Model embedding chạy Local trong Java (ONNX), hoàn toàn miễn phí & không giới hạn
-        return new dev.langchain4j.model.embedding.AllMiniLmL6V2EmbeddingModel();
+        return new AllMiniLmL6V2QuantizedEmbeddingModel();
     }
 
+    /**
+     * Vector Store: Lưu trữ và tìm kiếm vector trong PostgreSQL (pgvector extension)
+     */
     @Bean
-    public EmbeddingStore<TextSegment> embeddingStore(javax.sql.DataSource dataSource) {
+    public EmbeddingStore<TextSegment> embeddingStore(DataSource dataSource) {
         try {
-            return dev.langchain4j.store.embedding.pgvector.PgVectorEmbeddingStore.datasourceBuilder()
+            return PgVectorEmbeddingStore.datasourceBuilder()
                     .datasource(dataSource)
                     .table("vector_store")
                     .dimension(384)
                     .createTable(true)
-                    .dropTableFirst(false)
+                    .dropTableFirst(true)
                     .build();
         } catch (Exception e) {
-            org.slf4j.LoggerFactory.getLogger(LangChain4jConfig.class)
+            LoggerFactory.getLogger(LangChain4jConfig.class)
                     .warn("Không thể khởi tạo PgVectorEmbeddingStore, fallback về InMemoryEmbeddingStore: {}", e.getMessage());
-            return new dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore<>();
+            return new InMemoryEmbeddingStore<>();
         }
     }
 
+    /**
+     * AI Service: Fitness Assistant tích hợp RAG
+     */
     @Bean
     public FitnessAiAssistant fitnessAiAssistant(ChatLanguageModel langChain4jChatModel) {
         return AiServices.builder(FitnessAiAssistant.class)
@@ -76,4 +90,3 @@ public class LangChain4jConfig {
                 .build();
     }
 }
-
