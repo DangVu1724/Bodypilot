@@ -98,7 +98,7 @@ public class ChatbotServiceImpl implements ChatbotService {
             reply = "Xin lỗi bạn, tôi gặp sự cố nhỏ khi kết nối dữ liệu AI. Bạn có thể lặp lại câu hỏi được không?";
         }
 
-        reply = cleanReplyText(reply);
+        reply = (reply != null) ? reply.trim() : "";
 
         long elapsedTime = System.currentTimeMillis() - startTime;
         log.info("Hoàn thành trả lời chatbot trong {} ms", elapsedTime);
@@ -110,16 +110,17 @@ public class ChatbotServiceImpl implements ChatbotService {
     }
 
     /**
-     * Hybrid RAG Retrieval: Kết hợp tra cứu SQL Relational + Vector Similarity
-     * Search
+     * Hybrid RAG Retrieval: Kết hợp SQL Relational + Vector Similarity Search
+     * Đã tối ưu: Dynamic Routing, Khử trùng lặp (Deduplication) và Tinh gọn Token.
      */
     private String retrieveRelevantDatabaseContext(String userQuery) {
         if (userQuery == null || userQuery.trim().isEmpty()) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
+        Set<String> retrievedNames = new HashSet<>();
 
-        // Nhánh 1: SQL Keyword Search (Lấy thông số chính xác từng gram / kcal)
+        // Nhánh 1: SQL Keyword Search (Lấy tối đa 5 món ăn & 5 bài tập chính xác)
         List<String> keywords = extractKeywords(userQuery);
         Pageable limitFive = PageRequest.of(0, 5);
 
@@ -131,23 +132,10 @@ public class ChatbotServiceImpl implements ChatbotService {
                     matchedFoods.addAll(foods.getContent());
                 }
             } catch (Exception e) {
-                log.warn("Lỗi tra cứu món ăn RAG với từ khóa '{}': {}", kw, e.getMessage());
+                log.warn("Lỗi tra cứu món ăn SQL: {}", e.getMessage());
             }
             if (matchedFoods.size() >= 5) {
                 break;
-            }
-        }
-
-        if (!matchedFoods.isEmpty()) {
-            sb.append("\n[DỮ LIỆU SQL TRỰC TIẾP TỪ DATABASE BODYPILOT]:\n");
-            for (Food f : matchedFoods.stream().limit(5).collect(Collectors.toList())) {
-                sb.append("- Món: ").append(f.getName())
-                        .append(" | Calo/100g: ").append(f.getCaloriesPer100g() != null ? f.getCaloriesPer100g() : 0)
-                        .append(" kcal")
-                        .append(" | Protein: ").append(f.getProteinPer100g() != null ? f.getProteinPer100g() : 0)
-                        .append("g")
-                        .append(" | Carbs: ").append(f.getCarbsPer100g() != null ? f.getCarbsPer100g() : 0).append("g")
-                        .append(" | Fat: ").append(f.getFatPer100g() != null ? f.getFatPer100g() : 0).append("g\n");
             }
         }
 
@@ -159,34 +147,58 @@ public class ChatbotServiceImpl implements ChatbotService {
                     matchedExercises.addAll(exercises.getContent());
                 }
             } catch (Exception e) {
-                log.warn("Lỗi tra cứu bài tập RAG với từ khóa '{}': {}", kw, e.getMessage());
+                log.warn("Lỗi tra cứu bài tập SQL: {}", e.getMessage());
             }
             if (matchedExercises.size() >= 5) {
                 break;
             }
         }
 
+        // 1. Tinh gọn định dạng dữ liệu SQL (Compact Text Format)
+        if (!matchedFoods.isEmpty()) {
+            sb.append("\n[DỮ LIỆU MÓN ĂN TỪ DATABASE BODYPILOT]:\n");
+            for (Food f : matchedFoods.stream().limit(5).collect(Collectors.toList())) {
+                retrievedNames.add(f.getName().toLowerCase().trim());
+                sb.append("• ").append(f.getName())
+                        .append(": ").append(f.getCaloriesPer100g() != null ? f.getCaloriesPer100g() : 0)
+                        .append(" kcal/100g")
+                        .append(" (P: ").append(f.getProteinPer100g() != null ? f.getProteinPer100g() : 0).append("g")
+                        .append(", C: ").append(f.getCarbsPer100g() != null ? f.getCarbsPer100g() : 0).append("g")
+                        .append(", F: ").append(f.getFatPer100g() != null ? f.getFatPer100g() : 0).append("g)\n");
+            }
+        }
+
         if (!matchedExercises.isEmpty()) {
-            sb.append("\n[DỮ LIỆU BÀI TẬP SQL TÌM THẤY TRONG DATABASE]:\n");
+            sb.append("\n[DỮ LIỆU BÀI TẬP TỪ DATABASE BODYPILOT]:\n");
             for (Exercise ex : matchedExercises.stream().limit(5).collect(Collectors.toList())) {
-                sb.append("- Bài tập: ").append(ex.getName())
-                        .append(" | Danh mục: ")
-                        .append(ex.getCategory() != null ? ex.getCategory().getName() : "Thể hình")
-                        .append(" | Nhóm cơ chính: ")
+                retrievedNames.add(ex.getName().toLowerCase().trim());
+                sb.append("• ").append(ex.getName())
+                        .append(" | Nhóm cơ: ")
                         .append(ex.getTargetMuscle() != null ? ex.getTargetMuscle().getName() : "Chưa rõ")
-                        .append(" | Vùng cơ thể: ")
+                        .append(" | Vùng: ")
                         .append(ex.getBodyPart() != null ? ex.getBodyPart().getName() : "Chưa rõ\n");
             }
         }
 
-        // Nhánh 2: Vector Semantic Search (Tra cứu tương đồng ngữ nghĩa trong Vector
-        // Store)
-        if (vectorRagService.isIndexed()) {
+        // 2. Dynamic Routing & Deduplication: Chỉ gọi Vector Search khi SQL chưa đủ dữ
+        // liệu và lọc bỏ trùng lặp
+        boolean needMoreContext = (matchedFoods.size() < 3 && matchedExercises.size() < 2);
+        if (needMoreContext && vectorRagService.isIndexed()) {
             try {
-                List<String> vectorMatches = vectorRagService.searchSimilarContext(userQuery, 3);
-                if (!vectorMatches.isEmpty()) {
-                    sb.append("\n[DỮ LIỆU TƯƠNG ĐỒNG NGỮ NGHĨA TỪ VECTOR STORE (LANGCHAIN4J)]:\n");
-                    for (String text : vectorMatches) {
+                List<String> vectorMatches = vectorRagService.searchSimilarContext(userQuery, 5);
+                List<String> uniqueMatches = new ArrayList<>();
+
+                for (String text : vectorMatches) {
+                    // Khử trùng lặp: Nếu món/bài tập đã xuất hiện ở SQL thì bỏ qua
+                    boolean alreadyExists = retrievedNames.stream().anyMatch(name -> text.toLowerCase().contains(name));
+                    if (!alreadyExists) {
+                        uniqueMatches.add(text);
+                    }
+                }
+
+                if (!uniqueMatches.isEmpty()) {
+                    sb.append("\n[GỢI Ý TƯƠNG ĐỒNG BỔ SUNG TỪ VECTOR STORE]:\n");
+                    for (String text : uniqueMatches) {
                         sb.append("• ").append(text).append("\n");
                     }
                 }
@@ -230,39 +242,6 @@ public class ChatbotServiceImpl implements ChatbotService {
         return result;
     }
 
-    /**
-     * Chuẩn hóa văn bản phản hồi từ AI
-     */
-    private String cleanReplyText(String reply) {
-        if (reply == null || reply.trim().isEmpty()) {
-            return reply;
-        }
-        String trimmed = reply.trim();
-
-        if (trimmed.startsWith("```")) {
-            trimmed = trimmed.replaceAll("^```(?:json)?\\s*", "").replaceAll("\\s*```$", "").trim();
-        }
-
-        if (trimmed.startsWith("{") && trimmed.endsWith("}")) {
-            try {
-                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
-                com.fasterxml.jackson.databind.JsonNode node = mapper.readTree(trimmed);
-                if (node.has("response")) {
-                    return node.get("response").asText();
-                } else if (node.has("reply")) {
-                    return node.get("reply").asText();
-                } else if (node.has("message")) {
-                    return node.get("message").asText();
-                } else if (node.has("content")) {
-                    return node.get("content").asText();
-                } else if (node.has("text")) {
-                    return node.get("text").asText();
-                }
-            } catch (Exception ignored) {
-            }
-        }
-        return trimmed;
-    }
 
     /**
      * Chỉ gửi full user context ở đầu cuộc hội thoại hoặc định kỳ sau mỗi 4 tin
