@@ -21,17 +21,16 @@ import com.bodypilot.backend.model.dto.chat.ChatResponse;
 import com.bodypilot.backend.model.entity.nutrition.Food;
 import com.bodypilot.backend.model.entity.user.User;
 import com.bodypilot.backend.model.entity.user.UserAllergy;
-import com.bodypilot.backend.model.entity.user.UserCheckInHistory;
 import com.bodypilot.backend.model.entity.user.UserGoal;
 import com.bodypilot.backend.model.entity.user.UserInjury;
 import com.bodypilot.backend.model.entity.user.UserMetricHistory;
 import com.bodypilot.backend.model.entity.user.UserProfile;
 import com.bodypilot.backend.model.entity.workout.Exercise;
 import com.bodypilot.backend.rag.FitnessAiAssistant;
+import com.bodypilot.backend.rag.VectorRagService;
 import com.bodypilot.backend.repository.ExerciseRepository;
 import com.bodypilot.backend.repository.FoodRepository;
 import com.bodypilot.backend.repository.UserAllergyRepository;
-import com.bodypilot.backend.repository.UserCheckInHistoryRepository;
 import com.bodypilot.backend.repository.UserGoalRepository;
 import com.bodypilot.backend.repository.UserInjuryRepository;
 import com.bodypilot.backend.repository.UserMetricHistoryRepository;
@@ -46,7 +45,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ChatbotServiceImpl implements ChatbotService {
 
-    private final UserCheckInHistoryRepository userCheckInHistoryRepository;
     private final UserRepository userRepository;
     private final UserGoalRepository goalRepository;
     private final UserMetricHistoryRepository metricHistoryRepository;
@@ -54,15 +52,14 @@ public class ChatbotServiceImpl implements ChatbotService {
     private final UserInjuryRepository userInjuryRepository;
     private final FoodRepository foodRepository;
     private final ExerciseRepository exerciseRepository;
-    private final LlmRouterService llmRouterService;
     private final FitnessAiAssistant fitnessAiAssistant;
-    private final com.bodypilot.backend.rag.VectorRagService vectorRagService;
+    private final VectorRagService vectorRagService;
 
     @Override
     public ChatResponse processChat(UUID userId, ChatRequest request) {
         long startTime = System.currentTimeMillis();
-        log.info("💬 [AI_CHAT_START] Xử lý Hybrid RAG Chatbot cho userId={}, selectedModel={}, userQuery='{}'", userId,
-                request.getSelectedModel(), request.getUserQuery());
+        log.info("[AI_CHAT_START] Xử lý Hybrid RAG Chatbot cho userId={}, selectedModel={}, userQuery='{}'",
+                userId, request.getSelectedModel(), request.getUserQuery());
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
@@ -71,44 +68,33 @@ public class ChatbotServiceImpl implements ChatbotService {
         String userName = profile != null && profile.getFullName() != null ? profile.getFullName()
                 : "Người dùng BodyPilot";
 
-        // 1. Grounding Context String: Chỉ nạp đầy đủ Hồ sơ / Chỉ số / Dị ứng khi câu
-        // hỏi cần tư vấn cá nhân
+        // 1. Nạp ngữ cảnh người dùng: Chỉ nạp đầy đủ khi bắt đầu hội thoại hoặc sau mỗi
+        // 4 tin nhắn
         String userContext;
-        if (requiresPersonalProfile(request.getUserQuery())) {
+        if (shouldSendFullUserContext(request.getHistory())) {
             UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
                     .stream().findFirst().orElse(null);
             UserMetricHistory latestMetric = metricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)
                     .stream().findFirst().orElse(null);
             List<UserAllergy> allergies = allergyRepository.findAllByUserIdAndIsActiveTrue(userId);
             List<UserInjury> injuries = userInjuryRepository.findAllByUserId(userId);
-            UserCheckInHistory latestCheckIn = userCheckInHistoryRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
-                    .orElse(null);
 
-            userContext = buildUserContext(userName, activeGoal, latestMetric, allergies, injuries, latestCheckIn);
+            userContext = buildUserContext(userName, activeGoal, latestMetric, allergies, injuries);
         } else {
-            // Câu hỏi tra cứu kiến thức chung (vd: "100g ức gà bao nhiêu calo?"): chỉ gửi
-            // Tên để xưng hô, tiết kiệm tối đa token
             userContext = "Tên người dùng: " + userName + "\n";
         }
 
-        // 2. Hybrid RAG Retrieval Step: Kết hợp SQL Relational Search + Vector
-        // Similarity Search
+        // 2. Hybrid RAG: Kết hợp SQL Relational Search + Vector Semantic Search
         String retrievedDbContext = retrieveRelevantDatabaseContext(request.getUserQuery());
 
+        // 3. Gửi prompt đến LangChain4j FitnessAiAssistant
         String reply;
         try {
-            if ("LANGCHAIN4J".equalsIgnoreCase(request.getSelectedModel())) {
-                log.info("Xử lý câu hỏi chatbot qua LangChain4j...");
-                reply = fitnessAiAssistant.chat(userContext, retrievedDbContext, request.getUserQuery());
-            } else {
-                // 3. System Instruction với Guardrails + Hybrid RAG Context
-                String systemInstruction = buildSystemInstruction(userContext, retrievedDbContext);
-                String formattedPrompt = buildPromptWithHistory(request.getHistory(), request.getUserQuery());
-                reply = llmRouterService.routeChatRequest(request.getSelectedModel(), formattedPrompt,
-                        systemInstruction, false);
-            }
+            String formattedPrompt = buildPromptWithHistory(request.getHistory(), request.getUserQuery());
+            log.info("Xử lý câu hỏi chatbot qua LangChain4j FitnessAiAssistant...");
+            reply = fitnessAiAssistant.chat(userContext, retrievedDbContext, formattedPrompt);
         } catch (Exception e) {
-            log.error("Lỗi khi tạo phản hồi chatbot RAG: {}", e.getMessage());
+            log.error("Lỗi khi tạo phản hồi chatbot RAG qua LangChain4j: {}", e.getMessage(), e);
             reply = "Xin lỗi bạn, tôi gặp sự cố nhỏ khi kết nối dữ liệu AI. Bạn có thể lặp lại câu hỏi được không?";
         }
 
@@ -124,8 +110,8 @@ public class ChatbotServiceImpl implements ChatbotService {
     }
 
     /**
-     * Hybrid RAG Retrieval Step: Kết hợp tra cứu SQL Relational + Vector Similarity
-     * Search.
+     * Hybrid RAG Retrieval: Kết hợp tra cứu SQL Relational + Vector Similarity
+     * Search
      */
     private String retrieveRelevantDatabaseContext(String userQuery) {
         if (userQuery == null || userQuery.trim().isEmpty()) {
@@ -133,8 +119,7 @@ public class ChatbotServiceImpl implements ChatbotService {
         }
         StringBuilder sb = new StringBuilder();
 
-        // PART A: Relational SQL Keyword Search (Lấy số liệu chính xác từng gram /
-        // kcal)
+        // Nhánh 1: SQL Keyword Search (Lấy thông số chính xác từng gram / kcal)
         List<String> keywords = extractKeywords(userQuery);
         Pageable limitFive = PageRequest.of(0, 5);
 
@@ -146,10 +131,11 @@ public class ChatbotServiceImpl implements ChatbotService {
                     matchedFoods.addAll(foods.getContent());
                 }
             } catch (Exception e) {
-                log.warn("⚠️ Lỗi tra cứu món ăn RAG với từ khóa '{}': {}", kw, e.getMessage());
+                log.warn("Lỗi tra cứu món ăn RAG với từ khóa '{}': {}", kw, e.getMessage());
             }
-            if (matchedFoods.size() >= 5)
+            if (matchedFoods.size() >= 5) {
                 break;
+            }
         }
 
         if (!matchedFoods.isEmpty()) {
@@ -161,9 +147,7 @@ public class ChatbotServiceImpl implements ChatbotService {
                         .append(" | Protein: ").append(f.getProteinPer100g() != null ? f.getProteinPer100g() : 0)
                         .append("g")
                         .append(" | Carbs: ").append(f.getCarbsPer100g() != null ? f.getCarbsPer100g() : 0).append("g")
-                        .append(" | Fat: ").append(f.getFatPer100g() != null ? f.getFatPer100g() : 0).append("g");
-
-                sb.append("\n");
+                        .append(" | Fat: ").append(f.getFatPer100g() != null ? f.getFatPer100g() : 0).append("g\n");
             }
         }
 
@@ -175,10 +159,11 @@ public class ChatbotServiceImpl implements ChatbotService {
                     matchedExercises.addAll(exercises.getContent());
                 }
             } catch (Exception e) {
-                log.warn("⚠️ Lỗi tra cứu bài tập RAG với từ khóa '{}': {}", kw, e.getMessage());
+                log.warn("Lỗi tra cứu bài tập RAG với từ khóa '{}': {}", kw, e.getMessage());
             }
-            if (matchedExercises.size() >= 5)
+            if (matchedExercises.size() >= 5) {
                 break;
+            }
         }
 
         if (!matchedExercises.isEmpty()) {
@@ -190,14 +175,12 @@ public class ChatbotServiceImpl implements ChatbotService {
                         .append(" | Nhóm cơ chính: ")
                         .append(ex.getTargetMuscle() != null ? ex.getTargetMuscle().getName() : "Chưa rõ")
                         .append(" | Vùng cơ thể: ")
-                        .append(ex.getBodyPart() != null ? ex.getBodyPart().getName() : "Chưa rõ");
-
-                sb.append("\n");
+                        .append(ex.getBodyPart() != null ? ex.getBodyPart().getName() : "Chưa rõ\n");
             }
         }
 
-        // PART B: Vector Similarity Search (Chỉ chạy khi Vector Store đã hoàn tất Batch
-        // Indexing)
+        // Nhánh 2: Vector Semantic Search (Tra cứu tương đồng ngữ nghĩa trong Vector
+        // Store)
         if (vectorRagService.isIndexed()) {
             try {
                 List<String> vectorMatches = vectorRagService.searchSimilarContext(userQuery, 3);
@@ -210,17 +193,18 @@ public class ChatbotServiceImpl implements ChatbotService {
             } catch (Exception e) {
                 log.warn("Lỗi tra cứu Vector Store RAG: {}", e.getMessage());
             }
-        } else {
-            log.info(
-                    "[RAG_STATUS] Vector Store chưa hoàn tất Indexing, tự động chuyển sang luồng 1 (SQL + Gemini Grounding).");
         }
 
         return sb.toString();
     }
 
+    /**
+     * Bóc tách từ khóa tìm kiếm SQL (loại bỏ stopwords và tạo n-grams)
+     */
     private List<String> extractKeywords(String query) {
-        if (query == null)
+        if (query == null) {
             return List.of();
+        }
         String lower = query.toLowerCase().replaceAll("[?,.!;:()\\-]", " ");
 
         Set<String> stopWords = new HashSet<>(Arrays.asList(
@@ -246,6 +230,9 @@ public class ChatbotServiceImpl implements ChatbotService {
         return result;
     }
 
+    /**
+     * Chuẩn hóa văn bản phản hồi từ AI
+     */
     private String cleanReplyText(String reply) {
         if (reply == null || reply.trim().isEmpty()) {
             return reply;
@@ -277,39 +264,26 @@ public class ChatbotServiceImpl implements ChatbotService {
         return trimmed;
     }
 
-    private boolean requiresPersonalProfile(String query) {
-        if (query == null || query.trim().isEmpty())
-            return false;
-        String lower = query.toLowerCase();
-
-        // Kiểm tra các từ khóa thể hiện ý định tư vấn cá nhân / cho bản thân
-        return lower.contains("tôi") || lower.contains("toi")
-                || lower.contains("mình") || lower.contains("minh")
-                || lower.contains("của tôi") || lower.contains("của mình")
-                || lower.contains("cho tôi") || lower.contains("cho mình")
-                || lower.contains("hôm nay") || lower.contains("hom nay")
-                || lower.contains("thực đơn") || lower.contains("thuc don")
-                || lower.contains("lịch tập") || lower.contains("lich tap")
-                || lower.contains("gợi ý") || lower.contains("goi y")
-                || lower.contains("tư vấn") || lower.contains("tu van")
-                || lower.contains("phù hợp") || lower.contains("phu hop")
-                || lower.contains("mục tiêu") || lower.contains("muc tieu")
-                || lower.contains("giảm cân") || lower.contains("giam can")
-                || lower.contains("tăng cân") || lower.contains("tang can")
-                || lower.contains("tăng cơ") || lower.contains("tang co")
-                || lower.contains("bmi") || lower.contains("calo của")
-                || lower.contains("dị ứng") || lower.contains("chấn thương")
-                || lower.contains("sức khoẻ") || lower.contains("suc khoe");
+    /**
+     * Chỉ gửi full user context ở đầu cuộc hội thoại hoặc định kỳ sau mỗi 4 tin
+     * nhắn
+     */
+    private boolean shouldSendFullUserContext(List<ChatMessageDTO> history) {
+        if (history == null || history.isEmpty()) {
+            return true;
+        }
+        return history.size() % 4 == 0;
     }
 
+    /**
+     * Xây dựng chuỗi thông tin người dùng
+     */
     private String buildUserContext(String userName, UserGoal goal, UserMetricHistory metric,
-            List<UserAllergy> allergies, List<UserInjury> injuries, UserCheckInHistory latestCheckIn) {
+            List<UserAllergy> allergies, List<UserInjury> injuries) {
         StringBuilder sb = new StringBuilder();
         sb.append("Tên: ").append(userName).append("\n");
 
         if (metric != null) {
-            sb.append("Cân nặng: ").append(metric.getWeight()).append(" kg, ");
-            sb.append("Chiều cao: ").append(metric.getHeightCm()).append(" cm, ");
             sb.append("BMI: ").append(metric.getBmi() != null ? String.format("%.1f", metric.getBmi()) : "Chưa rõ")
                     .append(", ");
             sb.append("Target Calo hàng ngày: ")
@@ -338,52 +312,16 @@ public class ChatbotServiceImpl implements ChatbotService {
             sb.append("Chấn thương hiện tại: ").append(injuryList).append("\n");
         }
 
-        if (latestCheckIn != null) {
-            sb.append("[TRẠNG THÁI SỨC KHỎE & CHECK-IN GẦN NHẤT (").append(latestCheckIn.getCheckInDate())
-                    .append(")]:\n");
-            if (latestCheckIn.getEnergyLevel() != null) {
-                sb.append("- Mức năng lượng/thể trạng: ").append(latestCheckIn.getEnergyLevel()).append("\n");
-            }
-            if (latestCheckIn.getWorkoutState() != null) {
-                sb.append("- Trạng thái cơ bắp/tập luyện: ").append(latestCheckIn.getWorkoutState()).append("\n");
-            }
-            if (latestCheckIn.getHungerLevel() != null) {
-                sb.append("- Cảm giác thèm ăn/đói: ").append(latestCheckIn.getHungerLevel()).append("\n");
-            }
-            if (latestCheckIn.getNotes() != null && !latestCheckIn.getNotes().trim().isEmpty()) {
-                sb.append("- Ghi chú mệt mỏi/thể trạng từ người dùng: ").append(latestCheckIn.getNotes()).append("\n");
-            }
-        }
-
         return sb.toString();
     }
 
-    private String buildSystemInstruction(String userContext, String retrievedDbContext) {
-        return "Bạn là \"BodyPilot AI Coach\" - Trợ lý y tế, dinh dưỡng và huấn luyện viên cá nhân thông minh của ứng dụng BodyPilot.\n\n"
-                +
-                "[THÔNG TIN THỂ TRẠNG NGƯỜI DÙNG HẠN ĐỊNH]:\n" + userContext + "\n" +
-                (retrievedDbContext.isEmpty() ? "" : retrievedDbContext + "\n") +
-                "[PHẠM VI HỖ TRỢ CHỈ CHO PHÉP]:\n" +
-                "1. Tư vấn thực đơn, calo, dinh dưỡng, vóc dáng và phân bổ Macro (Protein, Fat, Carbs).\n" +
-                "2. Hướng dẫn kỹ thuật bài tập, lịch tập thể hình, cardio, giảm mỡ, tăng cơ.\n" +
-                "3. Tư vấn an toàn chấn thương thể thao & dị ứng thực phẩm.\n" +
-                "4. Giải đáp thắc mắc sử dụng ứng dụng BodyPilot.\n\n" +
-                "[QUY TẮC QUAN TRỌNG BẮT BUỘC (GUARDRAILS)]:\n" +
-                "1. Bạn CHỈ trả lời các câu hỏi NẰM TRONG phạm vi Dinh dưỡng, Tập luyện & BodyPilot.\n" +
-                "2. Nếu có [DỮ LIỆU THỰC ĐƠN / BÀI TẬP TÌM THẤY TRONG DATABASE BODYPILOT], hãy ưu tiên sử dụng thông số thực tế đó để trả lời chính xác cho người dùng.\n"
-                +
-                "3. Nếu người dùng hỏi chủ đề ngoài lề (như viết code, lập trình, giải toán, phim ảnh, chính trị, thời tiết...), bạn PHẢI TỪ CHỐI LỊCH SỰ theo đúng mẫu:\n"
-                +
-                "   \"Xin lỗi bạn, tôi là trợ lý AI chuyên biệt về Dinh Dưỡng & Tập Luyện của BodyPilot. Tôi không thể hỗ trợ các thắc mắc ngoài lĩnh vực sức khỏe và thể thao. Bạn có cần tôi hỗ trợ gì về thực đơn hay bài tập hôm nay không?\"\n"
-                +
-                "4. Trả lời thân thiện, xưng hô \"tôi\" và \"bạn\", ngắn gọn, dễ hiểu và cô đọng (dưới 150 từ), phù hợp đọc trên điện thoại di động.";
-    }
-
+    /**
+     * Ghép lịch sử hội thoại gần nhất (tối đa 4 tin nhắn) kèm câu hỏi mới
+     */
     private String buildPromptWithHistory(List<ChatMessageDTO> history, String userQuery) {
         StringBuilder sb = new StringBuilder();
 
         if (history != null && !history.isEmpty()) {
-            // Giữ tối đa 4 tin nhắn gần nhất để tiết kiệm token
             int start = Math.max(0, history.size() - 4);
             sb.append("[TÓM TẮT HỘI THOẠI TRƯỚC ĐÓ]:\n");
             for (int i = start; i < history.size(); i++) {

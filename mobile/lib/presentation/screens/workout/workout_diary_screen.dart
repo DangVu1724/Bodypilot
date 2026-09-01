@@ -397,113 +397,165 @@ class _WorkoutDiaryScreenState extends State<WorkoutDiaryScreen> {
       itemBuilder: (context, index) {
         final item = items[index];
 
-        final imageUrl = 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600';
-
-        return GestureDetector(
-          onTap: () {
-            final exercise = ExerciseModel(
-              id: item.exerciseId ?? '',
-              code: '',
-              name: item.exerciseNameSnapshot,
-              defaultDuration: item.durationMinutesSnapshot ?? 10,
-              durationUnit: 'min',
-              thumbnailUrl: imageUrl,
-            );
-            Navigator.of(context, rootNavigator: true).push(
-              MaterialPageRoute(
-                builder: (context) => ExerciseTimerScreen(
-                  exercise: exercise,
-                  dailyWorkoutItemId: item.id,
-                  selectedDate: selectedDate,
-                  sets: item.setsSnapshot,
-                  reps: item.repsSnapshot,
-                  restSeconds: item.restSecondsSnapshot,
-                ),
-              ),
-            );
-          },
-          child: Container(
-            height: 140,
-            margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              image: DecorationImage(image: NetworkImage(imageUrl), fit: BoxFit.cover),
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 6),
+          decoration: BoxDecoration(
+            color: item.isCompleted ? const Color(0xFF102A1A) : const Color(0xFF16181C),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: item.isCompleted
+                  ? const Color(0xFF22C55E).withValues(alpha: 0.35)
+                  : Colors.white.withValues(alpha: 0.08),
+              width: 1.2,
             ),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(20),
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [Colors.black.withValues(alpha: 0.15), Colors.black.withValues(alpha: 0.75)],
-                ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
               ),
-              child: Row(
-                children: [
-                  // Completed Toggle Button
-                  GestureDetector(
-                    onTap: () {
-                      if (item.id != null) {
-                        context.read<WorkoutDiaryCubit>().toggleExerciseStatus(item.id!, !item.isCompleted, selectedDate);
-                      }
-                    },
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(20),
+              onTap: () {
+                final exercise = ExerciseModel(
+                  id: item.exerciseId ?? '',
+                  code: '',
+                  name: item.exerciseNameSnapshot,
+                  defaultDuration: item.durationMinutesSnapshot ?? 10,
+                  durationUnit: 'min',
+                  thumbnailUrl: null,
+                );
+                Navigator.of(context, rootNavigator: true).push(
+                  MaterialPageRoute(
+                    builder: (context) => ExerciseTimerScreen(
+                      exercise: exercise,
+                      dailyWorkoutItemId: item.id,
+                      selectedDate: selectedDate,
+                      sets: item.setsSnapshot,
+                      reps: item.repsSnapshot,
+                      restSeconds: item.restSecondsSnapshot,
+                    ),
+                  ),
+                );
+              },
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Exercise Icon Badge
+                    Container(
+                      width: 48,
+                      height: 48,
                       decoration: BoxDecoration(
-                        color: item.isCompleted ? Colors.green : Colors.black.withValues(alpha: 0.35),
-                        shape: BoxShape.circle,
+                        color: item.isCompleted
+                            ? const Color(0xFF22C55E).withValues(alpha: 0.15)
+                            : const Color(0xFFFF7A30).withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(14),
                       ),
-                      child: Icon(item.isCompleted ? Icons.check : Icons.radio_button_unchecked, color: Colors.white, size: 24),
+                      child: Icon(
+                        item.isCompleted ? Icons.check_circle_rounded : Icons.fitness_center_rounded,
+                        color: item.isCompleted ? const Color(0xFF22C55E) : const Color(0xFFFF7A30),
+                        size: 24,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 16),
-  
-                  // Text details
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          item.exerciseNameSnapshot,
-                          style: const TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 6),
-                        // Parameter stats
-                        Text(
-                          _buildParamString(item),
-                          style: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            const Icon(Icons.local_fire_department, color: Colors.orange, size: 14),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${item.caloriesBurnedSnapshot.toStringAsFixed(0)} kcal',
-                              style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.bold),
+                    const SizedBox(width: 14),
+
+                    // Exercise Details
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            item.exerciseNameSnapshot,
+                            style: GoogleFonts.workSans(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              decoration: item.isCompleted ? TextDecoration.lineThrough : null,
+                              decorationColor: Colors.white54,
                             ),
-                          ],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          // Parameter stats
+                          Text(
+                            _buildParamString(item),
+                            style: TextStyle(
+                              color: Colors.white.withValues(alpha: 0.7),
+                              fontSize: 12,
+                              height: 1.3,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 6),
+                          // Calories badge
+                          Row(
+                            children: [
+                              const Icon(Icons.local_fire_department, color: Color(0xFFFF7A30), size: 14),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${item.caloriesBurnedSnapshot.toStringAsFixed(0)} kcal',
+                                style: const TextStyle(
+                                  color: Color(0xFFFF7A30),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 8),
+
+                    // Complete Checkbox Action
+                    GestureDetector(
+                      onTap: () {
+                        if (item.id != null) {
+                          context.read<WorkoutDiaryCubit>().toggleExerciseStatus(item.id!, !item.isCompleted, selectedDate);
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: item.isCompleted
+                              ? const Color(0xFF22C55E)
+                              : Colors.white.withValues(alpha: 0.08),
+                          shape: BoxShape.circle,
                         ),
-                      ],
+                        child: Icon(
+                          item.isCompleted ? Icons.check : Icons.radio_button_unchecked,
+                          color: item.isCompleted ? Colors.white : Colors.white54,
+                          size: 20,
+                        ),
+                      ),
                     ),
-                  ),
-  
-                  // More Options Vert icon
-                  GestureDetector(
-                    onTap: () => _showItemOptions(context, item, selectedDate),
-                    child: Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.35), shape: BoxShape.circle),
-                      child: const Icon(Icons.more_vert, color: Colors.white, size: 20),
+
+                    const SizedBox(width: 6),
+
+                    // More Options Icon
+                    GestureDetector(
+                      onTap: () => _showItemOptions(context, item, selectedDate),
+                      child: Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.05),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(Icons.more_vert, color: Colors.white70, size: 18),
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

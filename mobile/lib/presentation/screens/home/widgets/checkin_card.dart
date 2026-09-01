@@ -79,6 +79,15 @@ class CheckInCard extends StatelessWidget {
 
           final isMealDone = TokenService.isMealCheckInDone();
           final isWorkoutDone = TokenService.isWorkoutCheckInDone();
+          final isDone = isMealDone && isWorkoutDone;
+
+          final now = DateTime.now();
+          final isSundayOrMonday = (now.weekday == DateTime.sunday || now.weekday == DateTime.monday);
+
+          // Nếu chưa check-in và hôm nay KHÔNG PHẢI là Chủ Nhật hoặc Thứ Hai thì ẩn card đi
+          if (!isDone && !isSundayOrMonday) {
+            return const SizedBox.shrink();
+          }
 
           return Container(
             margin: const EdgeInsets.only(bottom: 24),
@@ -87,14 +96,14 @@ class CheckInCard extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: (isMealDone && isWorkoutDone)
+                colors: isDone
                     ? [const Color(0xFF0D9488), const Color(0xFF14B8A6)]
                     : [const Color(0xFFFF7E5F), const Color(0xFFFEB47B)],
               ),
               borderRadius: BorderRadius.circular(24),
               boxShadow: [
                 BoxShadow(
-                  color: ((isMealDone && isWorkoutDone) ? const Color(0xFF0D9488) : const Color(0xFFFF7E5F)).withValues(alpha: 0.35),
+                  color: (isDone ? const Color(0xFF0D9488) : const Color(0xFFFF7E5F)).withValues(alpha: 0.35),
                   blurRadius: 16,
                   offset: const Offset(0, 8),
                 ),
@@ -109,7 +118,7 @@ class CheckInCard extends StatelessWidget {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.25), shape: BoxShape.circle),
                       child: Icon(
-                        (isMealDone && isWorkoutDone) ? Icons.task_alt_rounded : Icons.auto_awesome_rounded,
+                        isDone ? Icons.task_alt_rounded : Icons.auto_awesome_rounded,
                         color: Colors.white,
                         size: 26,
                       ),
@@ -120,16 +129,16 @@ class CheckInCard extends StatelessWidget {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            (isMealDone && isWorkoutDone)
-                                ? 'Đã Tổng Kết Check-in Tuần'
-                                : 'Check-in Chủ Nhật Hàng Tuần',
+                            isDone
+                                ? 'Tổng Kết Check-in Tuần'
+                                : 'Check-in Tổng Kết Tuần',
                             style: AppTheme.headlineStyle.copyWith(color: Colors.white, fontSize: 17),
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            (isMealDone && isWorkoutDone)
+                            isDone
                                 ? 'Bấm vào từng mục bên dưới để xem lại thông số & đánh giá từ AI!'
-                                : 'Tổng kết & Cập nhật chỉ số để AI tối ưu kế hoạch tuần tới cho bạn!',
+                                : 'Tổng kết & cập nhật chỉ số để AI tối ưu kế hoạch tuần tới cho bạn!',
                             style: GoogleFonts.inter(
                               color: Colors.white.withValues(alpha: 0.92),
                               fontSize: 12.5,

@@ -102,7 +102,7 @@ class _FoodListScreenState extends State<FoodListScreen> {
       padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 10, offset: const Offset(0, 5))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.02), blurRadius: 10, offset: const Offset(0, 5))],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -152,10 +152,11 @@ class _FoodListScreenState extends State<FoodListScreen> {
     return BlocBuilder<FoodCubit, FoodState>(
       builder: (context, globalState) {
         final filteredCategories = globalState.categories.where((c) {
+          final appliesTo = c.appliesTo.toUpperCase();
           if (widget.type == 'DISH') {
-            return c.appliesTo == 'DISH' || c.appliesTo == 'BOTH';
+            return appliesTo == 'DISH' || appliesTo == 'BOTH';
           } else if (widget.type == 'INGREDIENT') {
-            return c.appliesTo == 'INGREDIENT' || c.appliesTo == 'BOTH';
+            return appliesTo == 'INGREDIENT' || appliesTo == 'BOTH';
           }
           return true;
         }).toList();
@@ -341,7 +342,7 @@ class _DishListItem extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(24),
                 gradient: LinearGradient(
-                  colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                  colors: [Colors.black.withValues(alpha: 0.7), Colors.transparent],
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
                 ),
@@ -359,7 +360,7 @@ class _DishListItem extends StatelessWidget {
                     children: [
                       Text(
                         '${food.caloriesPer100g.toStringAsFixed(0)}kcal',
-                        style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.7), fontSize: 12),
+                        style: AppTheme.bodyStyle.copyWith(color: Colors.white.withValues(alpha: 0.7), fontSize: 12),
                       ),
                     ],
                   ),
@@ -386,7 +387,7 @@ class _IngredientGridItem extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+          boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 10, offset: const Offset(0, 5))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

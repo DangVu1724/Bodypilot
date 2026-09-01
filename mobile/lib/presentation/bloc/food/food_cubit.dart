@@ -12,8 +12,8 @@ class FoodCubit extends Cubit<FoodState> {
 
   Future<void> init() async {
     await loadCategories();
-    // 1. Quick Load for Home Screen
-    await searchFoods(size: 20);
+    // 1. Quick Load for Home Screen (Lấy đủ cả Món ăn & Nguyên liệu)
+    await searchFoods(size: 60);
     // 2. Batched Background Prefetch for Local SQLite Cache (Chunks of 100)
     _startBackgroundBatchSync();
   }

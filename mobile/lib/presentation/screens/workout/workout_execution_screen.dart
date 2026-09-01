@@ -306,8 +306,7 @@ class _WorkoutExecutionScreenState extends State<WorkoutExecutionScreen> {
 
   Widget _buildExerciseHeaderCard(dynamic currentEx) {
     final String name = currentEx.exercise.name;
-    final String thumbUrl = currentEx.exercise.thumbnailUrl ??
-        'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=800&q=80';
+    final String thumbUrl = currentEx.exercise.displayImageUrl;
     final double met = currentEx.exercise.metValue ?? 5.0;
 
     return Container(

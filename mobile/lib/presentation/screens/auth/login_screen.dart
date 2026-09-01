@@ -30,6 +30,7 @@ class LoginView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocListener<LoginCubit, LoginState>(
+      listenWhen: (previous, current) => previous.status != current.status,
       listener: (context, state) {
         if (state.status == LoginStatus.success) {
           context.read<UserCubit>().fetchUserProfile();
@@ -102,7 +103,7 @@ class LoginView extends StatelessWidget {
                   ),
                 ],
               ),
-              duration: const Duration(seconds: 4),
+              duration: const Duration(seconds: 1),
             ),
           );
         }

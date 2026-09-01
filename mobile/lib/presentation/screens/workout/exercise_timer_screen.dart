@@ -235,7 +235,7 @@ class _ExerciseTimerScreenState extends State<ExerciseTimerScreen> {
               BlendMode.darken,
             ),
             child: Image.network(
-              widget.exercise.thumbnailUrl ?? 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=800&q=80',
+              widget.exercise.displayImageUrl,
               fit: BoxFit.cover,
             ),
           ),

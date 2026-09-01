@@ -16,11 +16,21 @@ class LoginCubit extends Cubit<LoginState> {
   }
 
   void emailChanged(String value) {
-    emit(state.copyWith(email: value, isValidEmail: _validateEmail(value)));
+    emit(state.copyWith(
+      email: value,
+      isValidEmail: _validateEmail(value),
+      status: state.status == LoginStatus.failure ? LoginStatus.initial : state.status,
+      errorMessage: state.status == LoginStatus.failure ? null : state.errorMessage,
+    ));
   }
 
   void passwordChanged(String value) {
-    emit(state.copyWith(password: value, isValidPassword: _validatePassword(value)));
+    emit(state.copyWith(
+      password: value,
+      isValidPassword: _validatePassword(value),
+      status: state.status == LoginStatus.failure ? LoginStatus.initial : state.status,
+      errorMessage: state.status == LoginStatus.failure ? null : state.errorMessage,
+    ));
   }
 
   void togglePasswordVisibility() {

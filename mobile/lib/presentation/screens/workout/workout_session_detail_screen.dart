@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:core_shared/models/workout_session_model.dart';
+import 'package:flutter/material.dart';
 import 'package:mobile/core/theme/app_theme.dart';
+
 import 'exercise_detail_screen.dart';
 import 'workout_execution_screen.dart';
 
@@ -18,9 +19,9 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
         totalDuration += ex.durationMinutes ?? 0;
       }
     }
-    
+
     // Fallback if duration is 0
-    if (totalDuration == 0) totalDuration = 45; 
+    if (totalDuration == 0) totalDuration = 45;
 
     return Scaffold(
       backgroundColor: Colors.white,
@@ -44,18 +45,14 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
                   gradient: LinearGradient(
                     begin: Alignment.topCenter,
                     end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withOpacity(0.4),
-                      Colors.black.withOpacity(0.1),
-                      Colors.white,
-                    ],
+                    colors: [Colors.black.withOpacity(0.4), Colors.black.withOpacity(0.1), Colors.white],
                     stops: const [0.0, 0.4, 1.0],
                   ),
                 ),
               ),
             ),
           ),
-          
+
           // Content
           CustomScrollView(
             slivers: [
@@ -103,7 +100,7 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
                         style: AppTheme.bodyStyle.copyWith(color: Colors.white.withOpacity(0.8)),
                       ),
                       const SizedBox(height: 40),
-                      
+
                       // White rounded container starts here
                       Container(
                         decoration: const BoxDecoration(
@@ -119,7 +116,7 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
                               style: AppTheme.bodyStyle.copyWith(color: AppTheme.textSecondary),
                             ),
                             const SizedBox(height: 32),
-                            
+
                             // Stats row
                             Row(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -130,14 +127,14 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
                               ],
                             ),
                             const SizedBox(height: 40),
-                            
+
                             // Exercise List
                             ListView.builder(
                               shrinkWrap: true,
                               physics: const NeverScrollableScrollPhysics(),
                               itemCount: session.exercises?.length ?? 0,
                               itemBuilder: (context, index) {
-                                  final ex = session.exercises![index];
+                                final ex = session.exercises![index];
                                 return _buildExerciseItem(context, ex, index + 1);
                               },
                             ),
@@ -151,7 +148,7 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
               ),
             ],
           ),
-          
+
           // Bottom Button
           Positioned(
             bottom: 30,
@@ -159,11 +156,9 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
             right: 24,
             child: ElevatedButton(
               onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) => WorkoutExecutionScreen(session: session),
-                  ),
-                );
+                Navigator.of(
+                  context,
+                ).push(MaterialPageRoute(builder: (context) => WorkoutExecutionScreen(session: session)));
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppTheme.primary,
@@ -173,10 +168,7 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Text(
-                    'Start Workout',
-                    style: AppTheme.semiboldStyle.copyWith(color: Colors.white, fontSize: 18),
-                  ),
+                  Text('Start Workout', style: AppTheme.semiboldStyle.copyWith(color: Colors.white, fontSize: 18)),
                   const SizedBox(width: 8),
                   const Icon(Icons.timer_outlined, color: Colors.white),
                 ],
@@ -203,19 +195,15 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
   Widget _buildExerciseItem(BuildContext context, dynamic ex, int number) {
     return GestureDetector(
       onTap: () {
-        Navigator.of(context, rootNavigator: true).push(
-          MaterialPageRoute(
-            builder: (context) => ExerciseDetailScreen(exercise: ex.exercise),
-          ),
-        );
+        Navigator.of(
+          context,
+          rootNavigator: true,
+        ).push(MaterialPageRoute(builder: (context) => ExerciseDetailScreen(exercise: ex.exercise)));
       },
       child: Container(
         margin: const EdgeInsets.only(bottom: 16),
         padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: AppTheme.surface,
-          borderRadius: BorderRadius.circular(20),
-        ),
+        decoration: BoxDecoration(color: AppTheme.surface, borderRadius: BorderRadius.circular(20)),
         child: Row(
           children: [
             // Thumbnail with play button
@@ -228,17 +216,17 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
                     image: DecorationImage(
-                      image: NetworkImage(ex.exercise.thumbnailUrl ?? 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=200&q=80'),
+                      image: NetworkImage(
+                        ex.exercise.displayImageUrl ??
+                            'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=200&q=80',
+                      ),
                       fit: BoxFit.cover,
                     ),
                   ),
                 ),
                 Container(
                   padding: const EdgeInsets.all(4),
-                  decoration: const BoxDecoration(
-                    color: AppTheme.primary,
-                    shape: BoxShape.circle,
-                  ),
+                  decoration: const BoxDecoration(color: AppTheme.primary, shape: BoxShape.circle),
                   child: const Icon(Icons.play_arrow, color: Colors.white, size: 20),
                 ),
               ],
@@ -250,20 +238,14 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
                 children: [
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.grey.shade200,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
+                    decoration: BoxDecoration(color: Colors.grey.shade200, borderRadius: BorderRadius.circular(8)),
                     child: Text(
                       'Exercise $number',
                       style: AppTheme.semiboldStyle.copyWith(color: AppTheme.textSecondary, fontSize: 10),
                     ),
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    ex.exercise.name,
-                    style: AppTheme.semiboldStyle.copyWith(fontSize: 16),
-                  ),
+                  Text(ex.exercise.name, style: AppTheme.semiboldStyle.copyWith(fontSize: 16)),
                   const SizedBox(height: 4),
                   Row(
                     children: [
@@ -288,7 +270,11 @@ class WorkoutSessionDetailScreen extends StatelessWidget {
                       const SizedBox(width: 4),
                       Text(
                         'Nghỉ: ${ex.restSeconds ?? 60}s',
-                        style: AppTheme.bodyStyle.copyWith(color: Colors.blue.shade700, fontSize: 12, fontWeight: FontWeight.w500),
+                        style: AppTheme.bodyStyle.copyWith(
+                          color: Colors.blue.shade700,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),

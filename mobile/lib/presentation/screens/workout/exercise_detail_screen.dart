@@ -1,5 +1,6 @@
 import 'package:core_shared/models/exercise_model.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:youtube_player_flutter/youtube_player_flutter.dart';
 import '../../../../core/theme/app_theme.dart';
 import 'exercise_timer_screen.dart';
@@ -14,34 +15,39 @@ class ExerciseDetailScreen extends StatefulWidget {
 }
 
 class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
-  late YoutubePlayerController _controller;
+  YoutubePlayerController? _controller;
   bool _isPlayerReady = false;
+  bool _hasValidVideo = false;
 
   @override
   void initState() {
     super.initState();
-    final videoId = YoutubePlayer.convertUrlToId(widget.exercise.mediaUrl ?? '') ?? '';
-    _controller = YoutubePlayerController(
-      initialVideoId: videoId,
-      flags: const YoutubePlayerFlags(autoPlay: false, mute: false, isLive: false),
-    )..addListener(_listener);
+    final rawUrl = widget.exercise.mediaUrl ?? '';
+    final videoId = YoutubePlayer.convertUrlToId(rawUrl);
+    _hasValidVideo = videoId != null && videoId.isNotEmpty;
+    if (_hasValidVideo) {
+      _controller = YoutubePlayerController(
+        initialVideoId: videoId!,
+        flags: const YoutubePlayerFlags(autoPlay: false, mute: false, isLive: false),
+      )..addListener(_listener);
+    }
   }
 
   void _listener() {
-    if (_isPlayerReady && mounted && !_controller.value.isFullScreen) {
+    if (_isPlayerReady && mounted && _controller != null && !_controller!.value.isFullScreen) {
       setState(() {});
     }
   }
 
   @override
   void deactivate() {
-    _controller.pause();
+    _controller?.pause();
     super.deactivate();
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
@@ -105,7 +111,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
       leading: Padding(
         padding: const EdgeInsets.all(8.0),
         child: CircleAvatar(
-          backgroundColor: Colors.white.withOpacity(0.3),
+          backgroundColor: Colors.white.withValues(alpha: 0.3),
           child: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => Navigator.pop(context),
@@ -119,6 +125,10 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
             Image.network(
               widget.exercise.displayImageUrl,
               fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) => Container(
+                color: const Color(0xFF1E293B),
+                child: const Icon(Icons.fitness_center_rounded, color: Colors.white70, size: 64),
+              ),
             ),
             const DecoratedBox(
               decoration: BoxDecoration(
@@ -147,7 +157,7 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: AppTheme.primary.withOpacity(0.1),
+                color: AppTheme.primary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
@@ -235,15 +245,15 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
+        color: color.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.1)),
+        border: Border.all(color: color.withValues(alpha: 0.1)),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(10),
-            decoration: BoxDecoration(color: color.withOpacity(0.1), shape: BoxShape.circle),
+            decoration: BoxDecoration(color: color.withValues(alpha: 0.1), shape: BoxShape.circle),
             child: Icon(icon, color: color, size: 20),
           ),
           const SizedBox(width: 16),
@@ -298,10 +308,6 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
   }
 
   Widget _buildVideoSection() {
-    if (widget.exercise.mediaUrl == null || widget.exercise.mediaUrl!.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -309,24 +315,57 @@ class _ExerciseDetailScreenState extends State<ExerciseDetailScreen> {
           children: [
             const Icon(Icons.videocam_outlined, color: AppTheme.primary),
             const SizedBox(width: 8),
-            Text('Video Tutorial', style: AppTheme.headlineStyle.copyWith(fontSize: 18)),
+            Text('Video Hướng Dẫn', style: AppTheme.headlineStyle.copyWith(fontSize: 18)),
           ],
         ),
         const SizedBox(height: 16),
-        Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 20, offset: const Offset(0, 10))],
-          ),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(20),
-            child: YoutubePlayer(
-              controller: _controller,
-              showVideoProgressIndicator: true,
-              onReady: () => _isPlayerReady = true,
+        if (_hasValidVideo && _controller != null)
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.1), blurRadius: 20, offset: const Offset(0, 10))],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(20),
+              child: YoutubePlayer(
+                controller: _controller!,
+                showVideoProgressIndicator: true,
+                onReady: () => _isPlayerReady = true,
+              ),
+            ),
+          )
+        else
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF8FAFC),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: const Color(0xFFE2E8F0)),
+            ),
+            child: Column(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.grey.shade200,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(Icons.videocam_off_rounded, color: Colors.grey.shade500, size: 28),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  'Hiện chưa có video hướng dẫn cho bài tập này',
+                  style: GoogleFonts.workSans(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF64748B),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+              ],
             ),
           ),
-        ),
       ],
     );
   }

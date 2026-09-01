@@ -14,8 +14,6 @@ class WorkoutDayCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const imageUrl = 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=600';
-
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       decoration: BoxDecoration(
@@ -29,9 +27,18 @@ class WorkoutDayCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.network(imageUrl, width: 60, height: 60, fit: BoxFit.cover),
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF7A30).withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.fitness_center_rounded,
+                color: Color(0xFFFF7A30),
+                size: 26,
+              ),
             ),
             const SizedBox(width: 16),
             Expanded(
