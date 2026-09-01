@@ -69,11 +69,11 @@ public class VectorRagService {
         }
 
         long startTime = System.currentTimeMillis();
-        log.info("[VECTOR_RAG_START] Dang tu dong Batch Index du lieu Mon an & Bai tap vao Vector Store...");
+        log.info("[VECTOR_RAG_START] Dang tu dong Batch Index du lieu Mon an (Recommended) & Bai tap vao Vector Store...");
 
         try {
-            // 1. Chuyển đổi dữ liệu Món ăn song song (Parallel Stream)
-            List<Food> foods = foodRepository.findAllWithRelations();
+            // 1. Chỉ lấy các Món ăn được đánh dấu Gợi ý (isRecommended = true)
+            List<Food> foods = foodRepository.findAllRecommendedWithRelations();
             List<TextSegment> foodSegments = foods.parallelStream().map(f -> {
                 String text = String.format(
                         "Món ăn / Dinh dưỡng: %s. Calo/100g: %s kcal. Protein: %sg, Carbs: %sg, Fat: %sg. %s",

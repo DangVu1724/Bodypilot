@@ -10,7 +10,7 @@ import 'package:mobile/presentation/screens/meal/widgets/dashboard/calorie_dashb
 import 'package:mobile/presentation/screens/meal/widgets/dashboard/weight_goal_card.dart';
 import 'package:mobile/presentation/screens/meal/widgets/sections/browse_meals_list.dart';
 import 'package:mobile/presentation/screens/meal/widgets/sections/meal_plan_section.dart';
-import 'package:mobile/presentation/screens/workout/widgets/ai_suggestion/ai_suggestion_banner.dart';
+import 'package:mobile/presentation/screens/meal/widgets/ai_suggestion/ai_suggestion_banner.dart';
 import 'package:mobile/presentation/widgets/hero_profile_avatar.dart';
 
 class MealScreen extends StatefulWidget {

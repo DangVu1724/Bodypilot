@@ -39,13 +39,14 @@ public interface ExerciseRepository extends JpaRepository<Exercise, UUID> {
        @EntityGraph(attributePaths = { "category", "bodyPart", "targetMuscle" })
        @Query("SELECT e FROM Exercise e")
        java.util.List<Exercise> findAllWithRelations();
+
        @EntityGraph(attributePaths = { "category", "bodyPart" })
        @Query("SELECT e FROM Exercise e")
        java.util.List<Exercise> findAllWithCategory();
 
        @Query("SELECT new com.bodypilot.backend.model.dto.admin.AdminStatsDTO$CategoryStatItem(" +
-              "COALESCE(c.name, bp.name, 'Khác'), COUNT(e), 0.0) " +
-              "FROM Exercise e LEFT JOIN e.category c LEFT JOIN e.bodyPart bp " +
-              "GROUP BY COALESCE(c.name, bp.name, 'Khác') ORDER BY COUNT(e) DESC")
+                     "COALESCE(c.name, bp.name, 'Khác'), COUNT(e), 0.0) " +
+                     "FROM Exercise e LEFT JOIN e.category c LEFT JOIN e.bodyPart bp " +
+                     "GROUP BY COALESCE(c.name, bp.name, 'Khác') ORDER BY COUNT(e) DESC")
        java.util.List<com.bodypilot.backend.model.dto.admin.AdminStatsDTO.CategoryStatItem> findExerciseCategoryCounts();
 }

@@ -1,25 +1,45 @@
 package com.bodypilot.backend.service.impl;
 
-import com.bodypilot.backend.exception.ResourceNotFoundException;
-import com.bodypilot.backend.model.dto.chat.ChatMessageDTO;
-import com.bodypilot.backend.model.dto.chat.ChatRequest;
-import com.bodypilot.backend.model.dto.chat.ChatResponse;
-import com.bodypilot.backend.model.entity.nutrition.Food;
-import com.bodypilot.backend.model.entity.user.*;
-import com.bodypilot.backend.model.entity.workout.Exercise;
-import com.bodypilot.backend.repository.*;
-import com.bodypilot.backend.service.ChatbotService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
-import java.util.*;
-import java.util.stream.Collectors;
-
+import com.bodypilot.backend.exception.ResourceNotFoundException;
+import com.bodypilot.backend.model.dto.chat.ChatMessageDTO;
+import com.bodypilot.backend.model.dto.chat.ChatRequest;
+import com.bodypilot.backend.model.dto.chat.ChatResponse;
+import com.bodypilot.backend.model.entity.nutrition.Food;
+import com.bodypilot.backend.model.entity.user.User;
+import com.bodypilot.backend.model.entity.user.UserAllergy;
+import com.bodypilot.backend.model.entity.user.UserCheckInHistory;
+import com.bodypilot.backend.model.entity.user.UserGoal;
+import com.bodypilot.backend.model.entity.user.UserInjury;
+import com.bodypilot.backend.model.entity.user.UserMetricHistory;
+import com.bodypilot.backend.model.entity.user.UserProfile;
+import com.bodypilot.backend.model.entity.workout.Exercise;
 import com.bodypilot.backend.rag.FitnessAiAssistant;
+import com.bodypilot.backend.repository.ExerciseRepository;
+import com.bodypilot.backend.repository.FoodRepository;
+import com.bodypilot.backend.repository.UserAllergyRepository;
+import com.bodypilot.backend.repository.UserCheckInHistoryRepository;
+import com.bodypilot.backend.repository.UserGoalRepository;
+import com.bodypilot.backend.repository.UserInjuryRepository;
+import com.bodypilot.backend.repository.UserMetricHistoryRepository;
+import com.bodypilot.backend.repository.UserRepository;
+import com.bodypilot.backend.service.ChatbotService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
 @RequiredArgsConstructor
@@ -41,25 +61,38 @@ public class ChatbotServiceImpl implements ChatbotService {
     @Override
     public ChatResponse processChat(UUID userId, ChatRequest request) {
         long startTime = System.currentTimeMillis();
-        log.info("💬 [AI_CHAT_START] Xử lý Hybrid RAG Chatbot cho userId={}, selectedModel={}, userQuery='{}'", userId, request.getSelectedModel(), request.getUserQuery());
+        log.info("💬 [AI_CHAT_START] Xử lý Hybrid RAG Chatbot cho userId={}, selectedModel={}, userQuery='{}'", userId,
+                request.getSelectedModel(), request.getUserQuery());
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
 
         UserProfile profile = user.getProfile();
-        UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
-                .stream().findFirst().orElse(null);
-        UserMetricHistory latestMetric = metricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)
-                .stream().findFirst().orElse(null);
+        String userName = profile != null && profile.getFullName() != null ? profile.getFullName()
+                : "Người dùng BodyPilot";
 
-        List<UserAllergy> allergies = allergyRepository.findAllByUserIdAndIsActiveTrue(userId);
-        List<UserInjury> injuries = userInjuryRepository.findAllByUserId(userId);
-        UserCheckInHistory latestCheckIn = userCheckInHistoryRepository.findTopByUserIdOrderByCreatedAtDesc(userId).orElse(null);
+        // 1. Grounding Context String: Chỉ nạp đầy đủ Hồ sơ / Chỉ số / Dị ứng khi câu
+        // hỏi cần tư vấn cá nhân
+        String userContext;
+        if (requiresPersonalProfile(request.getUserQuery())) {
+            UserGoal activeGoal = goalRepository.findByUserIdAndStatus(userId, "ACTIVE")
+                    .stream().findFirst().orElse(null);
+            UserMetricHistory latestMetric = metricHistoryRepository.findByUserIdOrderByCreatedAtDesc(userId)
+                    .stream().findFirst().orElse(null);
+            List<UserAllergy> allergies = allergyRepository.findAllByUserIdAndIsActiveTrue(userId);
+            List<UserInjury> injuries = userInjuryRepository.findAllByUserId(userId);
+            UserCheckInHistory latestCheckIn = userCheckInHistoryRepository.findTopByUserIdOrderByCreatedAtDesc(userId)
+                    .orElse(null);
 
-        // 1. Grounding Context String (Hồ sơ người dùng + Lần Check-in mới nhất)
-        String userContext = buildUserContext(profile, activeGoal, latestMetric, allergies, injuries, latestCheckIn);
+            userContext = buildUserContext(userName, activeGoal, latestMetric, allergies, injuries, latestCheckIn);
+        } else {
+            // Câu hỏi tra cứu kiến thức chung (vd: "100g ức gà bao nhiêu calo?"): chỉ gửi
+            // Tên để xưng hô, tiết kiệm tối đa token
+            userContext = "Tên người dùng: " + userName + "\n";
+        }
 
-        // 2. Hybrid RAG Retrieval Step: Kết hợp SQL Relational Search + Vector Similarity Search
+        // 2. Hybrid RAG Retrieval Step: Kết hợp SQL Relational Search + Vector
+        // Similarity Search
         String retrievedDbContext = retrieveRelevantDatabaseContext(request.getUserQuery());
 
         String reply;
@@ -71,7 +104,8 @@ public class ChatbotServiceImpl implements ChatbotService {
                 // 3. System Instruction với Guardrails + Hybrid RAG Context
                 String systemInstruction = buildSystemInstruction(userContext, retrievedDbContext);
                 String formattedPrompt = buildPromptWithHistory(request.getHistory(), request.getUserQuery());
-                reply = llmRouterService.routeChatRequest(request.getSelectedModel(), formattedPrompt, systemInstruction, false);
+                reply = llmRouterService.routeChatRequest(request.getSelectedModel(), formattedPrompt,
+                        systemInstruction, false);
             }
         } catch (Exception e) {
             log.error("Lỗi khi tạo phản hồi chatbot RAG: {}", e.getMessage());
@@ -90,7 +124,8 @@ public class ChatbotServiceImpl implements ChatbotService {
     }
 
     /**
-     * Hybrid RAG Retrieval Step: Kết hợp tra cứu SQL Relational + Vector Similarity Search.
+     * Hybrid RAG Retrieval Step: Kết hợp tra cứu SQL Relational + Vector Similarity
+     * Search.
      */
     private String retrieveRelevantDatabaseContext(String userQuery) {
         if (userQuery == null || userQuery.trim().isEmpty()) {
@@ -98,7 +133,8 @@ public class ChatbotServiceImpl implements ChatbotService {
         }
         StringBuilder sb = new StringBuilder();
 
-        // PART A: Relational SQL Keyword Search (Lấy số liệu chính xác từng gram / kcal)
+        // PART A: Relational SQL Keyword Search (Lấy số liệu chính xác từng gram /
+        // kcal)
         List<String> keywords = extractKeywords(userQuery);
         Pageable limitFive = PageRequest.of(0, 5);
 
@@ -112,17 +148,22 @@ public class ChatbotServiceImpl implements ChatbotService {
             } catch (Exception e) {
                 log.warn("⚠️ Lỗi tra cứu món ăn RAG với từ khóa '{}': {}", kw, e.getMessage());
             }
-            if (matchedFoods.size() >= 5) break;
+            if (matchedFoods.size() >= 5)
+                break;
         }
 
         if (!matchedFoods.isEmpty()) {
             sb.append("\n[DỮ LIỆU SQL TRỰC TIẾP TỪ DATABASE BODYPILOT]:\n");
             for (Food f : matchedFoods.stream().limit(5).collect(Collectors.toList())) {
                 sb.append("- Món: ").append(f.getName())
-                  .append(" | Calo/100g: ").append(f.getCaloriesPer100g() != null ? f.getCaloriesPer100g() : 0).append(" kcal")
-                  .append(" | Protein: ").append(f.getProteinPer100g() != null ? f.getProteinPer100g() : 0).append("g")
-                  .append(" | Carbs: ").append(f.getCarbsPer100g() != null ? f.getCarbsPer100g() : 0).append("g")
-                  .append(" | Fat: ").append(f.getFatPer100g() != null ? f.getFatPer100g() : 0).append("g\n");
+                        .append(" | Calo/100g: ").append(f.getCaloriesPer100g() != null ? f.getCaloriesPer100g() : 0)
+                        .append(" kcal")
+                        .append(" | Protein: ").append(f.getProteinPer100g() != null ? f.getProteinPer100g() : 0)
+                        .append("g")
+                        .append(" | Carbs: ").append(f.getCarbsPer100g() != null ? f.getCarbsPer100g() : 0).append("g")
+                        .append(" | Fat: ").append(f.getFatPer100g() != null ? f.getFatPer100g() : 0).append("g");
+
+                sb.append("\n");
             }
         }
 
@@ -136,20 +177,27 @@ public class ChatbotServiceImpl implements ChatbotService {
             } catch (Exception e) {
                 log.warn("⚠️ Lỗi tra cứu bài tập RAG với từ khóa '{}': {}", kw, e.getMessage());
             }
-            if (matchedExercises.size() >= 5) break;
+            if (matchedExercises.size() >= 5)
+                break;
         }
 
         if (!matchedExercises.isEmpty()) {
             sb.append("\n[DỮ LIỆU BÀI TẬP SQL TÌM THẤY TRONG DATABASE]:\n");
             for (Exercise ex : matchedExercises.stream().limit(5).collect(Collectors.toList())) {
                 sb.append("- Bài tập: ").append(ex.getName())
-                  .append(" | Danh mục: ").append(ex.getCategory() != null ? ex.getCategory().getName() : "Thể hình")
-                  .append(" | Nhóm cơ chính: ").append(ex.getTargetMuscle() != null ? ex.getTargetMuscle().getName() : "Chưa rõ")
-                  .append(" | Vùng cơ thể: ").append(ex.getBodyPart() != null ? ex.getBodyPart().getName() : "Chưa rõ").append("\n");
+                        .append(" | Danh mục: ")
+                        .append(ex.getCategory() != null ? ex.getCategory().getName() : "Thể hình")
+                        .append(" | Nhóm cơ chính: ")
+                        .append(ex.getTargetMuscle() != null ? ex.getTargetMuscle().getName() : "Chưa rõ")
+                        .append(" | Vùng cơ thể: ")
+                        .append(ex.getBodyPart() != null ? ex.getBodyPart().getName() : "Chưa rõ");
+
+                sb.append("\n");
             }
         }
 
-        // PART B: Vector Similarity Search (Chỉ chạy khi Vector Store đã hoàn tất Batch Indexing)
+        // PART B: Vector Similarity Search (Chỉ chạy khi Vector Store đã hoàn tất Batch
+        // Indexing)
         if (vectorRagService.isIndexed()) {
             try {
                 List<String> vectorMatches = vectorRagService.searchSimilarContext(userQuery, 3);
@@ -163,24 +211,25 @@ public class ChatbotServiceImpl implements ChatbotService {
                 log.warn("Lỗi tra cứu Vector Store RAG: {}", e.getMessage());
             }
         } else {
-            log.info("[RAG_STATUS] Vector Store chưa hoàn tất Indexing, tự động chuyển sang luồng 1 (SQL + Gemini Grounding).");
+            log.info(
+                    "[RAG_STATUS] Vector Store chưa hoàn tất Indexing, tự động chuyển sang luồng 1 (SQL + Gemini Grounding).");
         }
 
         return sb.toString();
     }
 
     private List<String> extractKeywords(String query) {
-        if (query == null) return List.of();
+        if (query == null)
+            return List.of();
         String lower = query.toLowerCase().replaceAll("[?,.!;:()\\-]", " ");
 
         Set<String> stopWords = new HashSet<>(Arrays.asList(
-            "chứa", "bao", "nhiêu", "nhieu", "calo", "cung", "cấp", "cap", "đạm", "dam",
-            "protein", "carbs", "fat", "và", "va", "như", "nhu", "thế", "the", "nào", "nao",
-            "là", "la", "gì", "gi", "tốt", "tot", "vào", "buổi", "buoi", "sáng", "sang",
-            "trưa", "trua", "tối", "giúp", "giup", "cho", "tôi", "toi", "hỏi", "hoi",
-            "bài", "bai", "tập", "tap", "100g", "món", "mon", "ăn", "an", "được", "duoc",
-            "không", "khong", "có", "co", "này", "nay", "nên", "nen", "tránh", "tranh", "cách", "cach"
-        ));
+                "chứa", "bao", "nhiêu", "nhieu", "calo", "cung", "cấp", "cap", "đạm", "dam",
+                "protein", "carbs", "fat", "và", "va", "như", "nhu", "thế", "the", "nào", "nao",
+                "là", "la", "gì", "gi", "tốt", "tot", "vào", "buổi", "buoi", "sáng", "sang",
+                "trưa", "trua", "tối", "giúp", "giup", "cho", "tôi", "toi", "hỏi", "hoi",
+                "bài", "bai", "tập", "tap", "100g", "món", "mon", "ăn", "an", "được", "duoc",
+                "không", "khong", "có", "co", "này", "nay", "nên", "nen", "tránh", "tranh", "cách", "cach"));
 
         List<String> words = Arrays.stream(lower.split("\\s+"))
                 .filter(w -> !w.isEmpty() && !stopWords.contains(w) && w.length() >= 2)
@@ -228,19 +277,49 @@ public class ChatbotServiceImpl implements ChatbotService {
         return trimmed;
     }
 
-    private String buildUserContext(UserProfile profile, UserGoal goal, UserMetricHistory metric, List<UserAllergy> allergies, List<UserInjury> injuries, UserCheckInHistory latestCheckIn) {
+    private boolean requiresPersonalProfile(String query) {
+        if (query == null || query.trim().isEmpty())
+            return false;
+        String lower = query.toLowerCase();
+
+        // Kiểm tra các từ khóa thể hiện ý định tư vấn cá nhân / cho bản thân
+        return lower.contains("tôi") || lower.contains("toi")
+                || lower.contains("mình") || lower.contains("minh")
+                || lower.contains("của tôi") || lower.contains("của mình")
+                || lower.contains("cho tôi") || lower.contains("cho mình")
+                || lower.contains("hôm nay") || lower.contains("hom nay")
+                || lower.contains("thực đơn") || lower.contains("thuc don")
+                || lower.contains("lịch tập") || lower.contains("lich tap")
+                || lower.contains("gợi ý") || lower.contains("goi y")
+                || lower.contains("tư vấn") || lower.contains("tu van")
+                || lower.contains("phù hợp") || lower.contains("phu hop")
+                || lower.contains("mục tiêu") || lower.contains("muc tieu")
+                || lower.contains("giảm cân") || lower.contains("giam can")
+                || lower.contains("tăng cân") || lower.contains("tang can")
+                || lower.contains("tăng cơ") || lower.contains("tang co")
+                || lower.contains("bmi") || lower.contains("calo của")
+                || lower.contains("dị ứng") || lower.contains("chấn thương")
+                || lower.contains("sức khoẻ") || lower.contains("suc khoe");
+    }
+
+    private String buildUserContext(String userName, UserGoal goal, UserMetricHistory metric,
+            List<UserAllergy> allergies, List<UserInjury> injuries, UserCheckInHistory latestCheckIn) {
         StringBuilder sb = new StringBuilder();
-        sb.append("Tên: ").append(profile != null && profile.getFullName() != null ? profile.getFullName() : "Người dùng BodyPilot").append("\n");
+        sb.append("Tên: ").append(userName).append("\n");
 
         if (metric != null) {
             sb.append("Cân nặng: ").append(metric.getWeight()).append(" kg, ");
             sb.append("Chiều cao: ").append(metric.getHeightCm()).append(" cm, ");
-            sb.append("BMI: ").append(metric.getBmi() != null ? String.format("%.1f", metric.getBmi()) : "Chưa rõ").append(", ");
-            sb.append("Target Calo hàng ngày: ").append(metric.getTargetCalories() != null ? metric.getTargetCalories().intValue() : 2000).append(" kcal\n");
+            sb.append("BMI: ").append(metric.getBmi() != null ? String.format("%.1f", metric.getBmi()) : "Chưa rõ")
+                    .append(", ");
+            sb.append("Target Calo hàng ngày: ")
+                    .append(metric.getTargetCalories() != null ? metric.getTargetCalories().intValue() : 2000)
+                    .append(" kcal\n");
         }
 
         if (goal != null) {
-            sb.append("Mục tiêu hiện tại: ").append(goal.getType()).append(" (Cân nặng mục tiêu: ").append(goal.getTargetWeight() != null ? goal.getTargetWeight() + "kg" : "Duy trì").append(")\n");
+            sb.append("Mục tiêu hiện tại: ").append(goal.getType()).append(" (Cân nặng mục tiêu: ")
+                    .append(goal.getTargetWeight() != null ? goal.getTargetWeight() + "kg" : "Duy trì").append(")\n");
         }
 
         if (!allergies.isEmpty()) {
@@ -260,7 +339,8 @@ public class ChatbotServiceImpl implements ChatbotService {
         }
 
         if (latestCheckIn != null) {
-            sb.append("[TRẠNG THÁI SỨC KHỎE & CHECK-IN GẦN NHẤT (").append(latestCheckIn.getCheckInDate()).append(")]:\n");
+            sb.append("[TRẠNG THÁI SỨC KHỎE & CHECK-IN GẦN NHẤT (").append(latestCheckIn.getCheckInDate())
+                    .append(")]:\n");
             if (latestCheckIn.getEnergyLevel() != null) {
                 sb.append("- Mức năng lượng/thể trạng: ").append(latestCheckIn.getEnergyLevel()).append("\n");
             }
@@ -279,7 +359,8 @@ public class ChatbotServiceImpl implements ChatbotService {
     }
 
     private String buildSystemInstruction(String userContext, String retrievedDbContext) {
-        return "Bạn là \"BodyPilot AI Coach\" - Trợ lý y tế, dinh dưỡng và huấn luyện viên cá nhân thông minh của ứng dụng BodyPilot.\n\n" +
+        return "Bạn là \"BodyPilot AI Coach\" - Trợ lý y tế, dinh dưỡng và huấn luyện viên cá nhân thông minh của ứng dụng BodyPilot.\n\n"
+                +
                 "[THÔNG TIN THỂ TRẠNG NGƯỜI DÙNG HẠN ĐỊNH]:\n" + userContext + "\n" +
                 (retrievedDbContext.isEmpty() ? "" : retrievedDbContext + "\n") +
                 "[PHẠM VI HỖ TRỢ CHỈ CHO PHÉP]:\n" +
@@ -289,9 +370,12 @@ public class ChatbotServiceImpl implements ChatbotService {
                 "4. Giải đáp thắc mắc sử dụng ứng dụng BodyPilot.\n\n" +
                 "[QUY TẮC QUAN TRỌNG BẮT BUỘC (GUARDRAILS)]:\n" +
                 "1. Bạn CHỈ trả lời các câu hỏi NẰM TRONG phạm vi Dinh dưỡng, Tập luyện & BodyPilot.\n" +
-                "2. Nếu có [DỮ LIỆU THỰC ĐƠN / BÀI TẬP TÌM THẤY TRONG DATABASE BODYPILOT], hãy ưu tiên sử dụng thông số thực tế đó để trả lời chính xác cho người dùng.\n" +
-                "3. Nếu người dùng hỏi chủ đề ngoài lề (như viết code, lập trình, giải toán, phim ảnh, chính trị, thời tiết...), bạn PHẢI TỪ CHỐI LỊCH SỰ theo đúng mẫu:\n" +
-                "   \"Xin lỗi bạn, tôi là trợ lý AI chuyên biệt về Dinh Dưỡng & Tập Luyện của BodyPilot. Tôi không thể hỗ trợ các thắc mắc ngoài lĩnh vực sức khỏe và thể thao. Bạn có cần tôi hỗ trợ gì về thực đơn hay bài tập hôm nay không?\"\n" +
+                "2. Nếu có [DỮ LIỆU THỰC ĐƠN / BÀI TẬP TÌM THẤY TRONG DATABASE BODYPILOT], hãy ưu tiên sử dụng thông số thực tế đó để trả lời chính xác cho người dùng.\n"
+                +
+                "3. Nếu người dùng hỏi chủ đề ngoài lề (như viết code, lập trình, giải toán, phim ảnh, chính trị, thời tiết...), bạn PHẢI TỪ CHỐI LỊCH SỰ theo đúng mẫu:\n"
+                +
+                "   \"Xin lỗi bạn, tôi là trợ lý AI chuyên biệt về Dinh Dưỡng & Tập Luyện của BodyPilot. Tôi không thể hỗ trợ các thắc mắc ngoài lĩnh vực sức khỏe và thể thao. Bạn có cần tôi hỗ trợ gì về thực đơn hay bài tập hôm nay không?\"\n"
+                +
                 "4. Trả lời thân thiện, xưng hô \"tôi\" và \"bạn\", ngắn gọn, dễ hiểu và cô đọng (dưới 150 từ), phù hợp đọc trên điện thoại di động.";
     }
 
@@ -299,12 +383,20 @@ public class ChatbotServiceImpl implements ChatbotService {
         StringBuilder sb = new StringBuilder();
 
         if (history != null && !history.isEmpty()) {
-            int start = Math.max(0, history.size() - 6);
-            sb.append("[LỊCH SỬ HỘI THOẠI GẦN ĐÂY]:\n");
+            // Giữ tối đa 4 tin nhắn gần nhất để tiết kiệm token
+            int start = Math.max(0, history.size() - 4);
+            sb.append("[TÓM TẮT HỘI THOẠI TRƯỚC ĐÓ]:\n");
             for (int i = start; i < history.size(); i++) {
                 ChatMessageDTO msg = history.get(i);
-                sb.append(msg.getRole().equalsIgnoreCase("user") ? "Người dùng: " : "AI Coach: ")
-                        .append(msg.getContent())
+                boolean isUser = "user".equalsIgnoreCase(msg.getRole());
+                String content = msg.getContent() != null ? msg.getContent().trim() : "";
+
+                if (!isUser && content.length() > 90) {
+                    content = content.substring(0, 90).replaceAll("[\\r\\n]+", " ") + "...";
+                }
+
+                sb.append(isUser ? "• Người dùng: " : "• AI: ")
+                        .append(content)
                         .append("\n");
             }
             sb.append("\n");

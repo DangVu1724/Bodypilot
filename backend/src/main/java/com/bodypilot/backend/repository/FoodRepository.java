@@ -1,7 +1,7 @@
 package com.bodypilot.backend.repository;
 
-import com.bodypilot.backend.model.entity.nutrition.Food;
-import com.bodypilot.backend.model.enums.FoodType;
+import java.util.UUID;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -9,7 +9,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.util.UUID;
+import com.bodypilot.backend.model.entity.nutrition.Food;
+import com.bodypilot.backend.model.enums.FoodType;
 
 public interface FoodRepository extends JpaRepository<Food, UUID> {
     
@@ -27,6 +28,9 @@ public interface FoodRepository extends JpaRepository<Food, UUID> {
 
     @Query("SELECT f FROM Food f LEFT JOIN FETCH f.category LEFT JOIN FETCH f.recipe")
     java.util.List<Food> findAllWithRelations();
+
+    @Query("SELECT f FROM Food f LEFT JOIN FETCH f.category LEFT JOIN FETCH f.recipe WHERE f.isRecommended = true")
+    java.util.List<Food> findAllRecommendedWithRelations();
 
     @EntityGraph(attributePaths = {"category"})
     @Query("SELECT f FROM Food f")
