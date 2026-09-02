@@ -169,6 +169,8 @@ public class DietPromptBuilder {
                 sb.append(
                                 "     + COMBO YẾN MẠCH & SỮA CHUA: Yến mạch / Sữa chua Hy Lạp + Hạt / Trái cây + Trứng luộc / Sữa.\n");
                 sb.append(
+                                "   - BẮT BUỘC TRONG TUẦN: Bắt buộc phải có ít nhất 1 ngày Bữa sáng là COMBO MÓN NƯỚC (như Phở, Bún bò, Hủ tiếu hoặc Cháo).\n");
+                sb.append(
                                 "   - TUYỆT ĐỐI CẤM ĐƯA CÁC MÓN MẶN ĂN CƠM TRƯA/TỐI VÀO BỮA SÁNG: Cấm đưa các món mặn mâm cơm như Đậu phụ chiên, Rau củ xào, Thịt kho, Cá nướng, Thịt xào... vào Bữa sáng!\n");
                 sb.append("3. CẤU TRÚC BỮA TRƯA & BỮA TỐI (LUNCH & DINNER) - CHUẨN MÂM CƠM VIỆT NAM:\n");
                 sb.append(

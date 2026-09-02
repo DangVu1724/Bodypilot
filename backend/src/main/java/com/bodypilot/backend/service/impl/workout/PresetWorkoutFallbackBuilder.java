@@ -17,7 +17,6 @@ import com.bodypilot.backend.model.entity.workout.Exercise;
 import com.bodypilot.backend.repository.ExerciseRepository;
 import com.bodypilot.backend.repository.UserInjuryRepository;
 import com.bodypilot.backend.service.impl.PresetWorkoutPlanData;
-
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
@@ -43,7 +42,8 @@ public class PresetWorkoutFallbackBuilder {
 
     public String generatePresetFallbackWorkoutPlan(UUID userId, LocalDate startDate, Integer days, String goalType,
             String focusBodyPart, String noteMessage) {
-        log.info("[PRESET_WORKOUT_FALLBACK] Generating preset fallback workout plan for userId={}, startDate={}, days={}, goalType={}, focusBodyPart={}",
+        log.info(
+                "[PRESET_WORKOUT_FALLBACK] Generating preset fallback workout plan for userId={}, startDate={}, days={}, goalType={}, focusBodyPart={}",
                 userId, startDate, days, goalType, focusBodyPart);
         try {
             // 1. Lấy danh sách chấn thương và lọc ra các bài tập an toàn từ DB
@@ -51,7 +51,8 @@ public class PresetWorkoutFallbackBuilder {
                     : new ArrayList<>();
             List<Exercise> availableExercises = exerciseFilterService.getFilteredExercises(injuries);
 
-            // 2. Tạo các Map tra cứu nhanh O(1) theo ID, Code, Name và Gom nhóm theo BodyPart
+            // 2. Tạo các Map tra cứu nhanh O(1) theo ID, Code, Name và Gom nhóm theo
+            // BodyPart
             Map<UUID, Exercise> exerciseMap = availableExercises.stream()
                     .collect(Collectors.toMap(Exercise::getId, e -> e, (e1, e2) -> e1));
             Map<String, Exercise> codeMap = availableExercises.stream()
@@ -62,16 +63,19 @@ public class PresetWorkoutFallbackBuilder {
             Map<String, List<Exercise>> bodyPartMap = new HashMap<>();
             for (Exercise ex : availableExercises) {
                 if (ex.getBodyPart() != null && ex.getBodyPart().getCode() != null) {
-                    bodyPartMap.computeIfAbsent(ex.getBodyPart().getCode().toUpperCase().trim(), k -> new ArrayList<>()).add(ex);
+                    bodyPartMap.computeIfAbsent(ex.getBodyPart().getCode().toUpperCase().trim(), k -> new ArrayList<>())
+                            .add(ex);
                 }
             }
 
-            // 3. Rút bộ khung lịch tập mẫu theo Mục tiêu (GoalType) và Nhóm cơ tập trung (FocusBodyPart)
+            // 3. Rút bộ khung lịch tập mẫu theo Mục tiêu (GoalType) và Nhóm cơ tập trung
+            // (FocusBodyPart)
             List<PresetWorkoutPlanData.PresetWorkoutDay> presetDays = PresetWorkoutPlanData
                     .getPresetForGoal(goalType, focusBodyPart);
             List<DailyWorkoutDTO> dailyWorkoutList = new ArrayList<>();
 
-            // 4. Vòng lặp duyệt tạo lịch từng ngày (Dùng phép chia lấy dư % để xoay vòng lịch mẫu)
+            // 4. Vòng lặp duyệt tạo lịch từng ngày (Dùng phép chia lấy dư % để xoay vòng
+            // lịch mẫu)
             for (int dayIdx = 0; dayIdx < days; dayIdx++) {
                 LocalDate date = startDate.plusDays(dayIdx);
                 PresetWorkoutPlanData.PresetWorkoutDay presetDay = presetDays.get(dayIdx % presetDays.size());
@@ -90,14 +94,18 @@ public class PresetWorkoutFallbackBuilder {
                         }
                     }
 
-                    // Step 5.2: Kiểm tra chấn thương kép (Loại bỏ nếu vi phạm chấn thương người dùng)
-                    if (matchedExercise != null && exerciseFilterService.isViolatingInjuries(matchedExercise, injuries)) {
+                    // Step 5.2: Kiểm tra chấn thương kép (Loại bỏ nếu vi phạm chấn thương người
+                    // dùng)
+                    if (matchedExercise != null
+                            && exerciseFilterService.isViolatingInjuries(matchedExercise, injuries)) {
                         matchedExercise = null;
                     }
 
-                    // Step 5.3: Nếu không tìm thấy hoặc bị dính chấn thương -> Đổi sang bài tập an toàn cùng nhóm cơ (BodyPart Fallback)
+                    // Step 5.3: Nếu không tìm thấy hoặc bị dính chấn thương -> Đổi sang bài tập an
+                    // toàn cùng nhóm cơ (BodyPart Fallback)
                     if (matchedExercise == null && presetItem.getBodyPartCode() != null) {
-                        List<Exercise> candidates = bodyPartMap.getOrDefault(presetItem.getBodyPartCode().toUpperCase().trim(), availableExercises);
+                        List<Exercise> candidates = bodyPartMap
+                                .getOrDefault(presetItem.getBodyPartCode().toUpperCase().trim(), availableExercises);
                         matchedExercise = candidates.stream()
                                 .filter(e -> !exerciseFilterService.isViolatingInjuries(e, injuries))
                                 .findFirst()
