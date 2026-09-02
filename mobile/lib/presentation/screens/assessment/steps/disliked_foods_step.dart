@@ -37,7 +37,7 @@ class _DislikedFoodsStepState extends State<DislikedFoodsStep> {
       code: 'MEAT',
       title: 'Thịt & Gia cầm',
       icon: Icons.restaurant,
-      subItems: ['Thịt gà', 'Thịt bò', 'Thịt heo', 'Thịt vịt', 'Thịt dê', 'Nội tạng'],
+      subItems: ['Gà', 'Bò', 'Heo', 'Vịt', 'Dê', 'Nội tạng'],
     ),
     DislikedCategoryGroup(
       code: 'GRAIN',

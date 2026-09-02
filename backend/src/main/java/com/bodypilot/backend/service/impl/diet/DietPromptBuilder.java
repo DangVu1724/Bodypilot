@@ -126,11 +126,12 @@ public class DietPromptBuilder {
 
                 if (dislikes != null && !dislikes.isEmpty()) {
                         String dislikeList = dislikes.stream()
-                                        .map(d -> d.getDislikedFoodGroup() != null ? d.getDislikedFoodGroup().name()
-                                                        : d.getNote())
-                                        .filter(s -> s != null && !s.isEmpty())
+                                        .map(d -> (d.getNote() != null && !d.getNote().trim().isEmpty()) ? d.getNote()
+                                                        : (d.getDislikedFoodGroup() != null ? d.getDislikedFoodGroup().name() : ""))
+                                        .filter(s -> !s.isEmpty())
+                                        .distinct()
                                         .collect(Collectors.joining(", "));
-                        sb.append("- Thực phẩm không thích / kiêng cữ: ").append(dislikeList).append("\n");
+                        sb.append("- Thực phẩm hạn chế / kiêng cữ (Ưu tiên tối đa hạn chế hoặc tránh đưa vào thực đơn): ").append(dislikeList).append("\n");
                 }
 
                 if (userFeedback != null && !userFeedback.trim().isEmpty()) {

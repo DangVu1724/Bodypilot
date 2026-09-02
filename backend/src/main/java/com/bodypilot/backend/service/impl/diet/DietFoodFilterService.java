@@ -99,28 +99,26 @@ public class DietFoodFilterService {
         if (f == null || allergy == null)
             return false;
 
+        String fName = f.getName() != null ? f.getName().toLowerCase() : "";
+        String fDesc = f.getDescription() != null ? f.getDescription().toLowerCase() : "";
+
         if (allergy.getNote() != null && !allergy.getNote().trim().isEmpty()) {
             String noteLower = allergy.getNote().toLowerCase();
             String[] keywords = noteLower.split("[,;\\n]+");
-            String fName = f.getName() != null ? f.getName().toLowerCase() : "";
-            String fDesc = f.getDescription() != null ? f.getDescription().toLowerCase() : "";
 
             for (String kw : keywords) {
                 String trimmed = kw.trim();
-                if (!trimmed.isEmpty() && (fName.contains(trimmed) || fDesc.contains(trimmed))) {
+                if (!trimmed.isEmpty() && (matchesKeyword(fName, trimmed) || matchesKeyword(fDesc, trimmed))) {
                     return true;
                 }
             }
-            return false;
         }
 
         if (allergy.getAllergyMaster() != null) {
             String masterName = allergy.getAllergyMaster().getName();
             if (masterName != null && !masterName.isEmpty()) {
                 String allergyName = masterName.toLowerCase();
-                String fName = f.getName() != null ? f.getName().toLowerCase() : "";
-                String fDesc = f.getDescription() != null ? f.getDescription().toLowerCase() : "";
-                return fName.contains(allergyName) || fDesc.contains(allergyName);
+                return matchesKeyword(fName, allergyName) || matchesKeyword(fDesc, allergyName);
             }
         }
 
@@ -151,18 +149,19 @@ public class DietFoodFilterService {
         if (f == null || preference == null)
             return false;
 
+        String fName = f.getName() != null ? f.getName().toLowerCase() : "";
+        String fDesc = f.getDescription() != null ? f.getDescription().toLowerCase() : "";
+
         if (preference.getNote() != null && !preference.getNote().trim().isEmpty()) {
             String noteLower = preference.getNote().toLowerCase();
             String[] keywords = noteLower.split("[,;\\n]+");
-            String fName = f.getName() != null ? f.getName().toLowerCase() : "";
 
             for (String kw : keywords) {
                 String trimmed = kw.trim();
-                if (!trimmed.isEmpty() && fName.contains(trimmed)) {
+                if (!trimmed.isEmpty() && (matchesKeyword(fName, trimmed) || matchesKeyword(fDesc, trimmed))) {
                     return true;
                 }
             }
-            return false;
         }
 
         if (preference.getDislikedFoodGroup() != null) {
@@ -170,6 +169,48 @@ public class DietFoodFilterService {
         }
 
         return false;
+    }
+
+    private boolean matchesKeyword(String text, String keyword) {
+        if (text == null || keyword == null)
+            return false;
+        String t = text.toLowerCase();
+        String k = keyword.toLowerCase().trim();
+        if (k.isEmpty())
+            return false;
+
+        if (k.startsWith("thịt ") && k.length() > 5) {
+            k = k.substring(5).trim();
+        }
+
+        if (k.equals("gà")) {
+            if (t.contains("gà")) {
+                boolean isPureEgg = (t.contains("trứng") || t.contains("lòng đỏ") || t.contains("lòng trắng"))
+                        && !t.contains("thịt") && !t.contains("ức") && !t.contains("cánh") && !t.contains("đùi")
+                        && !t.contains("viên");
+                return !isPureEgg;
+            }
+            return t.contains("chicken");
+        }
+
+        if (k.equals("bò")) {
+            return t.contains("bò") || t.contains("beef") || t.contains("bít tết");
+        }
+
+        if (k.equals("heo") || k.equals("lợn")) {
+            return t.contains("heo") || t.contains("lợn") || t.contains("pork") || t.contains("ba chỉ")
+                    || t.contains("giăm bông");
+        }
+
+        if (k.equals("vịt")) {
+            return t.contains("vịt") || t.contains("duck");
+        }
+
+        if (k.equals("dê")) {
+            return t.contains("dê") || t.contains("goat") || t.contains("mutton");
+        }
+
+        return t.contains(k);
     }
 
     private boolean isDislikedFoodGroup(Food f,
