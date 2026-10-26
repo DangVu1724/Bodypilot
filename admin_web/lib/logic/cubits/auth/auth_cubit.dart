@@ -26,23 +26,30 @@ class AuthCubit extends Cubit<AuthState> {
       );
 
       final dynamic resData = response.data['data'] ?? response.data;
-      final userData = resData as Map<String, dynamic>;
+      final Map<String, dynamic> authPayload = Map<String, dynamic>.from(resData as Map);
+      final Map<String, dynamic> userData = (authPayload['user'] is Map)
+          ? Map<String, dynamic>.from(authPayload['user'] as Map)
+          : authPayload;
 
-      final roleStr = (userData['role'] ?? '').toString().toUpperCase();
-      final isEmailAdmin = cleanEmail.toLowerCase().startsWith('admin');
+      final String? token = authPayload['token']?.toString();
+      final roleStr = (userData['role'] ?? authPayload['role'] ?? '').toString().toUpperCase();
 
-      if (roleStr == 'ADMIN' || isEmailAdmin) {
+      if (roleStr == 'ADMIN' && token != null && token.isNotEmpty) {
+        apiClient.setAuthToken(token);
         emit(AuthSuccess(userData));
       } else {
+        apiClient.setAuthToken(null);
         emit(const AuthFailure('Tài khoản của bạn là Customer (Khách hàng). Chỉ tài khoản ADMIN mới được truy cập!'));
       }
     } catch (e) {
+      apiClient.setAuthToken(null);
       final String msg = e.toString().replaceAll('Exception: ', '');
       emit(AuthFailure('Đăng nhập thất bại: $msg'));
     }
   }
 
   void logout() {
+    apiClient.setAuthToken(null);
     emit(AuthInitial());
   }
 }

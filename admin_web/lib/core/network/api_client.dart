@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiClient {
   late final Dio dio;
@@ -18,7 +19,17 @@ class ApiClient {
       ),
     );
 
-    dio.interceptors.add(LogInterceptor(responseBody: true, requestBody: true));
+    if (kDebugMode) {
+      dio.interceptors.add(LogInterceptor(responseBody: false, requestBody: false));
+    }
+  }
+
+  void setAuthToken(String? token) {
+    if (token != null && token.isNotEmpty) {
+      dio.options.headers['Authorization'] = 'Bearer $token';
+    } else {
+      dio.options.headers.remove('Authorization');
+    }
   }
 
   Future<Response> get(String path, {Map<String, dynamic>? queryParameters}) async {
