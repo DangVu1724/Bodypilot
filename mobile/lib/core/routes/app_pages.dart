@@ -43,14 +43,14 @@ class AppPages {
       GoRoute(
         path: AppRoutes.mealPlan,
         builder: (context, state) {
-          final selectedDate = state.extra as DateTime?;
+          final selectedDate = state.extra is DateTime ? state.extra as DateTime : null;
           return MealPlanScreen(initialDate: selectedDate);
         },
       ),
       GoRoute(
         path: AppRoutes.workoutDiary,
         builder: (context, state) {
-          final selectedDate = state.extra as DateTime?;
+          final selectedDate = state.extra is DateTime ? state.extra as DateTime : null;
           return WorkoutDiaryScreen(initialDate: selectedDate);
         },
       ),
@@ -61,21 +61,21 @@ class AppPages {
       GoRoute(
         path: AppRoutes.foodDetail,
         builder: (context, state) {
-          final foodId = state.extra as String;
+          final foodId = state.extra is String ? state.extra as String : '';
           return FoodDetailScreen(foodId: foodId);
         },
       ),
       GoRoute(
         path: AppRoutes.ingredientDetail,
         builder: (context, state) {
-          final foodId = state.extra as String;
+          final foodId = state.extra is String ? state.extra as String : '';
           return IngredientDetailScreen(foodId: foodId);
         },
       ),
       GoRoute(
         path: AppRoutes.foodList,
         builder: (context, state) {
-          final type = state.extra as String;
+          final type = state.extra is String ? state.extra as String : 'DISH';
           return BlocProvider(
             create: (context) => FoodListCubit(foodRepository),
             child: FoodListScreen(type: type),

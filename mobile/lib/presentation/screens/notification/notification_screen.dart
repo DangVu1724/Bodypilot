@@ -3,12 +3,24 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
+import 'package:mobile/core/routes/app_routes.dart';
 import 'package:mobile/data/models/notification_model.dart';
 import 'package:mobile/presentation/bloc/notification/notification_cubit.dart';
 import 'package:mobile/presentation/bloc/notification/notification_state.dart';
 
 class NotificationScreen extends StatefulWidget {
   const NotificationScreen({super.key});
+
+  static const Set<String> _allowedNotificationRoutes = {
+    AppRoutes.home,
+    AppRoutes.mealPlan,
+    AppRoutes.workoutDiary,
+    AppRoutes.calorieBalanceDetail,
+    AppRoutes.proteinDetail,
+    AppRoutes.activeMinutesDetail,
+    AppRoutes.aiChat,
+    AppRoutes.stepDetail,
+  };
 
   @override
   State<NotificationScreen> createState() => _NotificationScreenState();
@@ -224,8 +236,9 @@ class _NotificationScreenState extends State<NotificationScreen> {
       child: GestureDetector(
         onTap: () {
           context.read<NotificationCubit>().markAsRead(item.id);
-          if (item.routeToPush != null && item.routeToPush!.isNotEmpty) {
-            context.push(item.routeToPush!);
+          final route = item.routeToPush?.trim();
+          if (route != null && NotificationScreen._allowedNotificationRoutes.contains(route)) {
+            context.push(route);
           }
         },
         child: Container(

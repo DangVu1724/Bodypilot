@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:core_shared/models/user_model.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class TokenService {
@@ -13,17 +14,32 @@ class TokenService {
   static const String _cachedUserKey = 'cached_user';
   static const String _streakCountKey = 'streak_count';
   static const String _lastStreakDateKey = 'last_streak_date';
+
+  // Cấu hình lịch dọn dẹp lịch sử chat AI tự động (TTL 7 ngày, tối đa 50 tin nhắn)
+  static const String _chatHistoryPrefix = 'chat_history_';
+  static const String _chatHistoryUpdatedAtPrefix = 'chat_history_updated_at_';
+  static const int _chatHistoryRetentionDays = 7;
+  static const int _maxChatHistoryMessages = 50;
+
   static SharedPreferences? _prefs;
 
   static Future<void> init() async {
     _prefs = await SharedPreferences.getInstance();
+    await cleanupExpiredChatHistories(activeUserId: getUserId());
   }
 
   static Future<void> saveToken(String token, String userId, bool isAssessmentCompleted) async {
+    final previousUserId = getUserId();
+    if (previousUserId != null && previousUserId.isNotEmpty && previousUserId != userId) {
+      // Nếu chuyển sang tài khoản khác trên cùng thiết bị, xóa ngay lịch sử chat của tài khoản trước
+      await clearChatHistory(previousUserId);
+    }
+
     await _prefs?.setString(_tokenKey, token);
     await _prefs?.setString(_userIdKey, userId);
     await _prefs?.setBool(_isAssessmentCompletedKey, isAssessmentCompleted);
     await updateLastActivity();
+    await cleanupExpiredChatHistories(activeUserId: userId);
   }
 
   static String? getToken() {
@@ -102,6 +118,18 @@ class TokenService {
     await _prefs?.remove(_lastStreakDateKey);
     await _prefs?.remove('focus_body_part');
     await _prefs?.remove('selected_chat_model');
+
+    // Dọn dẹp các lịch sử chat đã quá hạn lưu trữ 7 ngày (giữ lại lịch sử trong hạn nếu chính chủ đăng nhập lại)
+    await cleanupExpiredChatHistories(activeUserId: currentUserId);
+
+    try {
+      if (Hive.isBoxOpen('assessment_box')) {
+        await Hive.box('assessment_box').clear();
+      }
+      if (Hive.isBoxOpen('notification_box')) {
+        await Hive.box('notification_box').clear();
+      }
+    } catch (_) {}
   }
 
   static bool hasToken() {
@@ -128,16 +156,79 @@ class TokenService {
     return null;
   }
 
+  static List<Map<String, dynamic>> _pruneChatMessages(List<Map<String, dynamic>> messages) {
+    final cutoff = DateTime.now().subtract(const Duration(days: _chatHistoryRetentionDays));
+    final validMessages = messages.where((msg) {
+      final rawTs = msg['timestamp']?.toString();
+      if (rawTs == null || rawTs.isEmpty) return true;
+      final parsed = DateTime.tryParse(rawTs);
+      if (parsed == null) return true;
+      return parsed.isAfter(cutoff);
+    }).toList();
+
+    if (validMessages.length > _maxChatHistoryMessages) {
+      return validMessages.sublist(validMessages.length - _maxChatHistoryMessages);
+    }
+    return validMessages;
+  }
+
+  /// Tự động dọn các lịch sử chat đã quá hạn 7 ngày hoặc thuộc về tài khoản cũ khi đổi tài khoản
+  static Future<void> cleanupExpiredChatHistories({String? activeUserId}) async {
+    final prefs = _prefs;
+    if (prefs == null) return;
+
+    final now = DateTime.now();
+    final keys = prefs.getKeys().toList();
+
+    for (final key in keys) {
+      if (!key.startsWith(_chatHistoryPrefix) || key.startsWith(_chatHistoryUpdatedAtPrefix)) {
+        continue;
+      }
+      final uid = key.substring(_chatHistoryPrefix.length);
+      if (uid.isEmpty) continue;
+
+      // Nếu có activeUserId đang đăng nhập và khóa thuộc về tài khoản khác -> xóa để tránh lộ dữ liệu chéo tài khoản
+      if (activeUserId != null && activeUserId.isNotEmpty && uid != activeUserId) {
+        await clearChatHistory(uid);
+        continue;
+      }
+
+      final updatedAtMs = prefs.getInt('$_chatHistoryUpdatedAtPrefix$uid');
+      if (updatedAtMs != null) {
+        final updatedAt = DateTime.fromMillisecondsSinceEpoch(updatedAtMs);
+        if (now.difference(updatedAt).inDays >= _chatHistoryRetentionDays) {
+          await clearChatHistory(uid);
+        }
+      }
+    }
+  }
+
   static Future<void> saveChatHistory(String userId, List<Map<String, dynamic>> messagesJson) async {
-    await _prefs?.setString('chat_history_$userId', jsonEncode(messagesJson));
+    final pruned = _pruneChatMessages(messagesJson);
+    await _prefs?.setString('$_chatHistoryPrefix$userId', jsonEncode(pruned));
+    await _prefs?.setInt('$_chatHistoryUpdatedAtPrefix$userId', DateTime.now().millisecondsSinceEpoch);
   }
 
   static List<Map<String, dynamic>> getChatHistory(String userId) {
-    final raw = _prefs?.getString('chat_history_$userId');
+    final updatedAtMs = _prefs?.getInt('$_chatHistoryUpdatedAtPrefix$userId');
+    if (updatedAtMs != null) {
+      final updatedAt = DateTime.fromMillisecondsSinceEpoch(updatedAtMs);
+      if (DateTime.now().difference(updatedAt).inDays >= _chatHistoryRetentionDays) {
+        clearChatHistory(userId);
+        return [];
+      }
+    }
+
+    final raw = _prefs?.getString('$_chatHistoryPrefix$userId');
     if (raw != null && raw.isNotEmpty) {
       try {
         final List<dynamic> decoded = jsonDecode(raw);
-        return decoded.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        final list = decoded.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+        final pruned = _pruneChatMessages(list);
+        if (pruned.length != list.length) {
+          _prefs?.setString('$_chatHistoryPrefix$userId', jsonEncode(pruned));
+        }
+        return pruned;
       } catch (e) {
         return [];
       }
@@ -146,7 +237,8 @@ class TokenService {
   }
 
   static Future<void> clearChatHistory(String userId) async {
-    await _prefs?.remove('chat_history_$userId');
+    await _prefs?.remove('$_chatHistoryPrefix$userId');
+    await _prefs?.remove('$_chatHistoryUpdatedAtPrefix$userId');
   }
 
   static Future<void> saveSelectedModel(String model, [String? userId]) async {

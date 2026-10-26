@@ -1,9 +1,8 @@
 import 'package:core_shared/models/daily_eating_model.dart';
 import 'package:dio/dio.dart';
-import 'package:mobile/core/network/api_client.dart';
-import 'package:logger/logger.dart';
-import 'package:mobile/data/services/token_service.dart';
 import 'package:intl/intl.dart';
+import 'package:logger/logger.dart';
+import 'package:mobile/core/network/api_client.dart';
 
 final _logger = Logger();
 

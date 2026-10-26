@@ -75,13 +75,22 @@ class _DislikedFoodsStepState extends State<DislikedFoodsStep> {
   void initState() {
     super.initState();
     final cubitState = context.read<AssessmentCubit>().state;
-    final initialNote = cubitState.dislikedFoodsNote ?? '';
-    _noteController = TextEditingController(text: initialNote);
+    final initialNote = cubitState.dislikedFoodsNote;
+
+    final allKnownSubItems = categoryGroups.expand((g) => g.subItems).toSet();
+    final otherNotes = <String>[];
 
     if (initialNote.isNotEmpty) {
       final parts = initialNote.split(RegExp(r'[,;\n]+')).map((e) => e.trim()).where((e) => e.isNotEmpty);
-      _selectedSubItems.addAll(parts);
+      for (final part in parts) {
+        if (allKnownSubItems.contains(part)) {
+          _selectedSubItems.add(part);
+        } else {
+          otherNotes.add(part);
+        }
+      }
     }
+    _noteController = TextEditingController(text: otherNotes.join(', '));
   }
 
   @override
@@ -103,12 +112,17 @@ class _DislikedFoodsStepState extends State<DislikedFoodsStep> {
 
     final customText = _noteController.text.trim();
     final allSubItems = List<String>.from(_selectedSubItems);
-    if (customText.isNotEmpty && !allSubItems.contains(customText)) {
-      allSubItems.add(customText);
+    if (customText.isNotEmpty) {
+      final customParts = customText.split(RegExp(r'[,;\n]+')).map((e) => e.trim()).where((e) => e.isNotEmpty);
+      for (final cp in customParts) {
+        if (!allSubItems.contains(cp)) {
+          allSubItems.add(cp);
+        }
+      }
     }
 
     final formattedNote = allSubItems.join(', ');
-    
+
     for (final group in categoryGroups) {
       if (activeGroups.contains(group.code)) {
         if (!cubit.state.dislikedFoodGroups.contains(group.code)) {

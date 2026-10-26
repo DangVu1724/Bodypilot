@@ -33,8 +33,13 @@ class AssessmentCubit extends Cubit<AssessmentState> {
     }
   }
 
+  String get _cacheKey {
+    final userId = TokenService.getUserId();
+    return (userId != null && userId.isNotEmpty) ? 'current_assessment_$userId' : 'current_assessment_guest';
+  }
+
   void _loadFromHive() {
-    final cachedData = _box.get('current_assessment');
+    final cachedData = _box.get(_cacheKey);
     if (cachedData != null) {
       try {
         final Map<String, dynamic> json = Map<String, dynamic>.from(cachedData);
@@ -49,8 +54,13 @@ class AssessmentCubit extends Cubit<AssessmentState> {
   void emit(AssessmentState state) {
     super.emit(state);
     if (state.status != AssessmentStatus.success && state.status != AssessmentStatus.loading) {
-      _box.put('current_assessment', state.toJson());
+      _box.put(_cacheKey, state.toJson());
     }
+  }
+
+  Future<void> clearDraft() async {
+    await _box.delete(_cacheKey);
+    emit(const AssessmentState());
   }
 
   Future<void> submitAssessment({UserCubit? userCubit}) async {
@@ -62,7 +72,7 @@ class AssessmentCubit extends Cubit<AssessmentState> {
     try {
       await userRepository.submitAssessment(userId, state.toJson());
       await TokenService.saveFocusBodyPart(state.selectedFocusBodyPart);
-      await _box.delete('current_assessment');
+      await _box.delete(_cacheKey);
 
       if (userCubit != null) {
         await userCubit.fetchUserProfile();
@@ -201,6 +211,7 @@ class AssessmentCubit extends Cubit<AssessmentState> {
       };
 
       await userRepository.updateUserPreferences(userId, requestData);
+      await _box.delete(_cacheKey);
       emit(state.copyWith(status: AssessmentStatus.success));
     } catch (e) {
       emit(state.copyWith(status: AssessmentStatus.failure));
