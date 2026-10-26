@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.times;
@@ -124,7 +125,8 @@ class GeminiServiceTest {
                 String mockRawJson = "[{\"day\": 1, \"meal\": \"Bữa sáng: Phở gà\"}]";
                 when(llmRouterService.routeChatRequest(any(), anyString(), anyString(), eq(true)))
                                 .thenReturn(mockRawJson);
-                when(dietSuggestionHelper.processAndLinkFoods(mockRawJson, null)).thenReturn(mockRawJson);
+                when(dietSuggestionHelper.processAndLinkFoods(anyString(), any(), any(), anyInt(), anyInt(), anyInt(), anyLong()))
+                                .thenReturn(mockRawJson);
 
                 // Act
                 String result = geminiService.generateMealSuggestion(userId, startDate, 7, "Không ăn cay");
@@ -210,7 +212,8 @@ class GeminiServiceTest {
                 String mockRawJson = "[{\"day\": 1, \"meal\": \"Bữa sáng: Ức gà nướng, Cơm lứt\"}]";
                 when(llmRouterService.routeChatRequest(any(), anyString(), anyString(), eq(true)))
                                 .thenReturn(mockRawJson);
-                when(dietSuggestionHelper.processAndLinkFoods(mockRawJson, null)).thenReturn(mockRawJson);
+                when(dietSuggestionHelper.processAndLinkFoods(anyString(), any(), any(), anyInt(), anyInt(), anyInt(), anyLong()))
+                                .thenReturn(mockRawJson);
 
                 // Act
                 String result = geminiService.generateMealSuggestion(userId, startDate, 7, "Dị ứng hải sản");

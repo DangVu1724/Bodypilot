@@ -77,6 +77,11 @@ public class DietSuggestionHelper {
         return jsonPostProcessor.processAndLinkFoods(rawJson, targetCalories);
     }
 
+    public String processAndLinkFoods(String rawJson, BigDecimal targetCalories, UUID userId,
+            int allergyCount, int dietCount, int dislikeCount, long executionTimeMs) {
+        return jsonPostProcessor.processAndLinkFoods(rawJson, targetCalories, userId, allergyCount, dietCount, dislikeCount, executionTimeMs);
+    }
+
     public String getFallbackJson(LocalDate startDate, String message, Integer days) {
         return presetFallbackBuilder.getFallbackJson(startDate, message, days);
     }

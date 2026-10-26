@@ -22,6 +22,7 @@ import com.bodypilot.backend.model.entity.user.UserFoodPreference;
 import com.bodypilot.backend.repository.UserAllergyRepository;
 import com.bodypilot.backend.repository.UserDietPreferenceRepository;
 import com.bodypilot.backend.repository.UserFoodPreferenceRepository;
+import com.bodypilot.backend.service.AiDietEvaluationService;
 import com.bodypilot.backend.service.impl.PresetMealPlanData;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,6 +41,7 @@ public class PresetMealFallbackBuilder {
     private final UserDietPreferenceRepository dietPreferenceRepository;
     private final UserFoodPreferenceRepository foodPreferenceRepository;
     private final DietFoodFilterService foodFilterService;
+    private final AiDietEvaluationService aiDietEvaluationService;
 
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -137,6 +139,11 @@ public class PresetMealFallbackBuilder {
                             .build());
                 }
 
+                BigDecimal rawTotalCal = mealSlots.stream()
+                        .flatMap(s -> s.getItems().stream())
+                        .map(i -> i.getCalories() != null ? i.getCalories() : BigDecimal.ZERO)
+                        .reduce(BigDecimal.ZERO, BigDecimal::add);
+
                 // Bước 5: Co/dãn định lượng khẩu phần ăn theo Target Calories của người dùng
                 scaleMealSlotsToTargetCalories(mealSlots, targetCalories, foodMap);
 
@@ -144,6 +151,32 @@ public class PresetMealFallbackBuilder {
                         .flatMap(s -> s.getItems().stream())
                         .map(i -> i.getCalories() != null ? i.getCalories() : BigDecimal.ZERO)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+                boolean wasScaled = rawTotalCal.compareTo(totalCal) != 0;
+                BigDecimal scaleFactor = (rawTotalCal.compareTo(BigDecimal.ZERO) > 0 && targetCalories != null)
+                        ? targetCalories.divide(rawTotalCal, 4, RoundingMode.HALF_UP)
+                        : BigDecimal.ONE;
+
+                int totalItemsCount = mealSlots.stream()
+                        .mapToInt(s -> s.getItems() != null ? s.getItems().size() : 0)
+                        .sum();
+
+                if (aiDietEvaluationService != null) {
+                    aiDietEvaluationService.recordDietEvaluation(
+                            userId,
+                            targetCalories,
+                            rawTotalCal,
+                            totalCal,
+                            wasScaled,
+                            scaleFactor,
+                            totalItemsCount,
+                            allergies.size(),
+                            diets.size(),
+                            dislikes.size(),
+                            15L,
+                            "Medical Preset Fallback (Goal: " + (goalType != null ? goalType : "BALANCED") + ")"
+                    );
+                }
 
                 dailyEatingList.add(DailyEatingDTO.builder()
                         .date(date)
@@ -189,16 +222,16 @@ public class PresetMealFallbackBuilder {
         if (currentTotal.compareTo(BigDecimal.ZERO) <= 0)
             return;
 
-        BigDecimal ratio = targetCalories.divide(currentTotal, 4, RoundingMode.HALF_UP);
         BigDecimal calDiff = targetCalories.subtract(currentTotal).abs();
+        BigDecimal mape = calDiff.divide(targetCalories, 4, RoundingMode.HALF_UP)
+                .multiply(BigDecimal.valueOf(100));
 
-        // Nếu đã xấp xỉ mục tiêu (lệch trong ±7% và lệch dưới 100 kcal) thì giữ nguyên khẩu phần gốc
-        boolean isAligned = ratio.compareTo(new BigDecimal("0.93")) >= 0
-                && ratio.compareTo(new BigDecimal("1.07")) <= 0
-                && calDiff.compareTo(new BigDecimal("100")) <= 0;
-        if (isAligned) {
+        // Sử dụng MAPE: Nếu MAPE <= 5.0% thì giữ nguyên khẩu phần gốc
+        if (mape.compareTo(new BigDecimal("5.0")) <= 0) {
             return;
         }
+
+        BigDecimal ratio = targetCalories.divide(currentTotal, 4, RoundingMode.HALF_UP);
 
         if (ratio.compareTo(new BigDecimal("0.5")) < 0)
             ratio = new BigDecimal("0.5");

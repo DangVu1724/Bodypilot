@@ -103,9 +103,14 @@ public class GeminiServiceImpl implements GeminiService {
                     "Bạn là một chuyên gia dinh dưỡng và lên thực đơn cá nhân hóa chuyên nghiệp. Hãy đưa ra thực đơn cực kỳ chi tiết, khoa học, thực tế dưới dạng JSON array hợp lệ phù hợp với danh sách thực phẩm được cung cấp.",
                     true);
 
-            String result = dietSuggestionHelper.processAndLinkFoods(rawJson, targetCal);
-
             long elapsedTime = System.currentTimeMillis() - startTime;
+            int allergyCount = allergies != null ? allergies.size() : 0;
+            int dietCount = diets != null ? diets.size() : 0;
+            int dislikeCount = dislikedFoods != null ? dislikedFoods.size() : 0;
+
+            String result = dietSuggestionHelper.processAndLinkFoods(
+                    rawJson, targetCal, userId, allergyCount, dietCount, dislikeCount, elapsedTime);
+
             log.info("Hoàn thành tạo gợi ý thực đơn cho người dùng: userId={} trong {} ms", userId, elapsedTime);
             return result;
         } catch (Exception e) {

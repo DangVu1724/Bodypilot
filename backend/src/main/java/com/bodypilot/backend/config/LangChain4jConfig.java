@@ -27,7 +27,7 @@ public class LangChain4jConfig {
     @Value("${gemini.api.key:demo}")
     private String geminiApiKey;
 
-    @Value("${gemini.model:gemini-1.5-flash}")
+    @Value("${gemini.model:gemini-3.5-flash-lite}")
     private String geminiModel;
 
     @Value("${gemini.api.baseUrl:https://generativelanguage.googleapis.com/v1beta/openai/}")

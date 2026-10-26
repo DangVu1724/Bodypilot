@@ -50,6 +50,16 @@ public class DietFoodFilterService {
         return foodRepository.findAllWithRelations();
     }
 
+    public List<Food> getFilteredFoodsForUser(UUID userId) {
+        if (userId == null) {
+            return getAllFoodsCached();
+        }
+        List<UserAllergy> allergies = allergyRepository.findAllByUserIdAndIsActiveTrue(userId);
+        List<UserDietPreference> diets = dietPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
+        List<UserFoodPreference> dislikes = foodPreferenceRepository.findAllByUserIdAndIsActiveTrue(userId);
+        return getFilteredFoods(allergies, diets, dislikes);
+    }
+
     public List<FoodCandidate> getBalancedFoodCandidates(UUID userId, String goalType) {
         List<UserAllergy> allergies = (userId != null) ? allergyRepository.findAllByUserIdAndIsActiveTrue(userId)
                 : new ArrayList<>();

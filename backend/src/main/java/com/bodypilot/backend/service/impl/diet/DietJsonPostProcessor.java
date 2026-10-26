@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -16,6 +17,7 @@ import com.bodypilot.backend.model.dto.nutrition.MealItemDTO;
 import com.bodypilot.backend.model.dto.nutrition.MealSlotDTO;
 import com.bodypilot.backend.model.entity.nutrition.Food;
 import com.bodypilot.backend.model.enums.MealType;
+import com.bodypilot.backend.service.AiDietEvaluationService;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,6 +42,7 @@ public class DietJsonPostProcessor {
 
     private final DietFoodFilterService foodFilterService;
     private final PresetMealFallbackBuilder presetMealFallbackBuilder;
+    private final AiDietEvaluationService aiDietEvaluationService;
 
     private final ObjectMapper objectMapper = new ObjectMapper()
             .registerModule(new JavaTimeModule())
@@ -53,6 +56,11 @@ public class DietJsonPostProcessor {
             .configure(com.fasterxml.jackson.core.JsonParser.Feature.ALLOW_BACKSLASH_ESCAPING_ANY_CHARACTER, true);
 
     public String processAndLinkFoods(String rawJson, BigDecimal targetCalories) {
+        return processAndLinkFoods(rawJson, targetCalories, null, 0, 0, 0, 0L);
+    }
+
+    public String processAndLinkFoods(String rawJson, BigDecimal targetCalories, UUID userId,
+            int allergyCount, int dietCount, int dislikeCount, long executionTimeMs) {
         try {
             if (rawJson == null || rawJson.trim().isEmpty()) {
                 return "[]";
@@ -62,11 +70,25 @@ public class DietJsonPostProcessor {
             // Ép thẳng chuỗi JSON thành mảng Raw DTOs (Fail-safe, 0-crash)
             RawDailyEating[] rawDays = objectMapper.readValue(cleanedJson, RawDailyEating[].class);
 
-            List<Food> allFoods = foodFilterService.getAllFoodsCached();
-            Map<UUID, Food> foodMap = allFoods.stream()
+            // Lấy danh sách món ăn AN TOÀN ĐÃ QUA BỘ LỌC DỊ ỨNG/KIÊNG CỮ của User
+            List<Food> availableFoods = (userId != null)
+                    ? foodFilterService.getFilteredFoodsForUser(userId)
+                    : foodFilterService.getAllFoodsCached();
+
+            Map<UUID, Food> foodMap = availableFoods.stream()
                     .collect(Collectors.toMap(Food::getId, f -> f, (f1, f2) -> f1));
-            Map<String, Food> nameMap = allFoods.stream()
+            Map<String, Food> nameMap = availableFoods.stream()
                     .collect(Collectors.toMap(f -> f.getName().toLowerCase().trim(), f -> f, (f1, f2) -> f1));
+
+            // Phân loại danh sách món an toàn theo Category để hỗ trợ tráo đổi thế thân thông minh
+            Map<String, List<Food>> catMap = new HashMap<>();
+            for (Food f : availableFoods) {
+                if (f.getCategory() != null && f.getCategory().getCode() != null) {
+                    catMap.computeIfAbsent(f.getCategory().getCode().toUpperCase().trim(), k -> new ArrayList<>())
+                            .add(f);
+                }
+            }
+            List<Food> allFoodsGlobal = foodFilterService.getAllFoodsCached();
 
             List<DailyEatingDTO> list = new ArrayList<>();
             for (RawDailyEating rawDay : rawDays) {
@@ -95,7 +117,50 @@ public class DietJsonPostProcessor {
                                         ? rawItem.getServingQuantity()
                                         : new BigDecimal("100.0");
 
-                                Food food = matchFoodInDatabase(foodIdStr, foodNameStr, foodMap, nameMap, allFoods);
+                                Food food = matchFoodInDatabase(foodIdStr, foodNameStr, foodMap, nameMap, availableFoods);
+
+                                // BƯỚC BẢO VỆ AN TOÀN & TRÁO ĐỔI THẾ THÂN THÔNG MINH
+                                if (food == null && (!foodIdStr.isEmpty() || !foodNameStr.isEmpty())) {
+                                    // Tra cứu món gốc trong kho dữ liệu tổng để xác định nhóm Category
+                                    Food originalViolatingFood = findFoodInGlobalList(foodIdStr, foodNameStr, allFoodsGlobal);
+                                    String catCode = (originalViolatingFood != null && originalViolatingFood.getCategory() != null && originalViolatingFood.getCategory().getCode() != null)
+                                            ? originalViolatingFood.getCategory().getCode().toUpperCase()
+                                            : "OTHERS";
+
+                                    List<Food> candidates = catMap.getOrDefault(catCode, availableFoods);
+                                    if (!candidates.isEmpty()) {
+                                        if (originalViolatingFood != null && originalViolatingFood.getCaloriesPer100g() != null) {
+                                            double origCal = originalViolatingFood.getCaloriesPer100g().doubleValue();
+                                            double origProtein = originalViolatingFood.getProteinPer100g() != null
+                                                    ? originalViolatingFood.getProteinPer100g().doubleValue() : 0.0;
+
+                                            // Chọn món trong tệp AN TOÀN có độ tương đồng Calo & Macro gần nhất với món gốc
+                                            food = candidates.stream()
+                                                    .min((f1, f2) -> {
+                                                        double cal1 = f1.getCaloriesPer100g() != null ? f1.getCaloriesPer100g().doubleValue() : 0.0;
+                                                        double pro1 = f1.getProteinPer100g() != null ? f1.getProteinPer100g().doubleValue() : 0.0;
+                                                        double diff1 = Math.abs(cal1 - origCal) + Math.abs(pro1 - origProtein) * 1.5;
+
+                                                        double cal2 = f2.getCaloriesPer100g() != null ? f2.getCaloriesPer100g().doubleValue() : 0.0;
+                                                        double pro2 = f2.getProteinPer100g() != null ? f2.getProteinPer100g().doubleValue() : 0.0;
+                                                        double diff2 = Math.abs(cal2 - origCal) + Math.abs(pro2 - origProtein) * 1.5;
+
+                                                        return Double.compare(diff1, diff2);
+                                                    })
+                                                    .orElse(candidates.get(0));
+                                        } else {
+                                            // Nếu AI bịa tên không có trong DB gốc, chọn món có healthScore cao nhất trong tệp an toàn
+                                            food = candidates.stream()
+                                                    .max((f1, f2) -> Integer.compare(
+                                                            f1.getHealthScore() != null ? f1.getHealthScore() : 0,
+                                                            f2.getHealthScore() != null ? f2.getHealthScore() : 0))
+                                                    .orElse(candidates.get(0));
+                                        }
+
+                                        log.info("⚠️ [SMART_SWAP] Món [{}] vi phạm dị ứng hoặc ngoài danh mục an toàn. Đã tráo đổi sang món an toàn cùng nhóm [{}] có dinh dưỡng gần nhất: [{}] (Cal: {} kcal/100g)",
+                                                foodNameStr, catCode, food.getName(), food.getCaloriesPer100g());
+                                    }
+                                }
 
                                 if (food != null) {
                                     BigDecimal factor = servingQuantity.divide(new BigDecimal("100"), 4,
@@ -128,7 +193,7 @@ public class DietJsonPostProcessor {
                                             .isEaten(false)
                                             .build());
                                 } else {
-                                    log.warn("Suggested food ID [{}] / Name [{}] not found in database candidates.",
+                                    log.warn("Suggested food ID [{}] / Name [{}] not found and could not be substituted.",
                                             foodIdStr, foodNameStr);
                                 }
                             }
@@ -149,20 +214,27 @@ public class DietJsonPostProcessor {
                         .map(item -> item.getCalories() != null ? item.getCalories() : BigDecimal.ZERO)
                         .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-                // Cân chỉnh Calo chuẩn mục tiêu TDEE của User khi chênh lệch quá xa (> 7% hoặc > 120 kcal)
+                BigDecimal rawTotalCal = totalCal;
+                boolean wasScaled = false;
+                BigDecimal scaleFactorUsed = BigDecimal.ONE;
+
+                // Cân chỉnh Calo chuẩn mục tiêu TDEE của User khi sai số MAPE > 5%
                 if (targetCalories != null && targetCalories.compareTo(BigDecimal.ZERO) > 0
                         && totalCal.compareTo(BigDecimal.ZERO) > 0) {
-                    BigDecimal scaleFactor = targetCalories.divide(totalCal, 4, RoundingMode.HALF_UP);
                     BigDecimal calDifference = targetCalories.subtract(totalCal).abs();
-                    
-                    // Ngưỡng sai số cho phép: lệch trong khoảng 0.93 - 1.07 (±7%) hoặc lệch dưới 100 kcal thì giữ nguyên định lượng tự nhiên của AI
-                    boolean isWithinAcceptableRange = scaleFactor.compareTo(new BigDecimal("0.93")) >= 0
-                            && scaleFactor.compareTo(new BigDecimal("1.07")) <= 0
-                            && calDifference.compareTo(new BigDecimal("100")) <= 0;
+                    BigDecimal mape = calDifference.divide(targetCalories, 4, RoundingMode.HALF_UP)
+                            .multiply(BigDecimal.valueOf(100));
+
+                    // Sử dụng MAPE để xét: nếu MAPE <= 5.0% thì giữ nguyên định lượng tự nhiên của AI
+                    boolean isWithinAcceptableRange = mape.compareTo(new BigDecimal("5.0")) <= 0;
 
                     if (!isWithinAcceptableRange) {
-                        log.info("Calorie deviation detected (Total: {} kcal, Target: {} kcal, Ratio: {}). Scaling serving quantities...",
-                                totalCal, targetCalories, scaleFactor);
+                        BigDecimal scaleFactor = targetCalories.divide(totalCal, 4, RoundingMode.HALF_UP);
+                        log.info("Calorie deviation detected (Total: {} kcal, Target: {} kcal, MAPE: {}%). Scaling serving quantities...",
+                                totalCal, targetCalories, mape.setScale(2, RoundingMode.HALF_UP));
+
+                        wasScaled = true;
+                        scaleFactorUsed = scaleFactor;
 
                         if (scaleFactor.compareTo(new BigDecimal("0.5")) < 0) {
                             scaleFactor = new BigDecimal("0.5");
@@ -208,6 +280,25 @@ public class DietJsonPostProcessor {
                         log.info("Total calories ({} kcal) is well-aligned with target ({} kcal). Keeping AI suggested natural portions.",
                                 totalCal, targetCalories);
                     }
+                }
+
+                // Ghi nhận chỉ số đo lường AI Evaluation Log
+                int totalItemsCount = mealSlots.stream().mapToInt(slot -> slot.getItems() != null ? slot.getItems().size() : 0).sum();
+                if (aiDietEvaluationService != null) {
+                    aiDietEvaluationService.recordDietEvaluation(
+                            userId,
+                            targetCalories,
+                            rawTotalCal,
+                            totalCal,
+                            wasScaled,
+                            scaleFactorUsed,
+                            totalItemsCount,
+                            allergyCount,
+                            dietCount,
+                            dislikeCount,
+                            executionTimeMs,
+                            "AI Diet Plan Generation"
+                    );
                 }
 
                 list.add(DailyEatingDTO.builder()
@@ -260,7 +351,7 @@ public class DietJsonPostProcessor {
     }
 
     private Food matchFoodInDatabase(String foodIdStr, String foodNameStr, Map<UUID, Food> foodMap,
-            Map<String, Food> nameMap, List<Food> allFoods) {
+            Map<String, Food> nameMap, List<Food> availableFoods) {
         Food food = null;
         if (!foodIdStr.isEmpty()) {
             try {
@@ -270,16 +361,35 @@ public class DietJsonPostProcessor {
             }
         }
         if (food == null && !foodNameStr.isEmpty()) {
-            food = nameMap.get(foodNameStr.toLowerCase());
+            food = nameMap.get(foodNameStr.toLowerCase().trim());
         }
         if (food == null && !foodNameStr.isEmpty()) {
-            String key = foodNameStr.toLowerCase();
-            food = allFoods.stream()
+            String key = foodNameStr.toLowerCase().trim();
+            food = availableFoods.stream()
                     .filter(f -> f.getName().toLowerCase().contains(key) || key.contains(f.getName().toLowerCase()))
                     .findFirst()
                     .orElse(null);
         }
         return food;
+    }
+
+    private Food findFoodInGlobalList(String foodIdStr, String foodNameStr, List<Food> allFoodsGlobal) {
+        if (allFoodsGlobal == null) return null;
+        if (!foodIdStr.isEmpty()) {
+            try {
+                UUID foodId = UUID.fromString(foodIdStr);
+                Food f = allFoodsGlobal.stream().filter(item -> item.getId().equals(foodId)).findFirst().orElse(null);
+                if (f != null) return f;
+            } catch (Exception ignored) {}
+        }
+        if (!foodNameStr.isEmpty()) {
+            String key = foodNameStr.toLowerCase().trim();
+            return allFoodsGlobal.stream()
+                    .filter(f -> f.getName().toLowerCase().contains(key) || key.contains(f.getName().toLowerCase()))
+                    .findFirst()
+                    .orElse(null);
+        }
+        return null;
     }
 
     // =========================================================================
