@@ -58,23 +58,30 @@ public class NutritionDiaryController {
 
     @PutMapping("/item/{id}")
     public ResponseEntity<ApiResponse<Void>> updateFood(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID id,
             @RequestBody MealItemDTO itemDTO) {
-        nutritionDiaryService.updateFoodInDiary(id, itemDTO);
+        User user = userService.getUserByEmail(userDetails.getUsername());
+        nutritionDiaryService.updateFoodInDiary(user, id, itemDTO);
         return ResponseEntity.ok(ApiResponse.ok("Food updated successfully", null));
     }
 
     @DeleteMapping("/item/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteFood(@PathVariable UUID id) {
-        nutritionDiaryService.removeFoodFromDiary(id);
+    public ResponseEntity<ApiResponse<Void>> deleteFood(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID id) {
+        User user = userService.getUserByEmail(userDetails.getUsername());
+        nutritionDiaryService.removeFoodFromDiary(user, id);
         return ResponseEntity.ok(ApiResponse.ok("Food removed successfully", null));
     }
 
     @PostMapping("/reorder/{mealSlotId}")
     public ResponseEntity<ApiResponse<Void>> reorderItems(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID mealSlotId,
             @RequestBody List<UUID> itemIds) {
-        nutritionDiaryService.reorderMealItems(mealSlotId, itemIds);
+        User user = userService.getUserByEmail(userDetails.getUsername());
+        nutritionDiaryService.reorderMealItems(user, mealSlotId, itemIds);
         return ResponseEntity.ok(ApiResponse.ok("Items reordered successfully", null));
     }
 
@@ -118,17 +125,21 @@ public class NutritionDiaryController {
 
     @PatchMapping("/item/{id}/status")
     public ResponseEntity<ApiResponse<DailyEatingDTO>> updateMealItemStatus(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID id,
-            @RequestParam Boolean   isEaten) {
-        DailyEatingDTO response = nutritionDiaryService.updateMealItemStatus(id, isEaten);
+            @RequestParam Boolean isEaten) {
+        User user = userService.getUserByEmail(userDetails.getUsername());
+        DailyEatingDTO response = nutritionDiaryService.updateMealItemStatus(user, id, isEaten);
         return ResponseEntity.ok(ApiResponse.ok("Item status updated successfully", response));
     }
 
     @PatchMapping("/slot/{id}/status")
     public ResponseEntity<ApiResponse<DailyEatingDTO>> updateMealSlotStatus(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID id,
             @RequestParam Boolean isEaten) {
-        DailyEatingDTO response = nutritionDiaryService.updateMealSlotStatus(id, isEaten);
+        User user = userService.getUserByEmail(userDetails.getUsername());
+        DailyEatingDTO response = nutritionDiaryService.updateMealSlotStatus(user, id, isEaten);
         return ResponseEntity.ok(ApiResponse.ok("Meal slot status updated successfully", response));
     }
 

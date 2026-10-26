@@ -10,3 +10,10 @@ data/__pycache__/
 .vercel
 .env*
 .VSCodeCounter/
+
+# Logs & JVM Crash Dumps
+*.log
+
+# Secrets & Service Account Credentials
+backend/secrets/
+**/firebase-service-account.json

@@ -56,31 +56,40 @@ public class WorkoutDiaryController {
 
     @PutMapping("/item/{id}")
     public ResponseEntity<ApiResponse<Void>> updateExercise(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID id,
             @RequestBody DailyWorkoutItemDTO itemDTO) {
-        workoutDiaryService.updateExerciseInDiary(id, itemDTO);
+        User user = userService.getUserByEmail(userDetails.getUsername());
+        workoutDiaryService.updateExerciseInDiary(user, id, itemDTO);
         return ResponseEntity.ok(ApiResponse.ok("Exercise updated successfully", null));
     }
 
     @DeleteMapping("/item/{id}")
-    public ResponseEntity<ApiResponse<Void>> deleteExercise(@PathVariable UUID id) {
-        workoutDiaryService.removeExerciseFromDiary(id);
+    public ResponseEntity<ApiResponse<Void>> deleteExercise(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @PathVariable UUID id) {
+        User user = userService.getUserByEmail(userDetails.getUsername());
+        workoutDiaryService.removeExerciseFromDiary(user, id);
         return ResponseEntity.ok(ApiResponse.ok("Exercise removed successfully", null));
     }
 
     @PatchMapping("/item/{id}/status")
     public ResponseEntity<ApiResponse<DailyWorkoutDTO>> updateExerciseStatus(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID id,
             @RequestParam Boolean isCompleted) {
-        DailyWorkoutDTO response = workoutDiaryService.updateExerciseStatus(id, isCompleted);
+        User user = userService.getUserByEmail(userDetails.getUsername());
+        DailyWorkoutDTO response = workoutDiaryService.updateExerciseStatus(user, id, isCompleted);
         return ResponseEntity.ok(ApiResponse.ok("Exercise completion status updated successfully", response));
     }
 
     @PostMapping("/reorder/{dailyWorkoutId}")
     public ResponseEntity<ApiResponse<Void>> reorderItems(
+            @AuthenticationPrincipal UserDetails userDetails,
             @PathVariable UUID dailyWorkoutId,
             @RequestBody List<UUID> itemIds) {
-        workoutDiaryService.reorderWorkoutItems(dailyWorkoutId, itemIds);
+        User user = userService.getUserByEmail(userDetails.getUsername());
+        workoutDiaryService.reorderWorkoutItems(user, dailyWorkoutId, itemIds);
         return ResponseEntity.ok(ApiResponse.ok("Workout items reordered successfully", null));
     }
 

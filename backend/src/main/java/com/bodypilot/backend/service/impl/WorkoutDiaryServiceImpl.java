@@ -13,6 +13,7 @@ import com.bodypilot.backend.repository.ExerciseRepository;
 import com.bodypilot.backend.service.CalorieCalculatorService;
 import com.bodypilot.backend.service.WorkoutDiaryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,6 +30,13 @@ public class WorkoutDiaryServiceImpl implements WorkoutDiaryService {
     private final DailyWorkoutItemRepository dailyWorkoutItemRepository;
     private final ExerciseRepository exerciseRepository;
     private final CalorieCalculatorService calorieCalculatorService;
+
+    private void verifyOwnership(User user, DailyWorkout dailyWorkout) {
+        if (user == null || dailyWorkout == null || dailyWorkout.getUser() == null
+                || !dailyWorkout.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("Bạn không có quyền truy cập hoặc chỉnh sửa nhật ký tập luyện này.");
+        }
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -100,9 +108,10 @@ public class WorkoutDiaryServiceImpl implements WorkoutDiaryService {
 
     @Override
     @Transactional
-    public void updateExerciseInDiary(UUID itemId, DailyWorkoutItemDTO itemDTO) {
+    public void updateExerciseInDiary(User user, UUID itemId, DailyWorkoutItemDTO itemDTO) {
         DailyWorkoutItem item = dailyWorkoutItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Workout item not found"));
+        verifyOwnership(user, item.getDailyWorkout());
 
         item.setSetsSnapshot(itemDTO.getSets());
         item.setRepsSnapshot(itemDTO.getReps());
@@ -120,10 +129,10 @@ public class WorkoutDiaryServiceImpl implements WorkoutDiaryService {
             item.setCaloriesBurnedSnapshot(itemDTO.getCaloriesBurned() != null ? itemDTO.getCaloriesBurned() : 0.0);
         } else if (item.getExercise() != null) {
             // Recalculate calories snapshot based on updated duration
-            User user = item.getDailyWorkout().getUser();
+            User owner = item.getDailyWorkout().getUser();
             double userWeight = 70.0;
-            if (user.getProfile() != null && user.getProfile().getWeight() != null) {
-                userWeight = user.getProfile().getWeight();
+            if (owner.getProfile() != null && owner.getProfile().getWeight() != null) {
+                userWeight = owner.getProfile().getWeight();
             }
             double met = item.getExercise().getMetValue() != null ? item.getExercise().getMetValue() : 3.0;
             double duration = itemDTO.getDurationMinutes() != null ? itemDTO.getDurationMinutes().doubleValue() : (item.getExercise().getDefaultDuration() != null ? item.getExercise().getDefaultDuration() : 10.0);
@@ -136,10 +145,11 @@ public class WorkoutDiaryServiceImpl implements WorkoutDiaryService {
 
     @Override
     @Transactional
-    public void removeExerciseFromDiary(UUID itemId) {
+    public void removeExerciseFromDiary(User user, UUID itemId) {
         DailyWorkoutItem item = dailyWorkoutItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Workout item not found"));
         DailyWorkout dailyWorkout = item.getDailyWorkout();
+        verifyOwnership(user, dailyWorkout);
         dailyWorkout.getWorkoutItems().remove(item);
         dailyWorkoutItemRepository.delete(item);
         recalculateDailyWorkoutCalories(dailyWorkout);
@@ -147,22 +157,25 @@ public class WorkoutDiaryServiceImpl implements WorkoutDiaryService {
 
     @Override
     @Transactional
-    public DailyWorkoutDTO updateExerciseStatus(UUID itemId, Boolean isCompleted) {
+    public DailyWorkoutDTO updateExerciseStatus(User user, UUID itemId, Boolean isCompleted) {
         DailyWorkoutItem item = dailyWorkoutItemRepository.findById(itemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Workout item not found"));
+        DailyWorkout dailyWorkout = item.getDailyWorkout();
+        verifyOwnership(user, dailyWorkout);
+
         item.setIsCompleted(isCompleted);
         dailyWorkoutItemRepository.save(item);
 
-        DailyWorkout dailyWorkout = item.getDailyWorkout();
         recalculateDailyWorkoutCalories(dailyWorkout);
         return mapToDailyWorkoutDTO(dailyWorkout);
     }
 
     @Override
     @Transactional
-    public void reorderWorkoutItems(UUID dailyWorkoutId, List<UUID> itemIds) {
+    public void reorderWorkoutItems(User user, UUID dailyWorkoutId, List<UUID> itemIds) {
         DailyWorkout dailyWorkout = dailyWorkoutRepository.findById(dailyWorkoutId)
                 .orElseThrow(() -> new ResourceNotFoundException("Daily workout not found"));
+        verifyOwnership(user, dailyWorkout);
 
         List<DailyWorkoutItem> items = dailyWorkout.getWorkoutItems();
         for (int i = 0; i < itemIds.size(); i++) {

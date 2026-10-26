@@ -63,6 +63,7 @@ class NutritionDiaryServiceTest {
         sampleUser = User.builder()
                 .email("test@example.com")
                 .build();
+        sampleUser.setId(UUID.randomUUID());
 
         sampleFood = Food.builder()
                 .name("Ức gà luộc")
@@ -155,11 +156,42 @@ class NutritionDiaryServiceTest {
         when(mealItemRepository.findById(mealItemId)).thenReturn(Optional.of(mealItem));
 
         // Act
-        nutritionDiaryService.removeFoodFromDiary(mealItemId);
+        nutritionDiaryService.removeFoodFromDiary(sampleUser, mealItemId);
 
         // Assert
         verify(mealItemRepository, times(1)).delete(mealItem);
         verify(dailyEatingRepository, times(1)).save(dailyEating);
         assertEquals(0, BigDecimal.ZERO.compareTo(dailyEating.getTotalCaloriesEaten()));
+    }
+
+    @Test
+    @DisplayName("TC11: Chặn IDOR khi người dùng khác cố xóa món ăn không thuộc sở hữu")
+    void removeFoodFromDiary_DifferentUser_ThrowsAccessDeniedException() {
+        UUID mealItemId = UUID.randomUUID();
+        User attackerUser = User.builder().email("attacker@example.com").build();
+        attackerUser.setId(UUID.randomUUID());
+
+        DailyEating victimDailyEating = DailyEating.builder()
+                .user(sampleUser)
+                .date(today)
+                .mealSlots(new ArrayList<>())
+                .build();
+
+        MealSlot mealSlot = MealSlot.builder()
+                .dailyEating(victimDailyEating)
+                .mealType(MealType.LUNCH)
+                .items(new ArrayList<>())
+                .build();
+
+        MealItem mealItem = new MealItem();
+        mealItem.setId(mealItemId);
+        mealItem.setMealSlot(mealSlot);
+
+        when(mealItemRepository.findById(mealItemId)).thenReturn(Optional.of(mealItem));
+
+        assertThrows(org.springframework.security.access.AccessDeniedException.class, () -> {
+            nutritionDiaryService.removeFoodFromDiary(attackerUser, mealItemId);
+        });
+        verify(mealItemRepository, never()).delete(any());
     }
 }

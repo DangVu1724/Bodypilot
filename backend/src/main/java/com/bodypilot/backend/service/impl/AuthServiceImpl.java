@@ -49,7 +49,7 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public AuthResponse register(UserRegistrationRequest request) {
         if (userRepository.existsByEmail(request.getEmail())) {
-            throw new RuntimeException("Email already exists");
+            throw new IllegalArgumentException("Email đã tồn tại trên hệ thống!");
         }
 
         User user = User.builder()
@@ -112,6 +112,9 @@ public class AuthServiceImpl implements AuthService {
             GoogleIdToken idToken = verifier.verify(request.getIdToken());
             if (idToken != null) {
                 GoogleIdToken.Payload payload = idToken.getPayload();
+                if (!Boolean.TRUE.equals(payload.getEmailVerified())) {
+                    throw new IllegalArgumentException("Email Google chưa được xác minh!");
+                }
 
                 String email = payload.getEmail();
                 String name = (String) payload.get("name");
@@ -122,6 +125,7 @@ public class AuthServiceImpl implements AuthService {
                     user = User.builder()
                             .email(email)
                             .password(passwordEncoder.encode(UUID.randomUUID().toString()))
+                            .role(UserRole.CUSTOMER)
                             .build();
                     user = userRepository.save(user);
 
@@ -141,10 +145,12 @@ public class AuthServiceImpl implements AuthService {
                         .user(userService.getUserDetails(user.getId()))
                         .build();
             } else {
-                throw new RuntimeException("Invalid Google ID Token");
+                throw new IllegalArgumentException("Google ID Token không hợp lệ!");
             }
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
-            throw new RuntimeException("Google authentication failed: " + e.getMessage());
+            throw new RuntimeException("Xác thực Google thất bại", e);
         }
     }
 

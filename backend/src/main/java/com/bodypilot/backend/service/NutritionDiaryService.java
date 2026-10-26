@@ -14,16 +14,16 @@ public interface NutritionDiaryService {
     List<DailyEatingDTO> getDailyEatingRange(User user, LocalDate startDate, LocalDate endDate);
     
     DailyEatingDTO addFoodToDiary(User user, LocalDate date, MealType mealType, MealItemDTO itemDTO);
-    void removeFoodFromDiary(UUID mealItemId);
-    void updateFoodInDiary(UUID mealItemId, MealItemDTO itemDTO);
+    void removeFoodFromDiary(User user, UUID mealItemId);
+    void updateFoodInDiary(User user, UUID mealItemId, MealItemDTO itemDTO);
     
     // New methods for reordering and clearing
-    void reorderMealItems(UUID mealSlotId, List<UUID> itemIds);
+    void reorderMealItems(User user, UUID mealSlotId, List<UUID> itemIds);
     void clearMeal(User user, LocalDate date, MealType mealType);
     void clearDay(User user, LocalDate date);
     void updateDailyNote(User user, LocalDate date, String note);
     void addMultipleDailyEatings(User user, List<DailyEatingDTO> dailyEatingDTOs);
-    DailyEatingDTO updateMealItemStatus(UUID mealItemId, Boolean isEaten);
-    DailyEatingDTO updateMealSlotStatus(UUID mealSlotId, Boolean isEaten);
+    DailyEatingDTO updateMealItemStatus(User user, UUID mealItemId, Boolean isEaten);
+    DailyEatingDTO updateMealSlotStatus(User user, UUID mealSlotId, Boolean isEaten);
     DailyEatingDTO copyDailyEating(User user, LocalDate fromDate, LocalDate toDate);
 }

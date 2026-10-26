@@ -18,6 +18,9 @@ public class AiSuggestionController {
 
     private final GeminiService geminiService;
 
+    private static final int MIN_DAYS = 1;
+    private static final int MAX_DAYS = 14;
+
     @GetMapping("/{userId}/ai-diet-suggestion")
     public ApiResponse<String> getAiDietSuggestion(
             @PathVariable UUID userId,
@@ -27,8 +30,9 @@ public class AiSuggestionController {
         if (startDate == null) {
             startDate = LocalDate.now();
         }
-        log.info("Nhận yêu cầu gợi ý thực đơn AI: userId={}, startDate={}, days={}", userId, startDate, days);
-        String suggestion = geminiService.generateMealSuggestion(userId, startDate, days, userFeedback);
+        int boundedDays = (days == null) ? 7 : Math.max(MIN_DAYS, Math.min(days, MAX_DAYS));
+        log.info("Nhận yêu cầu gợi ý thực đơn AI: userId={}, startDate={}, days={}", userId, startDate, boundedDays);
+        String suggestion = geminiService.generateMealSuggestion(userId, startDate, boundedDays, userFeedback);
         return ApiResponse.ok("Tạo gợi ý thực đơn thành công", suggestion);
     }
 
@@ -41,8 +45,9 @@ public class AiSuggestionController {
         if (startDate == null) {
             startDate = LocalDate.now();
         }
-        log.info("Nhận yêu cầu gợi ý lịch tập AI: userId={}, startDate={}, days={}", userId, startDate, days);
-        String suggestion = geminiService.generateWorkoutSuggestion(userId, startDate, days, focusBodyPart);
+        int boundedDays = (days == null) ? 7 : Math.max(MIN_DAYS, Math.min(days, MAX_DAYS));
+        log.info("Nhận yêu cầu gợi ý lịch tập AI: userId={}, startDate={}, days={}", userId, startDate, boundedDays);
+        String suggestion = geminiService.generateWorkoutSuggestion(userId, startDate, boundedDays, focusBodyPart);
         return ApiResponse.ok("Tạo gợi ý lịch tập thành công", suggestion);
     }
 }

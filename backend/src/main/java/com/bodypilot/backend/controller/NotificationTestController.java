@@ -3,8 +3,10 @@ package com.bodypilot.backend.controller;
 import com.bodypilot.backend.model.dto.common.ApiResponse;
 import com.bodypilot.backend.service.FcmService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.annotation.Profile;
 import org.springframework.web.bind.annotation.*;
 
+@Profile("dev")
 @RestController
 @RequestMapping("/api/v1/test-notifications")
 @RequiredArgsConstructor

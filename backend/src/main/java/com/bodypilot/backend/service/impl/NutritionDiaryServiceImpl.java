@@ -16,6 +16,7 @@ import com.bodypilot.backend.repository.MealItemRepository;
 import com.bodypilot.backend.repository.MealSlotRepository;
 import com.bodypilot.backend.service.NutritionDiaryService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,6 +35,13 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
     private final MealSlotRepository mealSlotRepository;
     private final MealItemRepository mealItemRepository;
     private final FoodRepository foodRepository;
+
+    private void verifyOwnership(User user, DailyEating dailyEating) {
+        if (user == null || dailyEating == null || dailyEating.getUser() == null
+                || !dailyEating.getUser().getId().equals(user.getId())) {
+            throw new AccessDeniedException("Bạn không có quyền truy cập hoặc chỉnh sửa nhật ký dinh dưỡng này.");
+        }
+    }
 
     @Override
     @Transactional(readOnly = true)
@@ -104,10 +112,11 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
 
     @Override
     @Transactional
-    public void removeFoodFromDiary(UUID mealItemId) {
+    public void removeFoodFromDiary(User user, UUID mealItemId) {
         MealItem mealItem = mealItemRepository.findById(mealItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal item not found"));
         DailyEating dailyEating = mealItem.getMealSlot().getDailyEating();
+        verifyOwnership(user, dailyEating);
         mealItem.getMealSlot().getItems().remove(mealItem);
         mealItemRepository.delete(mealItem);
         recalculateDailyCalories(dailyEating);
@@ -115,9 +124,10 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
 
     @Override
     @Transactional
-    public void updateFoodInDiary(UUID mealItemId, MealItemDTO itemDTO) {
+    public void updateFoodInDiary(User user, UUID mealItemId, MealItemDTO itemDTO) {
         MealItem mealItem = mealItemRepository.findById(mealItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal item not found"));
+        verifyOwnership(user, mealItem.getMealSlot().getDailyEating());
 
         mealItem.setServingQuantity(itemDTO.getServingQuantity());
         if (itemDTO.getOrderIndex() != null) {
@@ -144,9 +154,10 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
 
     @Override
     @Transactional
-    public void reorderMealItems(UUID mealSlotId, List<UUID> itemIds) {
+    public void reorderMealItems(User user, UUID mealSlotId, List<UUID> itemIds) {
         MealSlot mealSlot = mealSlotRepository.findById(mealSlotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal slot not found"));
+        verifyOwnership(user, mealSlot.getDailyEating());
 
         List<MealItem> items = mealSlot.getItems();
         for (int i = 0; i < itemIds.size(); i++) {
@@ -269,22 +280,27 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
 
     @Override
     @Transactional
-    public DailyEatingDTO updateMealItemStatus(UUID mealItemId, Boolean isEaten) {
+    public DailyEatingDTO updateMealItemStatus(User user, UUID mealItemId, Boolean isEaten) {
         MealItem mealItem = mealItemRepository.findById(mealItemId)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal item not found"));
+        DailyEating dailyEating = mealItem.getMealSlot().getDailyEating();
+        verifyOwnership(user, dailyEating);
+
         mealItem.setIsEaten(isEaten);
         mealItemRepository.save(mealItem);
 
-        DailyEating dailyEating = mealItem.getMealSlot().getDailyEating();
         recalculateDailyCalories(dailyEating);
         return mapToDailyEatingDTO(dailyEating);
     }
 
     @Override
     @Transactional
-    public DailyEatingDTO updateMealSlotStatus(UUID mealSlotId, Boolean isEaten) {
+    public DailyEatingDTO updateMealSlotStatus(User user, UUID mealSlotId, Boolean isEaten) {
         MealSlot mealSlot = mealSlotRepository.findById(mealSlotId)
                 .orElseThrow(() -> new ResourceNotFoundException("Meal slot not found"));
+        DailyEating dailyEating = mealSlot.getDailyEating();
+        verifyOwnership(user, dailyEating);
+
         mealSlot.setIsEaten(isEaten);
         for (MealItem item : mealSlot.getItems()) {
             item.setIsEaten(isEaten);
@@ -292,7 +308,6 @@ public class NutritionDiaryServiceImpl implements NutritionDiaryService {
         mealItemRepository.saveAll(mealSlot.getItems());
         mealSlotRepository.save(mealSlot);
 
-        DailyEating dailyEating = mealSlot.getDailyEating();
         recalculateDailyCalories(dailyEating);
         return mapToDailyEatingDTO(dailyEating);
     }

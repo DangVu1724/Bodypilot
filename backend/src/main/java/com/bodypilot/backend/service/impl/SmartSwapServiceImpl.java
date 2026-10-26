@@ -30,6 +30,7 @@ import com.bodypilot.backend.repository.FoodRepository;
 import com.bodypilot.backend.repository.UserAllergyRepository;
 import com.bodypilot.backend.repository.UserInjuryRepository;
 import com.bodypilot.backend.service.SmartSwapService;
+import com.bodypilot.backend.service.impl.diet.DietFoodFilterService;
 import com.bodypilot.backend.service.impl.diet.DietSuggestionHelper;
 
 import lombok.RequiredArgsConstructor;
@@ -46,6 +47,7 @@ public class SmartSwapServiceImpl implements SmartSwapService {
 
     private final UserInjuryRepository userInjuryRepository;
     private final DietSuggestionHelper dietSuggestionHelper;
+    private final DietFoodFilterService dietFoodFilterService;
 
     private static final Map<String, List<String>> CATEGORY_SWAP_MAP = Map.of(
             "FRUIT", List.of("FRUIT", "BEVERAGE", "DAIRY"),
@@ -71,10 +73,6 @@ public class SmartSwapServiceImpl implements SmartSwapService {
         BigDecimal targetProtein = targetFood.getProteinPer100g().multiply(factor);
 
         List<UserAllergy> allergies = allergyRepository.findAllByUserIdAndIsActiveTrue(user.getId());
-        Set<UUID> allergicFoodIds = allergies.stream()
-                .filter(a -> a.getAllergyMaster() != null)
-                .map(a -> a.getAllergyMaster().getId())
-                .collect(Collectors.toSet());
 
         // Lấy tất cả thực phẩm để tìm các món thay thế cùng nhóm phù hợp nhất
         List<Food> candidatePool = foodRepository.findAllWithRelations();
@@ -83,11 +81,12 @@ public class SmartSwapServiceImpl implements SmartSwapService {
         List<String> allowedTargetCategories = CATEGORY_SWAP_MAP.getOrDefault(targetCategoryCode,
                 List.of(targetCategoryCode));
 
-        // Lọc món ăn: khác món hiện tại, không dị ứng, BẮT BUỘC thuộc kiểu DISH / BOTH
-        // (bỏ INGREDIENT), calo > 0, và thuộc nhóm tương đương
+        // Lọc món ăn: khác món hiện tại, không dị ứng (kiểm tra cả AllergyMaster và ghi chú UserAllergy.note),
+        // BẮT BUỘC thuộc kiểu DISH / BOTH (bỏ INGREDIENT), calo > 0, và thuộc nhóm tương đương
         List<Food> filteredFoods = candidatePool.stream()
                 .filter(food -> !food.getId().equals(targetFood.getId()))
-                .filter(food -> !allergicFoodIds.contains(food.getId()))
+                .filter(food -> allergies == null
+                        || allergies.stream().noneMatch(allergy -> dietFoodFilterService.isAllergicFood(food, allergy)))
                 .filter(food -> food.getType() == FoodType.DISH || food.getType() == FoodType.BOTH)
                 .filter(food -> food.getCaloriesPer100g() != null
                         && food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) > 0)
@@ -104,7 +103,8 @@ public class SmartSwapServiceImpl implements SmartSwapService {
                     && targetFood.getProteinPer100g().doubleValue() >= 8.0;
             filteredFoods = candidatePool.stream()
                     .filter(food -> !food.getId().equals(targetFood.getId()))
-                    .filter(food -> !allergicFoodIds.contains(food.getId()))
+                    .filter(food -> allergies == null
+                            || allergies.stream().noneMatch(allergy -> dietFoodFilterService.isAllergicFood(food, allergy)))
                     .filter(food -> food.getType() == FoodType.DISH || food.getType() == FoodType.BOTH)
                     .filter(food -> food.getCaloriesPer100g() != null
                             && food.getCaloriesPer100g().compareTo(BigDecimal.ZERO) > 0)

@@ -3,6 +3,7 @@ package com.bodypilot.backend.exception;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -42,11 +43,20 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(body, HttpStatus.UNAUTHORIZED);
     }
 
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException e, HttpServletRequest request) {
+        log.warn("⚠️ Access Denied at [{} {}] - Message: {}", request.getMethod(), request.getRequestURI(), e.getMessage());
+        Map<String, Object> body = new HashMap<>();
+        body.put("message", e.getMessage() != null ? e.getMessage() : "Bạn không có quyền thực hiện thao tác này.");
+        body.put("status", HttpStatus.FORBIDDEN.value());
+        return new ResponseEntity<>(body, HttpStatus.FORBIDDEN);
+    }
+
     @ExceptionHandler(RuntimeException.class)
     public ResponseEntity<Map<String, Object>> handleRuntimeException(RuntimeException e, HttpServletRequest request) {
         log.error("🚨 Runtime Exception occurred at [{} {}] - Message: {}", request.getMethod(), request.getRequestURI(), e.getMessage(), e);
         Map<String, Object> body = new HashMap<>();
-        body.put("message", e.getMessage());
+        body.put("message", "Đã xảy ra lỗi xử lý yêu cầu. Vui lòng thử lại sau.");
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
@@ -56,7 +66,6 @@ public class GlobalExceptionHandler {
         log.error("🚨 Unhandled Exception occurred at [{} {}] - Message: {}", request.getMethod(), request.getRequestURI(), e.getMessage(), e);
         Map<String, Object> body = new HashMap<>();
         body.put("message", "Có lỗi không mong muốn xảy ra. Vui lòng thử lại.");
-        body.put("error", e.getMessage());
         body.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         return new ResponseEntity<>(body, HttpStatus.INTERNAL_SERVER_ERROR);
     }
